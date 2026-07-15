@@ -1,0 +1,15 @@
+{
+  "name": "purview-aspire-appresources",
+  "version": "1.0.0-prerelease.1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/purview-dev/purview-aspire-appresources.git"
+  },
+  "keywords": [],
+  "author": "Kieron Lanning",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/purview-dev/purview-aspire-appresources/issues"
+  },
+  "homepage": "https://github.com/purview-dev/purview-aspire-appresources#readme"
+}
