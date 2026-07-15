@@ -8,7 +8,7 @@ if (Environment.UserInteractive)
 builder.AddHostAppResources(static services =>
 {
 	services.AddSingleton<IEnvironmentTagProvider, ConfigurationEnvironmentTagProvider>();
-	services.AddSingleton(new HostAppBuildMetadata("example-apphost"));
+	services.AddSingleton<HostAppBuildMetadata>();
 });
 
 var app = builder.Build();

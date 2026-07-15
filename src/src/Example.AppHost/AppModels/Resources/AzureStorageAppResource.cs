@@ -2,7 +2,8 @@
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
-sealed class AzureStorageAppResource : HostAppResource<HostApp, AzureStorageResource>
+[HostResource]
+sealed class AzureStorageAppResource : HostAppResource<ExampleHostApp, AzureStorageResource>
 {
 	public override string Name { get; } = "azure-storage";
 
@@ -11,7 +12,7 @@ sealed class AzureStorageAppResource : HostAppResource<HostApp, AzureStorageReso
 	protected override IResourceBuilder<AzureStorageResource> Build(IDistributedApplicationBuilder builder) =>
 		builder.AddAzureStorage(Name).RunAsEmulator();
 
-	protected override void Configure(HostApp app)
+	protected override void Configure(ExampleHostApp app)
 	{
 		Blobs = ResourceBuilder.AddBlobs("blobs");
 

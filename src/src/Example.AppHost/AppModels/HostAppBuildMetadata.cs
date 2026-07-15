@@ -2,7 +2,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels;
 
-sealed record HostAppBuildMetadata(string EnvironmentTag);
+sealed class HostAppBuildMetadata(IEnvironmentTagProvider tagProvider)
+{
+	public string EnvironmentTag => tagProvider.GetTag();
+}
 
 interface IEnvironmentTagProvider
 {
@@ -14,5 +17,6 @@ sealed class ConfigurationEnvironmentTagProvider(IConfiguration configuration) :
 	public string GetTag() =>
 		configuration["HostApp:EnvironmentTag"]
 		?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-		?? "local";
+		?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+		?? "Local";
 }

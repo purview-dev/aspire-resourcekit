@@ -76,7 +76,7 @@ static class SourceGenHelpers
 
 			if (!declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
 				return GeneratorResult<TargetSymbolDescriptor>.Fail(
-					GeneratorDiagnostics.ClassMustBePartialInfo(symbol, declaration)
+					GeneratorDiagnostics.Create(GeneratorDiagnostics.ClassMustBePartial, symbol, declaration)
 				);
 
 			TargetSymbolDescriptor result = new(

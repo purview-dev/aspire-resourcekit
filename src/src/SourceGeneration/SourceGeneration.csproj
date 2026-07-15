@@ -19,6 +19,6 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="Templates\Sources\**\*.cs" />
-		<None Include="Templates\Sources\**\*.cs" />
+		<Compile Remove="Templates\Sources\**\*.cs" />
 	</ItemGroup>
 </Project>

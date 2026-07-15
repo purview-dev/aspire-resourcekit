@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
+[HostResource]
 sealed class ExampleApiAppResource(
 	PublishMarkerAppResource publishMarker,
 	SqlServerAppResource sqlServer,
@@ -9,14 +10,14 @@ sealed class ExampleApiAppResource(
 	KeyVaultAppResource keyVault,
 	RedisAppResource redis,
 	IEnvironmentTagProvider environmentTagProvider
-) : HostAppResource<HostApp, ProjectResource>
+) : HostAppResource<ExampleHostApp, ProjectResource>
 {
 	public override string Name { get; } = "example-api";
 
 	protected override IResourceBuilder<ProjectResource> Build(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
-	protected override void Configure([NotNull] HostApp app)
+	protected override void Configure([NotNull] ExampleHostApp app)
 	{
 		if (publishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", publishMarker.ResourceBuilder);

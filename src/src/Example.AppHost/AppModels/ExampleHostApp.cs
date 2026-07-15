@@ -1,7 +1,7 @@
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels;
 
-[HostResources]
-sealed partial class HostApp(HostAppBuildMetadata metadata)
+[HostApp]
+sealed partial class ExampleHostApp(HostAppBuildMetadata metadata)
 {
 	public HostAppBuildMetadata Metadata { get; } = metadata;
 }

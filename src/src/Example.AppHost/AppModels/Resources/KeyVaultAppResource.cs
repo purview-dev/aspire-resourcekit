@@ -3,7 +3,8 @@ using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
-sealed class KeyVaultAppResource : HostAppResource<HostApp, AzureKeyVaultResource>
+[HostResource]
+sealed class KeyVaultAppResource : HostAppResource<ExampleHostApp, AzureKeyVaultResource>
 {
 	public override string Name { get; } = "keyvault";
 
