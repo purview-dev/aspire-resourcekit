@@ -142,6 +142,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			// --- Host app partial class ---
 			if (!string.IsNullOrEmpty(hostAccessibility))
 				writer.Write($"{hostAccessibility} ");
+
 			writer.WriteLine($"partial class {hostAppTypeName}");
 
 			using (writer.Block())
@@ -159,7 +160,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						var resourceType = resource.ToDisplayString(FullyQualifiedFormat);
 						var propertyName = propertyNameMap[resource];
 						writer.Write($"public {resourceType} {propertyName} ");
-						writer.WriteLine("{ get; set; } = default!;");
+						writer.WriteLine("{ get; private set; } = default!;");
 					}
 					writer.NewLine();
 				}
@@ -180,7 +181,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 				// Build method.
 				writer.WriteLine(
-					"public void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.IServiceProvider serviceProvider)"
+					"void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.IServiceProvider serviceProvider)"
 				);
 				using (writer.Block())
 				{
@@ -197,9 +198,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							var resourceType = resource.ToDisplayString(FullyQualifiedFormat);
 							var variableName = variableMap[resource];
 							var propertyName = propertyNameMap[resource];
-							writer.WriteLine(
-								$"var {variableName} = global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.GetServiceOrCreateInstance<{resourceType}>(serviceProvider);"
-							);
+							writer.WriteLine($"var {variableName} = serviceProvider.GetRequiredService<{resourceType}>();");
 							writer.WriteLine($"{variableName}.BuildResource(builder);");
 							writer.WriteLine($"{propertyName} = {variableName};");
 						}
@@ -208,7 +207,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				writer.NewLine();
 
 				// Configure method.
-				writer.WriteLine("public void Configure(global::System.IServiceProvider serviceProvider)");
+				writer.WriteLine("void Configure(global::System.IServiceProvider serviceProvider)");
 				using (writer.Block())
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(serviceProvider);");

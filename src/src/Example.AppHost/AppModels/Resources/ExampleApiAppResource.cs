@@ -27,7 +27,10 @@ sealed partial class ExampleApiAppResource(
 
 		ResourceBuilder.WithReference(sqlServer.Database);
 		ResourceBuilder.WithReference(azureStorage.Blobs);
-		ResourceBuilder.WithReference(keyVault.ResourceBuilder);
+
+		if (keyVault.IsEnabled)
+			ResourceBuilder.WithReference(keyVault.ResourceBuilder);
+
 		ResourceBuilder.WithReference(redis.ResourceBuilder);
 	}
 }
