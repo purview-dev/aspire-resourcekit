@@ -6,4 +6,4 @@ namespace Purview.Aspire.ResourceIsolation;
 
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class HostApplicationAttribute : global::System.Attribute;
+public sealed class HostAppAttribute : global::System.Attribute;

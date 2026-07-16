@@ -3,7 +3,7 @@
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
 [HostResource]
-sealed class RedisAppResource : HostAppResource<ExampleHostApp, AzureManagedRedisResource>
+sealed partial class RedisAppResource : HostAppResource<ExampleHostApp, AzureManagedRedisResource>
 {
 	public override string Name { get; } = "redis";
 

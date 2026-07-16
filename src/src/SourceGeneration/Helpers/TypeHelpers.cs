@@ -7,8 +7,12 @@ static class TypeHelpers
 
 	public static readonly string[] GeneratedTypes = [HostAppAttributeName, HostResourceAttributeName];
 
-	public const string FullHostAppAttributeName = "Purview.Aspire.ResourceIsolation." + HostAppAttributeName;
-	public const string FullHostResourceAttributeName = "Purview.Aspire.ResourceIsolation." + HostResourceAttributeName;
+	public const string ResourceIsolationNamespace = "Purview.Aspire.ResourceIsolation";
+
+	public const string FullHostAppAttributeName = ResourceIsolationNamespace + "." + HostAppAttributeName;
+	public const string FullHostResourceAttributeName = ResourceIsolationNamespace + "." + HostResourceAttributeName;
+
+	public const string HostResourceInterfaceName = "IHostAppResource";
 
 	public const string DisableAspireResourceIsolationSourceGeneratorProperty =
 		"DisableAspireResourceIsolationSourceGenerator";

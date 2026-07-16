@@ -14,10 +14,10 @@ static class SourceGenHelpers
 	{
 		var isDisabledValueProvider = IsSourceGeneratorDisabledValueProvider(context, logger);
 		var generationContextValueProvider = GetGeneratorValueProvider(context, logger);
-		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.HostAppAttributeName, logger);
+		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.FullHostAppAttributeName, logger);
 		var hostResourceValueProvider = GetGenerationValueProviders(
 			context,
-			TypeHelpers.HostResourceAttributeName,
+			TypeHelpers.FullHostResourceAttributeName,
 			logger
 		);
 
@@ -46,18 +46,18 @@ static class SourceGenHelpers
 
 	static IncrementalValuesProvider<GeneratorResult<TargetSymbolDescriptor>> GetGenerationValueProviders(
 		IncrementalGeneratorInitializationContext context,
-		string attributeName,
+		string fullAttributeName,
 		GenerationLogger? logger
 	)
 	{
-		// Create a syntax provider that finds classes with the specified attribute
+		// Create a syntax provider that finds classes with the specified attribute.
 		var targetSymbols = context
 			.SyntaxProvider.ForAttributeWithMetadataName(
-				attributeName,
+				fullAttributeName,
 				predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-				transform: (ctx, ct) => GetSemanticTargetForGeneration(ctx, attributeName, ct)
+				transform: (ctx, ct) => GetSemanticTargetForGeneration(ctx, fullAttributeName, ct)
 			)
-			.WithTrackingName($"Get{attributeName}Targets");
+			.WithTrackingName($"Get{fullAttributeName}Targets");
 
 		return targetSymbols;
 
@@ -66,7 +66,7 @@ static class SourceGenHelpers
 
 		static GeneratorResult<TargetSymbolDescriptor> GetSemanticTargetForGeneration(
 			GeneratorAttributeSyntaxContext context,
-			string attributeName,
+			string fullAttributeName,
 			CancellationToken cancellationToken
 		)
 		{
@@ -82,7 +82,7 @@ static class SourceGenHelpers
 			TargetSymbolDescriptor result = new(
 				symbol,
 				declaration,
-				attributeName == TypeHelpers.FullHostAppAttributeName
+				fullAttributeName == TypeHelpers.FullHostAppAttributeName
 			);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
 [HostResource]
-sealed class ExampleApiAppResource(
+sealed partial class ExampleApiAppResource(
 	PublishMarkerAppResource publishMarker,
 	SqlServerAppResource sqlServer,
 	AzureStorageAppResource azureStorage,

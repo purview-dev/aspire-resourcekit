@@ -3,7 +3,7 @@
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
 [HostResource]
-sealed class SqlServerAppResource : HostAppResource<ExampleHostApp, AzureSqlServerResource>
+sealed partial class SqlServerAppResource : HostAppResource<ExampleHostApp, AzureSqlServerResource>
 {
 	public override string Name { get; } = "sql";
 
@@ -12,14 +12,8 @@ sealed class SqlServerAppResource : HostAppResource<ExampleHostApp, AzureSqlServ
 	protected override IResourceBuilder<AzureSqlServerResource> Build(IDistributedApplicationBuilder builder)
 	{
 		var sql = builder.AddAzureSqlServer(Name).RunAsContainer();
+		Database = sql.AddDatabase("db");
 
 		return sql;
-	}
-
-	protected override void Configure(ExampleHostApp app)
-	{
-		Database = ResourceBuilder.AddDatabase("db");
-
-		base.Configure(app);
 	}
 }

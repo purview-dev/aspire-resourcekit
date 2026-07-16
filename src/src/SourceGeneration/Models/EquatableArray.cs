@@ -16,7 +16,7 @@ readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<Equatabl
 
 	public T this[int index] => _array[index];
 
-	public ImmutableArray<T> AsImmutableArray() => _array.IsDefault ? ImmutableArray<T>.Empty : _array;
+	public ImmutableArray<T> AsImmutableArray() => _array.IsDefault ? [] : _array;
 
 	public static EquatableArray<T> Create(params T[] items) => new(ImmutableArray.Create(items));
 

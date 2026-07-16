@@ -3,7 +3,7 @@
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
 [HostResource]
-sealed class AzureStorageAppResource : HostAppResource<ExampleHostApp, AzureStorageResource>
+sealed partial class AzureStorageAppResource : HostAppResource<ExampleHostApp, AzureStorageResource>
 {
 	public override string Name { get; } = "azure-storage";
 

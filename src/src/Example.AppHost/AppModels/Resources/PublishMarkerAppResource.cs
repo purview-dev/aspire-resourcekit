@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
 [HostResource]
-sealed class PublishMarkerAppResource : HostAppResource<ExampleHostApp, ParameterResource>
+sealed partial class PublishMarkerAppResource : HostAppResource<ExampleHostApp, ParameterResource>
 {
 	public override string Name { get; } = "publish-marker";
 
