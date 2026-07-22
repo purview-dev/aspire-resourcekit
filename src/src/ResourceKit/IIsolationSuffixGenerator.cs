@@ -1,4 +1,4 @@
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 public interface IIsolationSuffixGenerator
 {

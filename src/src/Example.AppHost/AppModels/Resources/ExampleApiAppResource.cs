@@ -1,32 +1,31 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
+namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
 [AppResource(Name = "example-api")]
 sealed partial class ExampleApiAppResource(
 	PublishMarkerAppResource publishMarker,
 	SqlServerAppResource sqlServer,
 	AzureStorageAppResource azureStorage,
-	KeyVaultAppResource keyVault,
-	RedisAppResource redis,
-	IEnvironmentTagProvider environmentTagProvider
-) : ExampleHostAppAppResourceBase<ProjectResource>
+	KeyVaultAppResource keyVault
+) : ExampleHostAppResourceBase<ProjectResource>
 {
-	protected override IResourceBuilder<ProjectResource> Build(IDistributedApplicationBuilder builder) =>
+	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
-	protected override void Configure([NotNull] ExampleHostApp app)
+	protected override void ConfigureResource([NotNull] ExampleHostApp app)
 	{
+		// Examples using IoC
 		if (publishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", publishMarker.ResourceBuilder);
 
-		ResourceBuilder.WithEnvironment("HOST_APP_ENVIRONMENT", environmentTagProvider.GetTag());
-		ResourceBuilder.WithEnvironment("HOST_APP_METADATA", app.Metadata.EnvironmentTag);
-
 		ResourceBuilder.WithReference(sqlServer.Database);
 		ResourceBuilder.WithReference(azureStorage.Blobs);
+
 		if (keyVault.IsEnabled)
 			ResourceBuilder.WithReference(keyVault.ResourceBuilder);
-		ResourceBuilder.WithReference(redis.ResourceBuilder);
+
+		// Example of using the `app` parameter.
+		ResourceBuilder.WithReference(app.Redis.ResourceBuilder, optional: !app.Redis.IsEnabled);
 	}
 }

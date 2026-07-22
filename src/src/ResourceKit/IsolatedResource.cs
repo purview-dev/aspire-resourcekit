@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 public abstract class IsolatedResource<TResource> : IIsolatedResource
 	where TResource : class, IResource

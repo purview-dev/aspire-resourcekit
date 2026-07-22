@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 public sealed class DelegateIsolatedResource<TResource>(
 	string resourceKey,

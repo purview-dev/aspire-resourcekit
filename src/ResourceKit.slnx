@@ -10,7 +10,7 @@
 		<File Path="../nuget.config" />
 	</Folder>
 	<Folder Name="/src/">
-		<Project Path="src/ResourceIsolation/ResourceIsolation.csproj" />
+		<Project Path="src/ResourceKit/ResourceKit.csproj" />
 		<Project Path="src/SourceGeneration/SourceGeneration.csproj" />
 	</Folder>
 	<Folder Name="/src/examples/">
@@ -19,8 +19,9 @@
 		<Project Path="src/Example.Service/Example.Service.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
-		<Project Path="tests/ResourceIsolation.IntegrationTests/ResourceIsolation.IntegrationTests.csproj" />
-		<Project Path="tests/ResourceIsolation.UnitTests/ResourceIsolation.UnitTests.csproj" />
-		<Project Path="tests/SourceGeneration.IntegrationTests/SourceGeneration.IntegrationTests.csproj" Id="e862344c-a0e1-423c-98b2-86e1a9758ce6" />
+		<Project Path="tests/ResourceKit.IntegrationTests/ResourceKit.IntegrationTests.csproj" />
+		<Project Path="tests/ResourceKit.UnitTests/ResourceKit.UnitTests.csproj" />
+		<Project Path="tests/SourceGeneration.IntegrationTests/SourceGeneration.IntegrationTests.csproj" />
+		<Project Path="tests/SourceGeneration.UnitTests/SourceGeneration.UnitTests.csproj" />
 	</Folder>
 </Solution>

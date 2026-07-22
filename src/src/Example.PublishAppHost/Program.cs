@@ -1,6 +1,6 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var settingsProvider = new ConfigurationIsolationSettingsProvider(builder.Configuration, "ResourceIsolation");
+var settingsProvider = new ConfigurationIsolationSettingsProvider(builder.Configuration, "ResourceKit");
 var context = AppIsolationContext.Create(builder, settingsProvider.Load());
 IsolatedResourceCollection appModel = new(context);
 

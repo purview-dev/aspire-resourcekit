@@ -1,4 +1,4 @@
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix")]
 public sealed class IsolatedResourceCollection(AppIsolationContext context)

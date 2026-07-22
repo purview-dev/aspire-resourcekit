@@ -1,2 +1,2 @@
-﻿global using Purview.Aspire.ResourceIsolation.SourceGeneration.Assertions;
-global using Purview.Aspire.ResourceIsolation.SourceGeneration.Infrastructure;
+﻿global using Purview.Aspire.ResourceKit.SourceGeneration.Assertions;
+global using Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;

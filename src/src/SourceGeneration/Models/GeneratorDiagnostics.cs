@@ -1,11 +1,12 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 static class GeneratorDiagnostics
 {
-	const string Category = "Purview.Aspire.ResourceIsolation.SourceGenerator";
+	const string Category = TypeHelpers.ResourceKitNamespace + "SourceGenerator";
 
 	public static readonly DiagnosticDescriptor ClassMustBePartial = new(
 		id: "SG0001",
@@ -81,10 +82,28 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor ServiceLifetiemMissing = new(
+	public static readonly DiagnosticDescriptor ServiceLifetimeMissing = new(
 		id: "SG0009",
 		title: "ServiceLifetime type missing",
 		messageFormat: "Add the `Microsoft.Extensions.DependencyInjection.Abstractions` NuGet package",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor OptionDependencyMissing = new(
+		id: "SG0010",
+		title: "IOptions type and AddOptions extension method missing",
+		messageFormat: "Add the `Microsoft.Extensions.Options` NuGet package",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor OptionsBuilderConfigurationExtensionMissing = new(
+		id: "SG0011",
+		title: "BindConfiguration extension method missing",
+		messageFormat: "Add the `Microsoft.Extensions.Options.ConfigurationExtensions` NuGet package",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

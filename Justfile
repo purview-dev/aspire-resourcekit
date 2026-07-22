@@ -1,6 +1,6 @@
 set quiet
 
-solution := "src/ResourceIsolation.slnx"
+solution := "src/ResourceKit.slnx"
 build_configuration := "Release"
 artifacts_folder := "./artifacts"
 default_test_filter := "/*/*/*/*/"
@@ -15,6 +15,11 @@ default:
 build *args:
     echo "Building {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
     dotnet build {{ solution }} -c {{ build_configuration }} {{ args }}
+
+# Build and test with the specified configuration, defaulting to "Release"
+clean *args:
+    echo "Cleaning {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
+    dotnet clean {{ solution }} -c {{ build_configuration }} {{ args }}
 
 # Run tests with the specified configuration, defaulting to "Release"
 test filter=default_test_filter *args:

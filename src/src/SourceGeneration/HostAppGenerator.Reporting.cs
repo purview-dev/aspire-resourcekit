@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
 using Microsoft.CodeAnalysis;
-using Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
-using Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration;
+namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 partial class HostAppGenerator
 {

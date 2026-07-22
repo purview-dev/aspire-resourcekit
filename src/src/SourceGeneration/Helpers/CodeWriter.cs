@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 sealed class CodeWriter
 {
@@ -76,12 +76,27 @@ sealed class CodeWriter
 
 	public CodeWriter QuoteLine(string? value = null) => Quote(value).WriteLine();
 
-	public IDisposable Block(string? header = null, string seperator = "{", string? closingSeperator = null)
+	public IDisposable Block(
+		string? header = null,
+		string? seperator = "{",
+		string? closingSeperator = null,
+		Action<CodeWriter>? additionalParts = null
+	)
 	{
-		if (header != null)
-			WriteLine(header);
+		WriteIndent();
 
-		WriteLine(seperator);
+		if (header != null)
+		{
+			Write(header);
+			additionalParts?.Invoke(this);
+
+			NewLine();
+		}
+
+		if (seperator != null)
+			// Skips using the Indent via WriteLine if we DIY
+			Write(seperator).NewLine();
+
 		Indent();
 
 		if (closingSeperator == null)
@@ -94,6 +109,18 @@ sealed class CodeWriter
 		}
 
 		return new BlockScope(this, closingSeperator);
+	}
+
+	public CodeWriter MultiLine(params string[] parts)
+	{
+		for (var i = 0; i < parts.Length; i++)
+		{
+			WriteIndent().Write(parts[i]);
+			if (i < (parts.Length - 1))
+				NewLine();
+		}
+
+		return this;
 	}
 
 	void Reset()

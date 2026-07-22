@@ -1,12 +1,21 @@
+using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class SourceGenHelpers
 {
+	public const string DisablePurviewAspireResourceKitSourceGeneratorPropertyName =
+		"DisablePurviewAspireResourceKitSourceGenerator";
+
+	static readonly ConcurrentDictionary<int, string> TabCache = new();
+
+	public static string GetSpacing(int tabs, string? message = null) =>
+		(tabs <= 0 ? string.Empty : TabCache.GetOrAdd(tabs, t => new string(' ', t))) + message;
+
 	public static IncrementalValueProvider<GenerationModel> GetGeneratorValueProviders(
 		IncrementalGeneratorInitializationContext context,
 		GenerationLogger? logger
@@ -14,12 +23,8 @@ static class SourceGenHelpers
 	{
 		var isDisabledValueProvider = IsSourceGeneratorDisabledValueProvider(context, logger);
 		var generationContextValueProvider = GetGeneratorValueProvider(context, logger);
-		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.FullHostAppAttributeName, logger);
-		var appResourceValueProvider = GetGenerationValueProviders(
-			context,
-			TypeHelpers.FullAppResourceAttributeName,
-			logger
-		);
+		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.HostAppAttribute, logger);
+		var appResourceValueProvider = GetGenerationValueProviders(context, TypeHelpers.AppResourceAttribute, logger);
 
 		return isDisabledValueProvider
 			.Combine(generationContextValueProvider) // (bool, GenerationContext)
@@ -34,17 +39,33 @@ static class SourceGenHelpers
 					generationContext.Logger?.Debug($"Disabled: {isDisabled}", 1);
 					generationContext.Logger?.Debug($"Host Apps: {hostApps.Length}", 1);
 					generationContext.Logger?.Debug($"App Resources: {appResources.Length}", 1);
-					generationContext.Logger?.Debug($"Context: {generationContext.GetDebugInfo()}", 1);
+					generationContext.Logger?.Debug($"Generation Context:", 1);
+					foreach (var info in generationContext.GetDebugInfo())
+						generationContext.Logger?.Debug(info, 2);
 
 					// Work out any diagnostics we might need to raise here.
-					var hasMultipleHostApps = hostApps.Length > 1;
-					var hasServiceTimeTypeAvailable = generationContext.ServiceLifetime != null;
-
 					List<DiagnosticInfo> diagnostics = [];
-					if (hasMultipleHostApps)
+					if (hostApps.Length > 1)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.MultipleHostAppsFoundnfo));
-					if (!hasServiceTimeTypeAvailable)
-						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceLifetiemMissing));
+					if (generationContext.ServiceLifetime is null)
+						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceLifetimeMissing));
+
+					if (
+						generationContext.Options is null
+						|| generationContext.OptionsServiceCollectionExtensions is null
+					)
+					{
+						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.OptionDependencyMissing));
+					}
+
+					if (generationContext.OptionsBuilderConfigurationExtensions is null)
+					{
+						diagnostics.Add(
+							GeneratorDiagnostics.Create(
+								GeneratorDiagnostics.OptionsBuilderConfigurationExtensionMissing
+							)
+						);
+					}
 
 					return new GenerationModel(
 						IsSourceGeneratorEnabled: !isDisabled,
@@ -59,20 +80,20 @@ static class SourceGenHelpers
 
 	static IncrementalValuesProvider<GeneratorResult<TargetSymbolDescriptor>> GetGenerationValueProviders(
 		IncrementalGeneratorInitializationContext context,
-		string fullAttributeName,
+		TypeValueObject attributeType,
 		GenerationLogger? logger
 	)
 	{
-		logger?.Debug($"Generating value providers for {fullAttributeName}");
+		logger?.Debug($"Generating value providers for {attributeType}");
 
 		// Create a syntax provider that finds classes with the specified attribute.
 		var targetSymbols = context
 			.SyntaxProvider.ForAttributeWithMetadataName(
-				fullAttributeName,
+				attributeType.SymbolFullName,
 				predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-				transform: (ctx, ct) => GetSemanticTargetForGeneration(ctx, fullAttributeName, logger, ct)
+				transform: (ctx, ct) => GetSemanticTargetForGeneration(ctx, attributeType, logger, ct)
 			)
-			.WithTrackingName($"Get{fullAttributeName}Targets");
+			.WithTrackingName($"Get{attributeType.TypeName}Targets");
 
 		return targetSymbols;
 
@@ -81,14 +102,14 @@ static class SourceGenHelpers
 
 		static GeneratorResult<TargetSymbolDescriptor> GetSemanticTargetForGeneration(
 			GeneratorAttributeSyntaxContext context,
-			string fullAttributeName,
+			TypeValueObject attributeType,
 			GenerationLogger? logger,
 			CancellationToken cancellationToken
 		)
 		{
-			logger?.Debug($"Checking target {context.TargetNode} based on {fullAttributeName}");
-
 			var declaration = (TypeDeclarationSyntax)context.TargetNode;
+			logger?.Debug($"Checking target {declaration.Identifier} based on {attributeType.TypeName}");
+
 			if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
 			{
 				logger?.Error($"The symbol could not be found for {declaration}");
@@ -103,9 +124,9 @@ static class SourceGenHelpers
 				);
 			}
 
-			var isHostApp = fullAttributeName == TypeHelpers.FullHostAppAttributeName;
+			var isHostApp = attributeType == TypeHelpers.HostAppAttribute;
 
-			logger?.Debug($"Processing Attribute: {fullAttributeName}");
+			logger?.Debug($"Processing Attribute: {attributeType.SymbolFullName}");
 			if (isHostApp)
 				logger?.Debug($"for Host App {symbol.Name}", 1);
 			else
@@ -182,17 +203,17 @@ static class SourceGenHelpers
 		GenerationLogger? logger
 	)
 	{
-		// Opt-out: set <DisableAspireResourceIsolationSourceGenerator>true</DisableAspireResourceIsolationSourceGenerator> to skip generation.
+		// Opt-out: set <DisableAspireResourceKitSourceGenerator>true</DisableAspireResourceKitSourceGenerator> to skip generation.
 		var isDisabledValueProvider = context
 			.AnalyzerConfigOptionsProvider.Select(
 				(opts, _) =>
 				{
 					logger?.Debug(
-						$"Checking MSBuild property {TypeHelpers.DisableAspireResourceIsolationSourceGeneratorProperty}"
+						$"Checking MSBuild property {DisablePurviewAspireResourceKitSourceGeneratorPropertyName}"
 					);
 
 					opts.GlobalOptions.TryGetValue(
-						TypeHelpers.DisableAspireResourceIsolationSourceGeneratorProperty,
+						DisablePurviewAspireResourceKitSourceGeneratorPropertyName,
 						out var val
 					);
 					if (bool.TryParse(val, out var isDisabled))

@@ -1,21 +1,20 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Infrastructure;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
 
 public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 	where TGenerator : class, IIncrementalGenerator, new()
 {
-	public static readonly string[] GeneratedAttributes = [.. TypeHelpers.GeneratedTypes, "EmbeddedAttribute"];
-
 	static readonly string[] TrustedAssemblies = (
 		(string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? ""
 	).Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
 
-	public static readonly int ExpectedGeneratedFileCount = GeneratedAttributes.Length;
+	// +1 is for the EmbeddedAttribute
+	public static readonly int ExpectedGeneratedFileCount = TypeHelpers.GeneratedTypes.Length + 1;
 
 	public static readonly int ExpectedFileCountPlusGen = ExpectedGeneratedFileCount + 1;
 
@@ -41,9 +40,21 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		}
 
 		if (driverContext.IncludeSourceGeneratorNamespaces)
+			namespacesToInclude.AddRange(["// Source generator namespaces", TypeHelpers.ResourceKitNamespace]);
+
+		if (
+			driverContext.IncludeServiceTimelifeReference
+			|| driverContext.IncludeOptionsReference
+			|| driverContext.IncludeOptionsConfigurationExtensionReference
+		)
 		{
-			namespacesToInclude.AddRange(["// Source generator namespaces", TypeHelpers.ResourceIsolationNamespace]);
+			namespacesToInclude.Add("// NuGet package namespaces");
 		}
+
+		if (driverContext.IncludeOptionsReference)
+			namespacesToInclude.Add(TypeHelpers.IOptions.Namespace);
+		if (driverContext.IncludeOptionsConfigurationExtensionReference)
+			namespacesToInclude.Add(TypeHelpers.OptionsBuilderConfigurationExtensions.Namespace);
 
 		if (namespacesToInclude.Count > 0)
 		{
@@ -55,11 +66,29 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 
 		var syntaxTree = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken);
 		var references = BuildBclReferences();
-		if (driverContext.IncludeServiceTimelifeNamespace)
+		if (driverContext.IncludeServiceTimelifeReference)
 		{
 			references = references.Add(
 				MetadataReference.CreateFromFile(
 					typeof(Microsoft.Extensions.DependencyInjection.ServiceLifetime).Assembly.Location
+				)
+			);
+		}
+
+		if (driverContext.IncludeOptionsReference)
+		{
+			references = references.Add(
+				MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.Options.IOptions<>).Assembly.Location)
+			);
+		}
+
+		if (driverContext.IncludeOptionsConfigurationExtensionReference)
+		{
+			references = references.Add(
+				MetadataReference.CreateFromFile(
+					typeof(Microsoft.Extensions.DependencyInjection.OptionsBuilderConfigurationExtensions)
+						.Assembly
+						.Location
 				)
 			);
 		}
@@ -96,14 +125,19 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 			);
 		}
 
-		var driver = CSharpGeneratorDriver
-			.Create(generator)
-			.RunGeneratorsAndUpdateCompilation(
-				compilation,
-				out var outputCompilation,
-				out var diagnostics,
-				cancellationToken
-			);
+		GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+
+		if (driverContext.DisableSourceGenerator is bool disable)
+		{
+			driver = driver.WithUpdatedAnalyzerConfigOptions(new TestAnalyzerConfigOptionsProvider(disable));
+		}
+
+		driver = driver.RunGeneratorsAndUpdateCompilation(
+			compilation,
+			out var outputCompilation,
+			out var diagnostics,
+			cancellationToken
+		);
 
 		var result = driver.GetRunResult();
 
@@ -148,7 +182,10 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 	protected static IEnumerable<SyntaxTree> ExcludeGenAttribs(GeneratorDriverRunResult result)
 	{
 		return result.GeneratedTrees.Where(tree =>
-			!GeneratedAttributes.Any(attr => tree.FilePath.EndsWith(attr, StringComparison.Ordinal))
+			!TypeHelpers.GeneratedTypes.Any(attr =>
+				tree.FilePath.EndsWith(attr.SymbolFullName + ".g.cs", StringComparison.Ordinal)
+				|| tree.FilePath.EndsWith(TypeHelpers.EmbeddedAttribute.TypeName + ".cs", StringComparison.Ordinal)
+			)
 		);
 	}
 

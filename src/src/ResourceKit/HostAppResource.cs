@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<THostApp>
 	where THostApp : class
@@ -9,7 +9,7 @@ public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<TH
 {
 	public abstract string Name { get; }
 
-	public bool IsEnabled { get; private set; } = true;
+	public bool IsEnabled { get; set; } = true;
 
 	public IResourceBuilder<TResource> ResourceBuilder
 	{
@@ -27,38 +27,29 @@ public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<TH
 
 	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => true;
 
-	protected virtual bool IsResourceEnabled(
-		[NotNull] IDistributedApplicationBuilder builder,
-		IServiceProvider services
-	) => IsResourceEnabled(builder);
+	protected abstract IResourceBuilder<TResource> BuildResource(IDistributedApplicationBuilder builder);
 
-	protected abstract IResourceBuilder<TResource> Build(IDistributedApplicationBuilder builder);
+	protected virtual void ConfigureResource(THostApp app) { }
 
-	protected virtual void Configure(THostApp app) { }
-
-	protected virtual void Configure(THostApp app, IServiceProvider services) => Configure(app);
-
-	public void BuildResource(IDistributedApplicationBuilder builder, IServiceProvider services)
+	public void Build(IDistributedApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-		ArgumentNullException.ThrowIfNull(services);
 
-		IsEnabled = IsResourceEnabled(builder, services);
+		IsEnabled = IsResourceEnabled(builder);
 		if (!IsEnabled)
 			return;
 
-		ResourceBuilder = Build(builder);
+		ResourceBuilder = BuildResource(builder);
 	}
 
-	public void ConfigureResource(THostApp app, IServiceProvider services)
+	public void Configure(THostApp app)
 	{
 		ArgumentNullException.ThrowIfNull(app);
-		ArgumentNullException.ThrowIfNull(services);
 
 		if (!IsEnabled)
 			return;
 
-		Configure(app, services);
+		ConfigureResource(app);
 	}
 
 	[DebuggerHidden]

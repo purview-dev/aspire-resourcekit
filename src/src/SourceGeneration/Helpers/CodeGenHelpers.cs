@@ -1,14 +1,14 @@
 ﻿using System.Collections.Concurrent;
 using System.Globalization;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class CodeGenHelpers
 {
 	public const string CodeGenReplacementToken = "{{CodeGen}}";
 	public const string NonClassCodeGenReplacementToken = "{{NonClassCodeGen}}";
 
-	const string EmbedAttributesHashDefineName = "PURVIEW_ASPIRE_RESOURCEISOLATION_ATTRIBUTES";
+	const string EmbedAttributesHashDefineName = "PURVIEW_ASPIRE_RESOURCEKIT_ATTRIBUTES";
 
 	const string GeneratedCodeConstant = "System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
 	const string ConditionalConstant = "System.Diagnostics.ConditionalAttribute(\"{0}\")";

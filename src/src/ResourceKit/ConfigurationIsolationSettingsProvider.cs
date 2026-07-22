@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 public sealed class ConfigurationIsolationSettingsProvider(
 	IConfiguration configuration,

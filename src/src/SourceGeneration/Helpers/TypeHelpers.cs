@@ -1,21 +1,52 @@
-﻿namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+﻿using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class TypeHelpers
 {
-	public const string HostAppAttributeName = "HostAppAttribute";
-	public const string AppResourceAttributeName = "AppResourceAttribute";
+	// Generated type information...
+	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
-	public static readonly string[] GeneratedTypes = [HostAppAttributeName, AppResourceAttributeName];
+	public static readonly TypeValueObject HostAppAttribute = new(nameof(HostAppAttribute), ResourceKitNamespace);
 
-	public const string ResourceIsolationNamespace = "Purview.Aspire.ResourceIsolation";
+	public static readonly TypeValueObject AppResourceAttribute = new(
+		nameof(AppResourceAttribute),
+		ResourceKitNamespace
+	);
 
-	public const string FullHostAppAttributeName = ResourceIsolationNamespace + "." + HostAppAttributeName;
-	public const string FullAppResourceAttributeName = ResourceIsolationNamespace + "." + AppResourceAttributeName;
+	// Library types
+	public static readonly TypeValueObject HostAppResource = new(nameof(HostAppResource), ResourceKitNamespace);
+	public static readonly TypeValueObject IHostAppResource = new(nameof(IHostAppResource), ResourceKitNamespace);
 
-	public const string FullServiceLifetimeName = "Microsoft.Extensions.DependencyInjection.ServiceLifetime";
+	// Other required types
+	// Required for DI
+	public static readonly TypeValueObject ServiceLifetime = new(
+		nameof(ServiceLifetime),
+		"Microsoft.Extensions.DependencyInjection"
+	);
 
-	public const string AppResourceInterfaceName = "IHostAppResource";
+	public static readonly TypeValueObject IOptions = new(nameof(IOptions), "Microsoft.Extensions.Options");
+	public static readonly TypeValueObject Options = new(nameof(Options), "Microsoft.Extensions.Options");
 
-	public const string DisableAspireResourceIsolationSourceGeneratorProperty =
-		"DisableAspireResourceIsolationSourceGenerator";
+	//  Required for AddOptions
+	public static readonly TypeValueObject OptionsServiceCollectionExtensions = new(
+		nameof(OptionsServiceCollectionExtensions),
+		"Microsoft.Extensions.DependencyInjection"
+	);
+
+	// Required for BindConfiguration
+	public static readonly TypeValueObject OptionsBuilderConfigurationExtensions = new(
+		nameof(OptionsBuilderConfigurationExtensions),
+		"Microsoft.Extensions.DependencyInjection"
+	);
+
+	// Other useful types
+	public static readonly TypeValueObject NotNullAttribute = new(
+		nameof(NotNullAttribute),
+		"System.Diagnostics.CodeAnalysis"
+	);
+	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
+
+	// Generated attributes (make sure this is after they're all initialised!)
+	public static readonly TypeValueObject[] GeneratedTypes = [HostAppAttribute, AppResourceAttribute];
 }

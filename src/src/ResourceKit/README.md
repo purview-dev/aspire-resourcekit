@@ -1,4 +1,4 @@
-# Purview.Aspire.ResourceIsolation
+# Purview.Aspire.ResourceKit
 
 Testable Aspire AppHost resource composition with runtime isolation modes:
 

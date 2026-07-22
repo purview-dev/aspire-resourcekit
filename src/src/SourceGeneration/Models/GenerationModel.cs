@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 sealed record GenerationModel(
 	bool IsSourceGeneratorEnabled,

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Purview.Aspire.ResourceIsolation;
+namespace Purview.Aspire.ResourceKit;
 
 [DebuggerDisplay("{Mode} | Prefix={Settings.NamePrefix} | Suffix={Settings.NameSuffix}")]
 public sealed class AppIsolationContext(AppRunMode mode, IsolationSettings settings)

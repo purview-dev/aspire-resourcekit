@@ -1,6 +1,6 @@
-﻿using Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+﻿using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration;
+namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 public class HostAppGeneratorTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
 {
@@ -39,7 +39,7 @@ namespace Testing
 ";
 
 		// Act
-		var (result, o) = await GenerateAsync(source, cancellationToken);
+		var (result, _) = await GenerateAsync(source, cancellationToken);
 
 		// Assert — attribute files + 1 generated host app
 		await Assert.That(result.GeneratedTrees).Count().IsEqualTo(ExpectedFileCountPlusGen);

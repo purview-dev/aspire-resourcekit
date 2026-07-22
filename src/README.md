@@ -10,9 +10,9 @@ It provides a NuGet package for Aspire resource composition:
 
 ## Projects
 
-- `src/ResourceIsolation` - NuGet package source.
-- `tests/ResourceIsolation.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
-- `tests/ResourceIsolation.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
+- `src/ResourceKit` - NuGet package source.
+- `tests/ResourceKit.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
+- `tests/ResourceKit.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
 - `src/Example.AppHost` - local/running example AppHost.
 - `src/Example.PublishAppHost` - publish-aware example AppHost.
 - `src/Example.Service` - minimal service for examples/tests.
@@ -32,7 +32,7 @@ It provides a NuGet package for Aspire resource composition:
 
 Run packaging from this folder against:
 
-- `src/ResourceIsolation/ResourceIsolation.csproj`
+- `src/ResourceKit/ResourceKit.csproj`
 
 or
 
