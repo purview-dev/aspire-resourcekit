@@ -6,6 +6,6 @@ sealed record GenerationModel(
 	bool IsSourceGeneratorEnabled,
 	GenerationContext GenerationContext,
 	GeneratorResult<TargetSymbolDescriptor> HostApp,
-	ImmutableArray<GeneratorResult<TargetSymbolDescriptor>> HostResources,
+	ImmutableArray<GeneratorResult<TargetSymbolDescriptor>> AppResources,
 	ImmutableArray<DiagnosticInfo> Diagnostics
 );

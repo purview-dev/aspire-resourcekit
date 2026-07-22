@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
-[HostResource]
+[AppResource(Name = "example-api")]
 sealed partial class ExampleApiAppResource(
 	PublishMarkerAppResource publishMarker,
 	SqlServerAppResource sqlServer,
@@ -10,10 +10,8 @@ sealed partial class ExampleApiAppResource(
 	KeyVaultAppResource keyVault,
 	RedisAppResource redis,
 	IEnvironmentTagProvider environmentTagProvider
-) : HostAppResource<ExampleHostApp, ProjectResource>
+) : ExampleHostAppAppResourceBase<ProjectResource>
 {
-	public override string Name { get; } = "example-api";
-
 	protected override IResourceBuilder<ProjectResource> Build(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
@@ -27,7 +25,8 @@ sealed partial class ExampleApiAppResource(
 
 		ResourceBuilder.WithReference(sqlServer.Database);
 		ResourceBuilder.WithReference(azureStorage.Blobs);
-		ResourceBuilder.WithReference(keyVault.ResourceBuilder);
+		if (keyVault.IsEnabled)
+			ResourceBuilder.WithReference(keyVault.ResourceBuilder);
 		ResourceBuilder.WithReference(redis.ResourceBuilder);
 	}
 }

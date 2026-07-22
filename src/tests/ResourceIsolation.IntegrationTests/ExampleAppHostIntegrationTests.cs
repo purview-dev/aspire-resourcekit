@@ -1,3 +1,5 @@
+using Purview.Aspire.ResourceIsolation.Fixtures;
+
 namespace Purview.Aspire.ResourceIsolation;
 
 [ClassDataSource<ExampleAppHostFixture>(Shared = SharedType.PerTestSession)]

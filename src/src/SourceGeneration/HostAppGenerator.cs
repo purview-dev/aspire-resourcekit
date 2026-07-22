@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -17,12 +16,18 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		context.RegisterPostInitializationOutput(static postInitContext =>
+		context.RegisterPostInitializationOutput(postInitContext =>
 		{
+			_logger?.Debug("Adding attributes:");
+
 			postInitContext.AddEmbeddedAttributeDefinition();
+			_logger?.Debug("- EmbeddedAttribute", 1);
 
 			foreach (var resourceName in TypeHelpers.GeneratedTypes)
-				postInitContext.AddSource(resourceName, EmbeddedResources.LoadTemplate(resourceName));
+			{
+				_logger?.Debug($"- {resourceName}", 1);
+				postInitContext.AddSource(resourceName + ".g.cs", EmbeddedResources.LoadTemplate(resourceName));
+			}
 		});
 
 		// Collect all of the host app types and host resource types.
@@ -33,7 +38,12 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			static (sourceProductionContext, model) =>
 			{
 				if (!model.IsSourceGeneratorEnabled)
+				{
+					model.GenerationContext.Logger?.Debug("Source generator disabled.");
 					return;
+				}
+
+				model.GenerationContext.Logger?.Debug("Source generator enabled, processing...");
 
 				List<DiagnosticInfo> diagnostics = [];
 				if (model.HostApp.HasDiagnostics)
@@ -41,8 +51,8 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				if (!model.Diagnostics.IsDefaultOrEmpty)
 					diagnostics.AddRange(model.Diagnostics);
 
-				// Collect any diagnostics from the host resource results.
-				foreach (var resourceResult in model.HostResources)
+				// Collect any diagnostics from the app resource results.
+				foreach (var resourceResult in model.AppResources)
 				{
 					if (resourceResult.HasDiagnostics)
 						diagnostics.AddRange(resourceResult.Diagnostics);
@@ -51,34 +61,106 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				// Resolve the host app symbol (if any).
 				var hostAppSymbol = model.HostApp.IsSuccess ? model.HostApp.Value!.Symbol : null;
 
-				// Resolve the host resource symbols, filtering to those that target this host app.
-				ImmutableArray<INamedTypeSymbol> resourceSymbols;
+				// Resolve the app resource descriptors. All [AppResource] classes
+				// attach to the single [HostApp]; the generated base class is not
+				// visible during source generation, so interface-based filtering
+				// is not possible.
+				List<TargetSymbolDescriptor> resourceDescriptors;
 				if (hostAppSymbol is not null)
 				{
-					var resources = new List<INamedTypeSymbol>();
-					foreach (var resourceResult in model.HostResources)
+					resourceDescriptors = [];
+					foreach (var resourceResult in model.AppResources)
 					{
 						if (!resourceResult.IsSuccess)
 							continue;
 
-						var resourceSymbol = resourceResult.Value!.Symbol;
-						if (IsResourceForHostApp(resourceSymbol, hostAppSymbol))
-							resources.Add(resourceSymbol);
+						resourceDescriptors.Add(resourceResult.Value!);
 					}
-
-					resourceSymbols = [.. resources.Distinct(SymbolEqualityComparer.Default).Cast<INamedTypeSymbol>()];
 				}
 				else
 				{
-					resourceSymbols = [];
+					model.GenerationContext.Logger?.Debug("No host app found");
+					resourceDescriptors = [];
 				}
 
-				if (resourceSymbols.IsDefaultOrEmpty)
+				// Validate app resources: derive names, check uniqueness and base type.
+				if (hostAppSymbol is not null && resourceDescriptors.Count > 0)
 				{
-					if (model.HostApp.IsEmpty)
+					var descriptor = model.HostApp.Value!;
+					var baseClassName = $"{descriptor.Name ?? descriptor.Symbol.Name}AppResourceBase";
+					var seenPropertyNames = new HashSet<string>(StringComparer.Ordinal);
+
+					foreach (var resource in resourceDescriptors)
+					{
+						var resourceSymbol = resource.Symbol;
+
+						// Derive the resource name (from attribute or type name).
+						var resourceName = resource.Name ?? DeriveResourceName(resourceSymbol.Name);
+						if (string.IsNullOrWhiteSpace(resourceName))
+						{
+							diagnostics.Add(
+								DiagnosticInfo.Create(
+									GeneratorDiagnostics.ResourceNameNotDerivable,
+									resource.Declaration.Identifier.GetLocation(),
+									resourceSymbol.Name
+								)
+							);
+							continue;
+						}
+
+						// Derive the property name.
+						var propertyName = resource.PropertyName ?? BuildPropertyNameFromResourceName(resourceName);
+						if (!IsValidIdentifier(propertyName))
+						{
+							diagnostics.Add(
+								DiagnosticInfo.Create(
+									GeneratorDiagnostics.InvalidPropertyName,
+									resource.Declaration.Identifier.GetLocation(),
+									propertyName
+								)
+							);
+							continue;
+						}
+
+						// Check for duplicate property names (SG0005).
+						if (!seenPropertyNames.Add(propertyName))
+						{
+							diagnostics.Add(
+								DiagnosticInfo.Create(
+									GeneratorDiagnostics.DuplicateResourcePropertyName,
+									resource.Declaration.Identifier.GetLocation(),
+									propertyName
+								)
+							);
+							continue;
+						}
+
+						// Check that the resource derives from the expected base (SG0006).
+						if (
+							resourceSymbol.BaseType is null
+							|| !string.Equals(resourceSymbol.BaseType.Name, baseClassName, StringComparison.Ordinal)
+						)
+						{
+							diagnostics.Add(
+								DiagnosticInfo.Create(
+									GeneratorDiagnostics.ResourceMustDeriveFromBase,
+									resource.Declaration.Identifier.GetLocation(),
+									resourceSymbol.Name,
+									baseClassName
+								)
+							);
+						}
+					}
+				}
+
+				if (resourceDescriptors.Count == 0)
+				{
+					if (!model.HostApp.IsEmpty)
+					{
 						diagnostics.Add(
-							GeneratorDiagnostics.Create(GeneratorDiagnostics.NoHostResourcesDefined, hostAppSymbol)
+							GeneratorDiagnostics.Create(GeneratorDiagnostics.NoAppResourcesDefined, hostAppSymbol)
 						);
+					}
 				}
 				else if (model.HostApp.IsEmpty)
 					diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.NoHostAppInfoDefined));
@@ -88,17 +170,18 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					ReportDiagnostics(sourceProductionContext, diagnostics, model.GenerationContext.Logger);
 
 				// If any fatal diagnostics were reported, do not generate any source code.
-				if (model.HostApp.IsFatal || model.HostResources.Any(s => s.IsFatal))
+				if (model.HostApp.IsFatal || model.AppResources.Any(s => s.IsFatal))
 					return;
 
 				// We only support a single host app - if none was found, there is nothing to generate.
 				if (hostAppSymbol is null)
 					return;
 
-				var generatedModel = new GeneratedHostAppModel(hostAppSymbol, resourceSymbols);
+				var hostAppDescriptor = model.HostApp.Value!;
+				var generatedModel = new GeneratedHostAppModel(hostAppDescriptor, [.. resourceDescriptors]);
 				var source = BuildHostAppSource(generatedModel);
-				var fileName =
-					$"{SanitizeForFileName(hostAppSymbol.ToDisplayString(FullyQualifiedFormat))}.HostResources.g.cs";
+				var fileName = $"{hostAppSymbol.Name}.AppResources.g.cs";
+
 				sourceProductionContext.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
 			}
 		);
@@ -106,22 +189,38 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 	static string BuildHostAppSource(GeneratedHostAppModel model)
 	{
-		var hostAppType = model.HostAppType;
+		var hostAppDescriptor = model.HostApp;
+		var hostAppType = hostAppDescriptor.Symbol;
 		var hostNamespace = hostAppType.ContainingNamespace.IsGlobalNamespace
 			? null
 			: hostAppType.ContainingNamespace.ToDisplayString();
 		var hostAppTypeDisplay = hostAppType.ToDisplayString(FullyQualifiedFormat);
 		var hostAppTypeName = hostAppType.Name;
 		var hostAccessibility = GetAccessibilityKeyword(hostAppType.DeclaredAccessibility);
-
-		var resources = model.Resources;
-		var variableMap = CreateUniqueVariableMap(resources);
-		var propertyNameMap = CreatePropertyNameMap(resources);
+		var baseAccessibility = string.IsNullOrEmpty(hostAccessibility) ? "internal" : hostAccessibility;
+		var baseClassName = $"{hostAppDescriptor.Name ?? hostAppTypeName}AppResourceBase";
+		var optionsClassName = $"{hostAppTypeName}AppOptions";
+		var extensionMethodName = $"Add{hostAppTypeName}";
+		var resourceInfo =
+			new List<(
+				TargetSymbolDescriptor Descriptor,
+				string ResourceName,
+				string PropertyName,
+				string VariableName
+			)>();
+		var seenPropertyNames = new HashSet<string>(StringComparer.Ordinal);
+		foreach (var resource in model.Resources)
+		{
+			var resourceName = resource.Name ?? DeriveResourceName(resource.Symbol.Name);
+			if (string.IsNullOrWhiteSpace(resourceName))
+				continue;
+			var propertyName = resource.PropertyName ?? BuildPropertyNameFromResourceName(resourceName);
+			if (!IsValidIdentifier(propertyName) || !seenPropertyNames.Add(propertyName))
+				continue;
+			resourceInfo.Add((resource, resourceName, propertyName, ToCamelCase(propertyName)));
+		}
 
 		var writer = new CodeWriter();
-
-		// The CodeWriter.Begin() scope resets the writer on dispose, so capture
-		// the string before leaving the using block.
 		string source;
 		using (writer.Begin())
 		{
@@ -132,53 +231,89 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			writer.WriteLine("using global::System;");
 			writer.WriteLine("using global::System.Linq;");
 			writer.NewLine();
-
-			if (hostNamespace is not null)
+			// --- Per-resource partials (Name override) in block-scoped namespaces ---
+			string? currentNs = null;
+			IDisposable? nsScope = null;
+			foreach (var (desc, resName, _, _) in resourceInfo)
 			{
-				writer.WriteLine($"namespace {hostNamespace};");
+				var resSymbol = desc.Symbol;
+				var resNs = resSymbol.ContainingNamespace.IsGlobalNamespace
+					? null
+					: resSymbol.ContainingNamespace.ToDisplayString();
+				if (resNs != currentNs)
+				{
+					nsScope?.Dispose();
+					nsScope = resNs is not null ? writer.Block($"namespace {resNs}") : null;
+					currentNs = resNs;
+				}
+
+				writer.WriteLine($"partial class {resSymbol.Name}");
+				using (writer.Block())
+					writer.WriteLine($"public override string Name => \"{resName}\";");
 				writer.NewLine();
 			}
 
-			// --- Host app partial class ---
-			if (!string.IsNullOrEmpty(hostAccessibility))
-				writer.Write($"{hostAccessibility} ");
-			writer.WriteLine($"partial class {hostAppTypeName}");
-
+			nsScope?.Dispose();
+			writer.NewLine();
+			// --- Host app namespace block (base class + partial + options + extensions) ---
+			IDisposable? hostNs = hostNamespace is not null ? writer.Block($"namespace {hostNamespace}") : null;
+			// --- Generated base class ---
+			writer.WriteLine(
+				$"{baseAccessibility} abstract class {baseClassName}<TResource> : global::Purview.Aspire.ResourceIsolation.HostAppResource<{hostAppTypeDisplay}, TResource>, global::Purview.Aspire.ResourceIsolation.IHostAppResource<{hostAppTypeDisplay}> where TResource : class, global::Aspire.Hosting.ApplicationModel.IResource"
+			);
 			using (writer.Block())
 			{
-				// Public properties for each host resource.
-				if (resources.Length == 0)
+				writer.WriteLine(
+					"protected override bool IsResourceEnabled(global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.IServiceProvider services)"
+				);
+				using (writer.Block())
 				{
-					writer.WriteLine("// No host resources were discovered for this host app.");
+					writer.WriteLine($"var options = services.GetService<{optionsClassName}>();");
+					writer.WriteLine("if (options is not null && options.IsResourceDisabled(Name))");
+					writer.Indent();
+					writer.WriteLine("return false;");
+					writer.Unindent();
+					writer.WriteLine("return base.IsResourceEnabled(builder, services);");
+				}
+			}
+
+			writer.NewLine();
+			// --- Host app partial class ---
+			var accessPrefix = string.IsNullOrEmpty(hostAccessibility) ? string.Empty : hostAccessibility + " ";
+			writer.WriteLine($"{accessPrefix}partial class {hostAppTypeName}");
+			// (accessibility prefix handled above)
+			using (writer.Block())
+			{
+				if (resourceInfo.Count == 0)
+				{
+					writer.WriteLine("// No app resources were discovered for this host app.");
 					writer.NewLine();
 				}
 				else
 				{
-					foreach (var resource in resources)
-					{
-						var resourceType = resource.ToDisplayString(FullyQualifiedFormat);
-						var propertyName = propertyNameMap[resource];
-						writer.Write($"public {resourceType} {propertyName} ");
-						writer.WriteLine("{ get; set; } = default!;");
-					}
+					foreach (var (desc, _, propName, _) in resourceInfo)
+						writer.WriteLine(
+							$"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName} {{ get; private set; }} = default!;"
+						);
 					writer.NewLine();
 				}
-
-				// Initialize method.
-				writer.WriteLine(
-					"public void Initialize(global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.IServiceProvider serviceProvider)"
-				);
+				// Initialise method
+				writer.WriteLine("public void Initialize(global::System.IServiceProvider serviceProvider)");
 				using (writer.Block())
 				{
-					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(serviceProvider);");
 					writer.NewLine();
-					writer.WriteLine("Build(builder, serviceProvider);");
-					writer.WriteLine("Configure(serviceProvider);");
+					foreach (var (desc, _, propName, varName) in resourceInfo)
+					{
+						writer.WriteLine(
+							$"var {varName} = ActivatorUtilities.GetServiceOrCreateInstance<{desc.Symbol.ToDisplayString(FullyQualifiedFormat)}>(serviceProvider);"
+						);
+						writer.WriteLine($"{propName} = {varName};");
+					}
 				}
-				writer.NewLine();
 
-				// Build method.
+				writer.NewLine();
+				// Build method
 				writer.WriteLine(
 					"public void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.IServiceProvider serviceProvider)"
 				);
@@ -187,53 +322,61 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(serviceProvider);");
 					writer.NewLine();
-
-					if (resources.Length == 0)
-						writer.WriteLine("// No host resources were discovered for this host app.");
+					if (resourceInfo.Count == 0)
+						writer.WriteLine("// No app resources were discovered for this host app.");
 					else
-					{
-						foreach (var resource in resources)
-						{
-							var resourceType = resource.ToDisplayString(FullyQualifiedFormat);
-							var variableName = variableMap[resource];
-							var propertyName = propertyNameMap[resource];
-							writer.WriteLine(
-								$"var {variableName} = global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.GetServiceOrCreateInstance<{resourceType}>(serviceProvider);"
-							);
-							writer.WriteLine($"{variableName}.BuildResource(builder);");
-							writer.WriteLine($"{propertyName} = {variableName};");
-						}
-					}
+						foreach (var (_, _, propName, _) in resourceInfo)
+							writer.WriteLine($"{propName}.BuildResource(builder, serviceProvider);");
 				}
-				writer.NewLine();
 
-				// Configure method.
+				writer.NewLine();
+				// Configure method
 				writer.WriteLine("public void Configure(global::System.IServiceProvider serviceProvider)");
 				using (writer.Block())
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(serviceProvider);");
 					writer.NewLine();
-
-					if (resources.Length == 0)
-						writer.WriteLine("// No host resources were discovered for this host app.");
+					if (resourceInfo.Count == 0)
+						writer.WriteLine("// No app resources were discovered for this host app.");
 					else
-					{
-						foreach (var resource in resources)
-						{
-							var propertyName = propertyNameMap[resource];
-							writer.WriteLine($"{propertyName}.ConfigureResource(this);");
-						}
-					}
+						foreach (var (_, _, propName, _) in resourceInfo)
+							writer.WriteLine($"{propName}.ConfigureResource(this, serviceProvider);");
 				}
 			}
-			writer.NewLine();
 
+			writer.NewLine();
+			// --- AppOptions class ---
+			writer.WriteLine($"{baseAccessibility} sealed class {optionsClassName}");
+			using (writer.Block())
+			{
+				writer.WriteLine(
+					"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
+				);
+				writer.NewLine();
+				writer.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }");
+				writer.NewLine();
+				writer.WriteLine("public bool IsResourceDisabled(string resourceName)");
+				using (writer.Block())
+				{
+					writer.WriteLine("if (DisabledResources.Contains(resourceName))");
+					writer.Indent();
+					writer.WriteLine("return true;");
+					writer.Unindent();
+					writer.WriteLine("if (IsResourceEnabledPredicate is not null)");
+					writer.Indent();
+					writer.WriteLine("return !IsResourceEnabledPredicate(resourceName);");
+					writer.Unindent();
+					writer.WriteLine("return false;");
+				}
+			}
+
+			writer.NewLine();
 			// --- Builder extensions ---
 			writer.WriteLine($"internal static class {hostAppTypeName}BuilderExtensions");
 			using (writer.Block())
 			{
 				writer.WriteLine(
-					"public static global::Aspire.Hosting.IDistributedApplicationBuilder AddHostAppResources(this global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.Action<global::Microsoft.Extensions.DependencyInjection.IServiceCollection>? configureServices = null)"
+					$"public static global::Aspire.Hosting.IDistributedApplicationBuilder {extensionMethodName}(this global::Aspire.Hosting.IDistributedApplicationBuilder builder, global::System.Action<global::Microsoft.Extensions.DependencyInjection.IServiceCollection>? configureServices = null, global::System.Action<{optionsClassName}>? configureOptions = null, global::{TypeHelpers.FullServiceLifetimeName}? hostAppLifetime = null, global::{TypeHelpers.FullServiceLifetimeName}? resourceLifetimeOverride = null)"
 				);
 				using (writer.Block())
 				{
@@ -241,28 +384,37 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					writer.NewLine();
 					writer.WriteLine("configureServices?.Invoke(builder.Services);");
 					writer.NewLine();
-					writer.WriteLine($"builder.Services.TryAddSingleton<{hostAppTypeDisplay}>();");
-
-					if (resources.Length > 0)
-					{
-						foreach (var resource in resources)
-						{
-							var resourceType = resource.ToDisplayString(FullyQualifiedFormat);
-							writer.WriteLine($"builder.Services.TryAddSingleton<{resourceType}>();");
-						}
-					}
-
+					writer.WriteLine($"builder.Services.TryAddSingleton<{optionsClassName}>();");
+					writer.WriteLine(
+						$"builder.Services.TryAdd(new ServiceDescriptor(typeof({hostAppTypeDisplay}), typeof({hostAppTypeDisplay}), global::{TypeHelpers.FullServiceLifetimeName}.{hostAppDescriptor.ServiceLifetime}));"
+					);
+					foreach (var (desc, _, _, _) in resourceInfo)
+						writer.WriteLine(
+							$"builder.Services.TryAdd(new ServiceDescriptor(typeof({desc.Symbol.ToDisplayString(FullyQualifiedFormat)}), typeof({desc.Symbol.ToDisplayString(FullyQualifiedFormat)}), resourceLifetimeOverride ?? global::{TypeHelpers.FullServiceLifetimeName}.{desc.ServiceLifetime}));"
+						);
 					writer.NewLine();
 					writer.WriteLine("using var serviceProvider = builder.Services.BuildServiceProvider();");
+					writer.WriteLine($"var options = serviceProvider.GetRequiredService<{optionsClassName}>();");
+					writer.WriteLine("configureOptions?.Invoke(options);");
+					writer.NewLine();
 					writer.WriteLine(
-						$"var hostApp = global::Microsoft.Extensions.DependencyInjection.ActivatorUtilities.GetServiceOrCreateInstance<{hostAppTypeDisplay}>(serviceProvider);"
+						$"var hostApp = ActivatorUtilities.GetServiceOrCreateInstance<{hostAppTypeDisplay}>(serviceProvider);"
 					);
-					writer.WriteLine("hostApp.Initialize(builder, serviceProvider);");
+					writer.WriteLine(
+						"// Initialize the host app with the service provider. We do this hear to allow the user to"
+					);
+					writer.WriteLine("// add other services via construction if they need to...");
+					writer.WriteLine("hostApp.Initialize(serviceProvider);");
+					writer.WriteLine("// Build first to allow the assembly of all the required parts.");
+					writer.WriteLine("hostApp.Build(builder, serviceProvider);");
+					writer.WriteLine("// Then configure once all of the building is done across all resources.");
+					writer.WriteLine("hostApp.Configure(serviceProvider);");
 					writer.NewLine();
 					writer.WriteLine("return builder;");
 				}
 			}
 
+			hostNs?.Dispose();
 			source = writer.ToString();
 		}
 
@@ -283,83 +435,6 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		};
 	}
 
-	static Dictionary<INamedTypeSymbol, string> CreateUniqueVariableMap(ImmutableArray<INamedTypeSymbol> resources)
-	{
-		var map = new Dictionary<INamedTypeSymbol, string>(NamedTypeSymbolComparer.Instance);
-		var seen = new Dictionary<string, int>(StringComparer.Ordinal);
-
-		foreach (var resource in resources)
-		{
-			var baseName = BuildVariableName(resource.Name);
-			if (seen.TryGetValue(baseName, out var count))
-			{
-				count++;
-				seen[baseName] = count;
-				map[resource] = $"{baseName}{count}";
-			}
-			else
-			{
-				seen[baseName] = 0;
-				map[resource] = baseName;
-			}
-		}
-
-		return map;
-	}
-
-	static Dictionary<INamedTypeSymbol, string> CreatePropertyNameMap(ImmutableArray<INamedTypeSymbol> resources)
-	{
-		// Property names are PascalCase derived from the resource type name,
-		// with deduplication by appending a numeric suffix.
-		var map = new Dictionary<INamedTypeSymbol, string>(NamedTypeSymbolComparer.Instance);
-		var seen = new Dictionary<string, int>(StringComparer.Ordinal);
-
-		foreach (var resource in resources)
-		{
-			var baseName = BuildPropertyName(resource.Name);
-			if (seen.TryGetValue(baseName, out var count))
-			{
-				count++;
-				seen[baseName] = count;
-				map[resource] = $"{baseName}{count}";
-			}
-			else
-			{
-				seen[baseName] = 0;
-				map[resource] = baseName;
-			}
-		}
-
-		return map;
-	}
-
-	sealed class NamedTypeSymbolComparer : IEqualityComparer<INamedTypeSymbol>
-	{
-		public static NamedTypeSymbolComparer Instance { get; } = new();
-
-		public bool Equals(INamedTypeSymbol? x, INamedTypeSymbol? y) => SymbolEqualityComparer.Default.Equals(x, y);
-
-		public int GetHashCode(INamedTypeSymbol obj) => SymbolEqualityComparer.Default.GetHashCode(obj);
-	}
-
-	static string BuildVariableName(string typeName)
-	{
-		var trimmed = TrimSuffix(typeName);
-		if (string.IsNullOrWhiteSpace(trimmed))
-			trimmed = "resource";
-
-		return ToCamelCase(trimmed);
-	}
-
-	static string BuildPropertyName(string typeName)
-	{
-		var trimmed = TrimSuffix(typeName);
-		if (string.IsNullOrWhiteSpace(trimmed))
-			trimmed = "Resource";
-
-		return ToPascalCase(trimmed);
-	}
-
 	static string TrimSuffix(string typeName) =>
 		typeName.EndsWith("AppResource", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "AppResource".Length)
@@ -369,55 +444,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 	static string ToCamelCase(string value)
 	{
-		if (string.IsNullOrEmpty(value))
-			return value;
-
-		return value.Length == 1
-			? char.ToLowerInvariant(value[0]).ToString()
+		return string.IsNullOrEmpty(value) ? value
+			: value.Length == 1 ? char.ToLowerInvariant(value[0]).ToString()
 			: char.ToLowerInvariant(value[0]) + value.Substring(1);
-	}
-
-	static string ToPascalCase(string value)
-	{
-		if (string.IsNullOrEmpty(value))
-			return value;
-
-		return value.Length == 1
-			? char.ToUpperInvariant(value[0]).ToString()
-			: char.ToUpperInvariant(value[0]) + value.Substring(1);
-	}
-
-	/// <summary>
-	/// Determines whether the given resource type implements <see cref="IHostAppResource{T}"/>
-	/// for the specified host app type.
-	/// </summary>
-	static bool IsResourceForHostApp(INamedTypeSymbol resourceType, INamedTypeSymbol hostAppType)
-	{
-		if (resourceType.TypeKind != TypeKind.Class || resourceType.IsAbstract)
-			return false;
-
-		foreach (var @interface in resourceType.AllInterfaces)
-		{
-			if (!string.Equals(@interface.Name, TypeHelpers.HostResourceInterfaceName, StringComparison.Ordinal))
-				continue;
-
-			if (
-				!string.Equals(
-					@interface.ContainingNamespace.ToDisplayString(),
-					TypeHelpers.ResourceIsolationNamespace,
-					StringComparison.Ordinal
-				)
-			)
-				continue;
-
-			if (@interface.TypeArguments.Length != 1)
-				continue;
-
-			if (SymbolEqualityComparer.Default.Equals(@interface.TypeArguments[0], hostAppType))
-				return true;
-		}
-
-		return false;
 	}
 
 	static string SanitizeForFileName(string typeName)
@@ -432,5 +461,41 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		}
 
 		return sb.ToString();
+	}
+
+	static string DeriveResourceName(string typeName) => TrimSuffix(typeName);
+
+	static string BuildPropertyNameFromResourceName(string name)
+	{
+		var sb = new StringBuilder(name.Length);
+		var capitalizeNext = true;
+		foreach (var c in name)
+		{
+			if (char.IsLetterOrDigit(c) || c == '_')
+			{
+				sb.Append(capitalizeNext ? char.ToUpperInvariant(c) : c);
+				capitalizeNext = false;
+			}
+			else
+				capitalizeNext = true;
+		}
+
+		var result = sb.ToString();
+		return string.IsNullOrEmpty(result) ? "Resource" : result;
+	}
+
+	static bool IsValidIdentifier(string name)
+	{
+		if (string.IsNullOrEmpty(name))
+			return false;
+		if (!char.IsLetter(name[0]) && name[0] != '_')
+			return false;
+		for (var i = 1; i < name.Length; i++)
+		{
+			if (!char.IsLetterOrDigit(name[i]) && name[i] != '_')
+				return false;
+		}
+
+		return true;
 	}
 }

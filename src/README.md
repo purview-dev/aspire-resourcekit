@@ -1,12 +1,8 @@
 # Aspire Resource Isolation Package (isolated workspace)
 
-This folder is a fully isolated package workspace under:
+It provides a NuGet package for Aspire resource composition:
 
-- `sampels/package`
-
-It provides a reusable NuGet package that models Aspire resource composition similarly to your `AppModels`, with explicit support for:
-
-- configuration-driven behavior,
+- configuration-driven behaviour,
 - local mode,
 - running mode,
 - publishing mode,
@@ -14,12 +10,12 @@ It provides a reusable NuGet package that models Aspire resource composition sim
 
 ## Projects
 
-- `src/Howden.MAADevEng.Aspire.ResourceIsolation` - NuGet package source.
-- `tests/Howden.MAADevEng.Aspire.ResourceIsolation.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
-- `tests/Howden.MAADevEng.Aspire.ResourceIsolation.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
-- `examples/ResourceIsolation.Example.AppHost` - local/running example AppHost.
-- `examples/ResourceIsolation.Example.PublishAppHost` - publish-aware example AppHost.
-- `examples/ResourceIsolation.Example.Service` - minimal service for examples/tests.
+- `src/ResourceIsolation` - NuGet package source.
+- `tests/ResourceIsolation.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
+- `tests/ResourceIsolation.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
+- `src/Example.AppHost` - local/running example AppHost.
+- `src/Example.PublishAppHost` - publish-aware example AppHost.
+- `src/Example.Service` - minimal service for examples/tests.
 
 ## Core usage
 
@@ -36,11 +32,10 @@ It provides a reusable NuGet package that models Aspire resource composition sim
 
 Run packaging from this folder against:
 
-- `src/Howden.MAADevEng.Aspire.ResourceIsolation/Howden.MAADevEng.Aspire.ResourceIsolation.csproj`
+- `src/ResourceIsolation/ResourceIsolation.csproj`
+
+or
+
+- `just pack`
 
 The package metadata is already configured (`PackageId`, symbols, readme, version).
-
-## Notes
-
-- This workspace intentionally does not depend on your `src/backend` projects.
-- Resource names can be isolated with prefix/suffix and overrides per resource key.

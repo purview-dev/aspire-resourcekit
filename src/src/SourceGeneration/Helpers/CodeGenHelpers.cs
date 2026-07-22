@@ -8,7 +8,7 @@ static class CodeGenHelpers
 	public const string CodeGenReplacementToken = "{{CodeGen}}";
 	public const string NonClassCodeGenReplacementToken = "{{NonClassCodeGen}}";
 
-	const string EmbedAttributesHashDefineName = "PURVIEW_EVENTSOURCING_ATTRIBUTES";
+	const string EmbedAttributesHashDefineName = "PURVIEW_ASPIRE_RESOURCEISOLATION_ATTRIBUTES";
 
 	const string GeneratedCodeConstant = "System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
 	const string ConditionalConstant = "System.Diagnostics.ConditionalAttribute(\"{0}\")";

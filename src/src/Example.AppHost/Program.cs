@@ -5,11 +5,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 if (Environment.UserInteractive)
 	Console.Title = $"[{builder.Environment.EnvironmentName}] Example.AppHost v{AssemblyInfo.Version}";
 
-builder.AddHostAppResources(static services =>
-{
-	services.AddSingleton<IEnvironmentTagProvider, ConfigurationEnvironmentTagProvider>();
-	services.AddSingleton<HostAppBuildMetadata>();
-});
+builder.Services.AddSingleton<IEnvironmentTagProvider, ConfigurationEnvironmentTagProvider>();
+builder.Services.AddSingleton<HostAppBuildMetadata>();
+
+builder.AddExampleHostApp();
 
 var app = builder.Build();
 await app.RunAsync();

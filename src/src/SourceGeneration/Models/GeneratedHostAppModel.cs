@@ -8,7 +8,4 @@ namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
 /// Resolved model for a single host app and its associated host resources,
 /// ready for source emission.
 /// </summary>
-sealed record GeneratedHostAppModel(
-	INamedTypeSymbol HostAppType,
-	ImmutableArray<INamedTypeSymbol> Resources
-);
+sealed record GeneratedHostAppModel(TargetSymbolDescriptor HostApp, ImmutableArray<TargetSymbolDescriptor> Resources);

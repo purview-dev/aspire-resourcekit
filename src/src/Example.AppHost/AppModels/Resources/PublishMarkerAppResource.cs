@@ -2,11 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
 
-[HostResource]
-sealed partial class PublishMarkerAppResource : HostAppResource<ExampleHostApp, ParameterResource>
+[AppResource(Name = "publish-marker")]
+sealed partial class PublishMarkerAppResource : ExampleHostAppAppResourceBase<ParameterResource>
 {
-	public override string Name { get; } = "publish-marker";
-
 	protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 

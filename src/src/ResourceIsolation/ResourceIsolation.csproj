@@ -15,42 +15,32 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
 	</ItemGroup>
 
+	<PropertyGroup>
+		<ResourceIsolationSourceGeneratorProject>$(MSBuildThisFileDirectory)..\Analyzers\SourceGeneration.csproj</ResourceIsolationSourceGeneratorProject>
+		<ResourceIsolationSourceGeneratorTargetFramework>netstandard2.0</ResourceIsolationSourceGeneratorTargetFramework>
+		<ResourceIsolationSourceGeneratorAssembly>$(MSBuildThisFileDirectory)..\SourceGeneration\bin\$(Configuration)\$(ResourceIsolationSourceGeneratorTargetFramework)\Purview.Aspire.ResourceIsolation.SourceGeneration.dll</ResourceIsolationSourceGeneratorAssembly>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeResourceIsolationSourceGenerator</TargetsForTfmSpecificContentInPackage>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<ProjectReference
-			Include="..\SourceGeneration\SourceGeneration.csproj"
-			OutputItemType="Analyzer"
-			ReferenceOutputAssembly="false"
+			Include="$(ResourceIsolationSourceGeneratorProject)"
 			PrivateAssets="all"
+			ReferenceOutputAssembly="false"
+			OutputItemType="Analyzer"
 		/>
 	</ItemGroup>
 
-	<ItemGroup>
-		<None Include="README.md" Pack="true" PackagePath="/" />
-	</ItemGroup>
+	<Target Name="IncludeResourceIsolationSourceGenerator" DependsOnTargets="Build">
+		<Error
+			Condition="!Exists('$(ProjectSdkSourceGeneratorAssembly)')"
+			Text="The Purview Aspire Resource Isolation Source Generator was not found at '$(ResourceIsolationSourceGeneratorAssembly)'."
+		/>
 
-	<!-- Ship the generator DLL and build props file inside the NuGet package. -->
-	<Target Name="IncludeAnalyzerInPackage" BeforeTargets="_GetPackageFiles">
-		<MSBuild
-			Projects="..\SourceGeneration\SourceGeneration.csproj"
-			Targets="GetTargetPath"
-			Properties="Configuration=$(Configuration)"
-			RebaseOutputs="true"
-		>
-			<Output TaskParameter="TargetOutputs" ItemName="_AnalyzerDll" />
-		</MSBuild>
 		<ItemGroup>
-			<None
-				Include="@(_AnalyzerDll)"
-				Pack="true"
-				PackagePath="analyzers/dotnet/cs"
-				Visible="false"
-			/>
-			<None
-				Include="$(MSBuildThisFileDirectory)build\Purview.Aspire.ResourceIsolation.props"
-				Pack="true"
-				PackagePath="build"
-				Visible="false"
-			/>
+			<TfmSpecificPackageFile Include="$(ResourceIsolationSourceGeneratorAssembly)">
+				<PackagePath>analyzers/dotnet/cs/</PackagePath>
+			</TfmSpecificPackageFile>
 		</ItemGroup>
 	</Target>
 </Project>

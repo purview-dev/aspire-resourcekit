@@ -5,7 +5,7 @@ public interface IHostAppResource<in THostApp>
 {
 	bool IsEnabled { get; }
 
-	void BuildResource(IDistributedApplicationBuilder builder);
+	void BuildResource(IDistributedApplicationBuilder builder, IServiceProvider services);
 
-	void ConfigureResource(THostApp app);
+	void ConfigureResource(THostApp app, IServiceProvider services);
 }

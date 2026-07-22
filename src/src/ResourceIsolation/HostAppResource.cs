@@ -27,29 +27,38 @@ public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<TH
 
 	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => true;
 
+	protected virtual bool IsResourceEnabled(
+		[NotNull] IDistributedApplicationBuilder builder,
+		IServiceProvider services
+	) => IsResourceEnabled(builder);
+
 	protected abstract IResourceBuilder<TResource> Build(IDistributedApplicationBuilder builder);
 
 	protected virtual void Configure(THostApp app) { }
 
-	public void BuildResource(IDistributedApplicationBuilder builder)
+	protected virtual void Configure(THostApp app, IServiceProvider services) => Configure(app);
+
+	public void BuildResource(IDistributedApplicationBuilder builder, IServiceProvider services)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
+		ArgumentNullException.ThrowIfNull(services);
 
-		IsEnabled = IsResourceEnabled(builder);
+		IsEnabled = IsResourceEnabled(builder, services);
 		if (!IsEnabled)
 			return;
 
 		ResourceBuilder = Build(builder);
 	}
 
-	public void ConfigureResource(THostApp app)
+	public void ConfigureResource(THostApp app, IServiceProvider services)
 	{
 		ArgumentNullException.ThrowIfNull(app);
+		ArgumentNullException.ThrowIfNull(services);
 
 		if (!IsEnabled)
 			return;
 
-		Configure(app);
+		Configure(app, services);
 	}
 
 	[DebuggerHidden]

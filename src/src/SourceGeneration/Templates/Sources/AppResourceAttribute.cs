@@ -6,9 +6,11 @@ namespace Purview.Aspire.ResourceIsolation;
 
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class HostAppAttribute : global::System.Attribute
+public sealed class AppResourceAttribute : global::System.Attribute
 {
 	public string? Name { get; set; }
+
+	public string? PropertyName { get; set; }
 
 	public global::Microsoft.Extensions.DependencyInjection.ServiceLifetime ServiceLifetime { get; set; } = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton;
 }

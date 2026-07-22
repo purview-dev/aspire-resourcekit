@@ -1,4 +1,4 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
 		<ProjectReference
@@ -15,9 +15,5 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Aspire.Hosting" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Analyzer Include="..\SourceGeneration\bin\$(Configuration)\netstandard2.0\Purview.Aspire.ResourceIsolation.SourceGeneration.dll" />
 	</ItemGroup>
 </Project>
