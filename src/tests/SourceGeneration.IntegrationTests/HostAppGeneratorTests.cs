@@ -39,7 +39,7 @@ namespace Testing
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var (result, o) = await GenerateAsync(source, cancellationToken);
 
 		// Assert — attribute files + 1 generated host app
 		await Assert.That(result.GeneratedTrees).Count().IsEqualTo(ExpectedFileCountPlusGen);
@@ -91,7 +91,11 @@ class TestingHostApp
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.ClassMustBePartial);

@@ -6,7 +6,7 @@ using Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Infrastructure;
 
-public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwOnLogError = true)
+public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 	where TGenerator : class, IIncrementalGenerator, new()
 {
 	public static readonly string[] GeneratedAttributes = [.. TypeHelpers.GeneratedTypes, "EmbeddedAttribute"];
@@ -90,7 +90,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwO
 
 					TestContext.Current.OutputWriter.WriteLine($"{prefix}: {message}");
 
-					if (throwOnLogError && outputType == OutputType.Error)
+					if (driverContext.ThrowOnGenerationException && outputType == OutputType.Error)
 						throw new InvalidOperationException($"Generator logged error: {message}");
 				}
 			);
@@ -108,9 +108,12 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwO
 		var result = driver.GetRunResult();
 
 		// No generator exceptions
-		var generationExceptions = result.Results.Select(m => m.Exception).Where(e => e != null);
+		if (driverContext.ThrowOnGenerationException)
+		{
+			var generationExceptions = result.Results.Select(m => m.Exception).Where(e => e != null);
 
-		await Assert.That(generationExceptions).IsEmpty();
+			await Assert.That(generationExceptions).IsEmpty();
+		}
 
 		return (result, outputCompilation);
 	}
