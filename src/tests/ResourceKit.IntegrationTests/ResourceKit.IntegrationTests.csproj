@@ -4,5 +4,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Example.AppHost\Example.AppHost.csproj" />
+		<ProjectReference Include="..\..\src\Example.ManualAppHost\Example.ManualAppHost.csproj" />
 	</ItemGroup>
 </Project>

@@ -1,6 +1,9 @@
-using Projects;
-using TUnit.Aspire;
+﻿using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit.Fixtures;
 
-public sealed class ExampleAppHostFixture : AspireFixture<Example_AppHost> { }
+public sealed class ExampleAppHostFixture<TAppHost> : AspireFixture<TAppHost>
+	where TAppHost : class
+{
+	//
+}

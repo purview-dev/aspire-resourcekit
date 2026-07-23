@@ -1,9 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
+namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
-[AppResource(Name = "api")]
-sealed partial class ExampleApiAppResource : ExampleHostAppResourceBase<ProjectResource>
+sealed partial class ExampleAPIAppResource() : HostResourceBase<ExampleHostApp, ProjectResource>("api")
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);

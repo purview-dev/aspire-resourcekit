@@ -4,4 +4,4 @@ var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
-app.Run();
+await app.RunAsync();

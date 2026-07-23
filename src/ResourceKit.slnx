@@ -15,6 +15,7 @@
 	</Folder>
 	<Folder Name="/src/examples/">
 		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />
+		<Project Path="src/Example.ManualAppHost/Example.ManualAppHost.csproj" Id="0dc2301e-502a-4afa-9cab-dee2daf1b028" />
 		<Project Path="src/Example.Service/Example.Service.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
