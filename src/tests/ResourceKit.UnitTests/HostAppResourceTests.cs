@@ -55,15 +55,13 @@ public sealed class HostAppResourceTests
 		await Assert.That(resource.IsEnabled).IsFalse();
 	}
 
-	sealed class TestHostApp;
+	sealed class TestHostApp : HostAppBase<TestHostApp>;
 
-	sealed class TestAppResource(bool enabled = true) : HostAppResource<TestHostApp, ParameterResource>
+	sealed class TestAppResource(bool enabled = true) : HostResourceBase<TestHostApp, ParameterResource>(name: "test")
 	{
 		public bool BuildCalled { get; private set; }
 
 		public bool ConfigureCalled { get; private set; }
-
-		public override string Name => "test";
 
 		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => enabled;
 
@@ -79,10 +77,8 @@ public sealed class HostAppResourceTests
 		}
 	}
 
-	sealed class DelegatingTestAppResource : HostAppResource<TestHostApp, ParameterResource>
+	sealed class DelegatingTestAppResource() : HostResourceBase<TestHostApp, ParameterResource>("test")
 	{
-		public override string Name => "test";
-
 		// Does NOT override IsResourceEnabled(builder, services) — should delegate to builder-only.
 		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => false;
 

@@ -3,12 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
 [AppResource(Name = "example-api")]
-sealed partial class ExampleApiAppResource(
-	PublishMarkerAppResource publishMarker,
-	SqlServerAppResource sqlServer,
-	AzureStorageAppResource azureStorage,
-	KeyVaultAppResource keyVault
-) : ExampleHostAppResourceBase<ProjectResource>
+sealed partial class ExampleApiAppResource : ExampleHostAppResourceBase<ProjectResource>
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
@@ -16,14 +11,14 @@ sealed partial class ExampleApiAppResource(
 	protected override void ConfigureResource([NotNull] ExampleHostApp app)
 	{
 		// Examples using IoC
-		if (publishMarker.IsEnabled)
-			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", publishMarker.ResourceBuilder);
+		if (app.PublishMarker.IsEnabled)
+			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", app.PublishMarker.ResourceBuilder);
 
-		ResourceBuilder.WithReference(sqlServer.Database);
-		ResourceBuilder.WithReference(azureStorage.Blobs);
+		ResourceBuilder.WithReference(app.SqlServer.Database);
+		ResourceBuilder.WithReference(app.AzureStorage.Blobs);
 
-		if (keyVault.IsEnabled)
-			ResourceBuilder.WithReference(keyVault.ResourceBuilder);
+		if (app.KeyVault.IsEnabled)
+			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder);
 
 		// Example of using the `app` parameter.
 		ResourceBuilder.WithReference(app.Redis.ResourceBuilder, optional: !app.Redis.IsEnabled);

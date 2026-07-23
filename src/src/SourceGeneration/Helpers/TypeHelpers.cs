@@ -15,8 +15,9 @@ static class TypeHelpers
 	);
 
 	// Library types
-	public static readonly TypeValueObject HostAppResource = new(nameof(HostAppResource), ResourceKitNamespace);
-	public static readonly TypeValueObject IHostAppResource = new(nameof(IHostAppResource), ResourceKitNamespace);
+	public static readonly TypeValueObject HostAppBase = new(nameof(HostAppBase), ResourceKitNamespace);
+
+	public static readonly TypeValueObject HostResourceBase = new(nameof(HostResourceBase), ResourceKitNamespace);
 
 	// Other required types
 	// Required for DI
@@ -25,19 +26,16 @@ static class TypeHelpers
 		"Microsoft.Extensions.DependencyInjection"
 	);
 
-	public static readonly TypeValueObject IOptions = new(nameof(IOptions), "Microsoft.Extensions.Options");
-	public static readonly TypeValueObject Options = new(nameof(Options), "Microsoft.Extensions.Options");
-
-	//  Required for AddOptions
-	public static readonly TypeValueObject OptionsServiceCollectionExtensions = new(
-		nameof(OptionsServiceCollectionExtensions),
-		"Microsoft.Extensions.DependencyInjection"
+	public static readonly TypeValueObject ConfigurationBinder = new(
+		nameof(ConfigurationBinder),
+		"Microsoft.Extensions.Configuration"
 	);
 
-	// Required for BindConfiguration
-	public static readonly TypeValueObject OptionsBuilderConfigurationExtensions = new(
-		nameof(OptionsBuilderConfigurationExtensions),
-		"Microsoft.Extensions.DependencyInjection"
+	// Aspire types.
+	public static readonly TypeValueObject IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
+	public static readonly TypeValueObject IDistributedApplicationBuilder = new(
+		nameof(IDistributedApplicationBuilder),
+		"Aspire.Hosting"
 	);
 
 	// Other useful types

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Extensions.Configuration;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
@@ -52,9 +53,9 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		}
 
 		if (driverContext.IncludeOptionsReference)
-			namespacesToInclude.Add(TypeHelpers.IOptions.Namespace);
+			namespacesToInclude.Add("Microsoft.Extensions.Options");
 		if (driverContext.IncludeOptionsConfigurationExtensionReference)
-			namespacesToInclude.Add(TypeHelpers.OptionsBuilderConfigurationExtensions.Namespace);
+			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace);
 
 		if (namespacesToInclude.Count > 0)
 		{
@@ -90,6 +91,10 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 						.Assembly
 						.Location
 				)
+			);
+
+			references = references.Add(
+				MetadataReference.CreateFromFile(typeof(ConfigurationBinder).Assembly.Location)
 			);
 		}
 

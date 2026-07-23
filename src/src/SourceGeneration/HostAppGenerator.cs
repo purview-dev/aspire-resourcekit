@@ -111,8 +111,8 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							continue;
 						}
 
-						// Derive the property name.
-						var propertyName = resource.PropertyName ?? BuildPropertyNameFromResourceName(resourceName);
+						// Derive the property name from the resource type name when not explicitly overridden.
+						var propertyName = resource.PropertyName ?? BuildPropertyNameFromTypeName(resourceSymbol.Name);
 						if (!IsValidIdentifier(propertyName))
 						{
 							diagnostics.Add(
@@ -203,13 +203,15 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		var baseAccessibility = string.IsNullOrEmpty(hostAccessibility) ? "internal" : hostAccessibility;
 		var baseClassName = $"{hostAppDescriptor.Name ?? hostAppTypeName}ResourceBase";
 		var optionsClassName = $"{hostAppTypeName}Options";
-		var extensionMethodName = $"Add{hostAppTypeName}";
+		var extensionMethodName = $"Add{hostAppTypeName}ResourceKit";
+		var notNull = generationContext.SystemCANotNull is null ? null : $"[{TypeHelpers.NotNullAttribute}] ";
+
 		var resourceInfo =
 			new List<(
 				TargetSymbolDescriptor Descriptor,
 				string ResourceName,
 				string PropertyName,
-				string VariableName
+				string ParameterName
 			)>();
 
 		generationContext.Logger?.Info($"Generating {hostAppType}...");
@@ -220,13 +222,15 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			var resourceName = resource.Name ?? DeriveResourceName(resource.Symbol.Name);
 			if (string.IsNullOrWhiteSpace(resourceName))
 				continue;
-			var propertyName = resource.PropertyName ?? BuildPropertyNameFromResourceName(resourceName);
+
+			var propertyName = resource.PropertyName ?? BuildPropertyNameFromTypeName(resource.Symbol.Name);
 			if (!IsValidIdentifier(propertyName) || !seenPropertyNames.Add(propertyName))
 				continue;
+
 			resourceInfo.Add((resource, resourceName, propertyName, ToCamelCase(propertyName)));
 		}
 
-		var writer = new CodeWriter();
+		CodeWriter writer = new();
 		string source;
 		using (writer.Begin())
 		{
@@ -235,39 +239,34 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				.NewLine()
 				.WriteLine("#nullable enable")
 				.NewLine()
-				.WriteLine("using global::Microsoft.Extensions.Options;")
+				.WriteLine("using global::Microsoft.Extensions.Configuration;")
 				.WriteLine("using global::Microsoft.Extensions.DependencyInjection;")
-				.WriteLine("using global::Microsoft.Extensions.DependencyInjection.Extensions;")
 				.WriteLine("using global::System;")
-				.WriteLine("using global::System.Linq;")
 				.NewLine();
 
 			// --- Per-resource partials (Name override) in block-scoped namespaces ---
-			string? currentNs = null;
-			IDisposable? nsScope = null;
-			foreach (var (desc, resName, _, _) in resourceInfo)
-			{
-				var resSymbol = desc.Symbol;
-				var resNs = resSymbol.ContainingNamespace.IsGlobalNamespace
-					? null
-					: resSymbol.ContainingNamespace.ToDisplayString();
-				if (resNs != currentNs)
-				{
-					nsScope?.Dispose();
-					nsScope = resNs is not null ? writer.Block($"namespace {resNs}") : null;
-					currentNs = resNs;
-				}
+			//string? currentNs = null;
+			//IDisposable? nsScope = null;
+			//foreach (var (desc, resName, _, _) in resourceInfo)
+			//{
+			//	var resSymbol = desc.Symbol;
+			//	var resNs = resSymbol.ContainingNamespace.IsGlobalNamespace
+			//		? null
+			//		: resSymbol.ContainingNamespace.ToDisplayString();
+			//	if (resNs != currentNs)
+			//	{
+			//		nsScope?.Dispose();
+			//		nsScope = resNs is not null ? writer.Block($"namespace {resNs}") : null;
+			//		currentNs = resNs;
+			//	}
 
-				writer.WriteLine($"partial class {resSymbol.Name}");
+			//	writer.WriteLine($"partial class {resSymbol.Name};");
 
-				using (writer.Block())
-					writer.WriteLine($"public override string Name => \"{resName}\";");
+			//	writer.NewLine();
+			//}
 
-				writer.NewLine();
-			}
-
-			nsScope?.Dispose();
-			writer.NewLine();
+			//nsScope?.Dispose();
+			//writer.NewLine();
 			// --- Host app namespace block (base class + partial + options + extensions) ---
 			IDisposable? hostNs = hostNamespace is not null ? writer.Block($"namespace {hostNamespace}") : null;
 			// --- Generated base class ---
@@ -278,9 +277,8 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						w.NewLine()
 							.Indent()
 							.MultiLine(
-								$"{TypeHelpers.HostAppResource}<{hostAppTypeDisplay}, TResource>,",
-								$"{TypeHelpers.IHostAppResource}<{hostAppTypeDisplay}>",
-								$"where TResource : class, global::Aspire.Hosting.ApplicationModel.IResource"
+								$"{TypeHelpers.HostResourceBase}<{hostAppTypeDisplay}, TResource>",
+								$"where TResource : class, {TypeHelpers.IResource}"
 							)
 							.Unindent()
 				)
@@ -289,63 +287,32 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			writer.NewLine();
 			// --- Host app partial class ---
 			var accessPrefix = string.IsNullOrEmpty(hostAccessibility) ? string.Empty : hostAccessibility + " ";
-			writer.WriteLine($"{accessPrefix}partial class {hostAppTypeName}");
+			writer.WriteLine(
+				$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
+			);
 
 			// (accessibility prefix handled above)
 			using (writer.Block())
 			{
-				writer.WriteLine($"IOptions<{optionsClassName}> _appHostOptions = default!;").NewLine();
-
 				if (resourceInfo.Count == 0)
-				{
 					writer.WriteLine("// No app resources were discovered for this host app.");
-					writer.NewLine();
-				}
 				else
 				{
 					foreach (var (desc, _, propName, _) in resourceInfo)
 					{
 						writer
 							.WriteLine(
-								$"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName} {{ get; private set; }} = default!;"
+								$"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName} {{ get; }} = new() {{ Name = \"{desc.Name}\" }};"
 							)
 							.NewLine();
-					}
-
-					writer.NewLine();
-				}
-
-				// Initialise method
-				writer.WriteLine("public void Initialize(global::System.IServiceProvider serviceProvider)");
-				using (writer.Block())
-				{
-					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(serviceProvider);");
-					writer.NewLine();
-					foreach (var (desc, _, propName, varName) in resourceInfo)
-					{
-						writer.WriteLine(
-							$"{propName} = ActivatorUtilities.GetServiceOrCreateInstance<{desc.Symbol.ToDisplayString(FullyQualifiedFormat)}>(serviceProvider);"
-						);
-					}
-
-					writer
-						.WriteLine()
-						.WriteLine(
-							$"_appHostOptions = ActivatorUtilities.GetServiceOrCreateInstance<IOptions<{optionsClassName}>>(serviceProvider);"
-						)
-						.NewLine();
-
-					foreach (var (desc, _, propName, varName) in resourceInfo)
-					{
-						writer.WriteLine(
-							$"{propName}.IsEnabled = !_appHostOptions.Value.IsResourceDisabled({propName}.Name);"
-						);
 					}
 				}
 
 				writer.NewLine();
 				// Build method
-				writer.WriteLine("public void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder)");
+				writer.WriteLine(
+					$"public override void Build({notNull}{TypeHelpers.IDistributedApplicationBuilder} builder)"
+				);
 				using (writer.Block())
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
@@ -353,20 +320,31 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					if (resourceInfo.Count == 0)
 						writer.WriteLine("// No app resources were discovered for this host app.");
 					else
+					{
+						writer.WriteLine("// Set the enabled/ disabled state for each app resource.");
 						foreach (var (_, _, propName, _) in resourceInfo)
-							writer.WriteLine($"{propName}.Build(builder);");
-				}
+						{
+							writer.WriteLine(
+								$"{propName}.IsEnabled = !hostAppOptions.IsResourceDisabled({propName}.Name);"
+							);
+						}
 
-				writer.NewLine();
-				// Configure method
-				writer.WriteLine("public void Configure()");
-				using (writer.Block())
-				{
-					if (resourceInfo.Count == 0)
-						writer.WriteLine("// No app resources were discovered for this host app.");
-					else
-						foreach (var (_, _, propName, _) in resourceInfo)
-							writer.WriteLine($"{propName}.Configure(this);");
+						writer
+							.NewLine()
+							.WriteLine("// Provide the list of app resources to the base class.")
+							.WriteLine("Resources = [")
+							.Indent()
+							.MultiLineItems([.. resourceInfo.Select(r => r.PropertyName)])
+							.Unindent()
+							.WriteLine("];")
+							.NewLine();
+					}
+
+					writer
+						.WriteLine(
+							"// Call the base class Build method to register the app resources with the builder."
+						)
+						.WriteLine("base.Build(builder);");
 				}
 			}
 
@@ -392,10 +370,10 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 				using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
 				{
-					using (writer.Block("if (DisabledResources.Contains(resourceName))", seperator: null))
+					using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
 						writer.WriteLine("return true;");
 
-					using (writer.Block("if (IsResourceEnabledPredicate is not null)", seperator: null))
+					using (writer.Block("if (IsResourceEnabledPredicate is not null)", separator: null))
 						writer.WriteLine("return !IsResourceEnabledPredicate(resourceName);");
 
 					writer.WriteLine("return false;");
@@ -408,52 +386,28 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				using (
 					writer.Block(
-						$"public static global::Aspire.Hosting.IDistributedApplicationBuilder {extensionMethodName}(",
+						$"public static {TypeHelpers.IDistributedApplicationBuilder} {extensionMethodName}(",
 						additionalParts: w =>
-							w.NewLine()
-								.Indent()
-								.MultiLine(
-									"this global::Aspire.Hosting.IDistributedApplicationBuilder builder, ",
-									$"global::System.Action<{optionsClassName}>? configureOptions = null, ",
-									$"{TypeHelpers.ServiceLifetime}? hostAppLifetimeOverride = null, ",
-									$"{TypeHelpers.ServiceLifetime}? resourceLifetimeOverride = null)"
-								)
-								.Unindent()
+							w.MultiLineParameters($"{notNull}this {TypeHelpers.IDistributedApplicationBuilder} builder")
 					)
 				)
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
 					writer.NewLine();
-					writer.WriteLine(
-						$"builder.Services.AddOptions<{optionsClassName}>().BindConfiguration({optionsClassName}.SectionName);"
-					);
-					writer.WriteLine(
-						$"builder.Services.TryAdd(new ServiceDescriptor(typeof({hostAppTypeDisplay}), typeof({hostAppTypeDisplay}), hostAppLifetimeOverride ?? {TypeHelpers.ServiceLifetime}.{hostAppDescriptor.ServiceLifetime}));"
-					);
-
-					// Register each of the resources.
-					foreach (var (desc, _, _, _) in resourceInfo)
-					{
-						writer.WriteLine(
-							$"builder.Services.TryAdd(new ServiceDescriptor(typeof({desc.Symbol.ToDisplayString(FullyQualifiedFormat)}), typeof({desc.Symbol.ToDisplayString(FullyQualifiedFormat)}), resourceLifetimeOverride ?? {TypeHelpers.ServiceLifetime}.{desc.ServiceLifetime}));"
-						);
-					}
-
+					using (
+						writer.Indented(
+							$"var options = builder.Configuration.GetSection({optionsClassName}.SectionName)"
+						)
+					)
+						writer.WriteLine($".Get<{optionsClassName}>() ?? new {optionsClassName}();");
 					writer.NewLine();
-
-					//writer.WriteLine(
-					//	$"var hostApp = ActivatorUtilities.GetServiceOrCreateInstance<{hostAppTypeDisplay}>(serviceProvider);"
-					//);
-					//writer.WriteLine(
-					//	"// Initialize the host app with the service provider. We do this hear to allow the user to"
-					//);
-					//writer.WriteLine("// add other services via construction if they need to...");
-					//writer.WriteLine("hostApp.Initialize(serviceProvider);");
-					//writer.WriteLine("// Build first to allow the assembly of all the required parts.");
-					//writer.WriteLine("hostApp.Build(builder, serviceProvider);");
-					//writer.WriteLine("// Then configure once all of the building is done across all resources.");
-					//writer.WriteLine("hostApp.Configure(serviceProvider);");
-					//writer.NewLine();
+					writer.WriteLine($"{hostAppTypeDisplay} hostApp = new (options);");
+					writer.NewLine();
+					writer.WriteLine("hostApp.Build(builder);");
+					writer.WriteLine("hostApp.Configure();");
+					writer.NewLine();
+					writer.WriteLine("builder.Services.AddSingleton(hostApp);");
+					writer.NewLine();
 
 					writer.WriteLine("return builder;");
 				}
@@ -527,6 +481,12 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 		var result = sb.ToString();
 		return string.IsNullOrEmpty(result) ? "Resource" : result;
+	}
+
+	static string BuildPropertyNameFromTypeName(string typeName)
+	{
+		var trimmed = TrimSuffix(typeName);
+		return string.IsNullOrEmpty(trimmed) ? "Resource" : trimmed;
 	}
 
 	static bool IsValidIdentifier(string name)

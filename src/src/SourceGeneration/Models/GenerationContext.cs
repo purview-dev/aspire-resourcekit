@@ -10,9 +10,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 /// <param name="HostAppAttribute"></param>
 /// <param name="AppResourceAttribute"></param>
 /// <param name="ServiceLifetime"></param>
-/// <param name="Options">We actually need IOptions&lt;&gt;, but Options isn't generic and int he same assembly so easier to lookup.</param>
-/// <param name="OptionsServiceCollectionExtensions">Required for AddOptions</param>
-/// <param name="OptionsBuilderConfigurationExtensions">Required for BindConfiguration</param>
+/// <param name="ConfigurationBinder">Required for IConfiguration.Get&lt;T&gt; options binding support.</param>
 /// <param name="SystemCANotNull"></param>
 /// <param name="Logger"></param>
 sealed record class GenerationContext(
@@ -22,9 +20,7 @@ sealed record class GenerationContext(
 	INamedTypeSymbol? AppResourceAttribute,
 	// Required symbols
 	INamedTypeSymbol? ServiceLifetime,
-	INamedTypeSymbol? Options,
-	INamedTypeSymbol? OptionsServiceCollectionExtensions,
-	INamedTypeSymbol? OptionsBuilderConfigurationExtensions,
+	INamedTypeSymbol? ConfigurationBinder,
 	// Helper symbols
 	INamedTypeSymbol? SystemCANotNull,
 	// Debugging support
@@ -45,13 +41,7 @@ sealed record class GenerationContext(
 			AppResourceAttribute: compilation.GetTypeByMetadataName(TypeHelpers.AppResourceAttribute.SymbolFullName),
 			// Required symbols
 			ServiceLifetime: compilation.GetTypeByMetadataName(TypeHelpers.ServiceLifetime.SymbolFullName),
-			Options: compilation.GetTypeByMetadataName(TypeHelpers.Options.SymbolFullName),
-			OptionsServiceCollectionExtensions: compilation.GetTypeByMetadataName(
-				TypeHelpers.OptionsServiceCollectionExtensions.SymbolFullName
-			),
-			OptionsBuilderConfigurationExtensions: compilation.GetTypeByMetadataName(
-				TypeHelpers.OptionsBuilderConfigurationExtensions.SymbolFullName
-			),
+			ConfigurationBinder: compilation.GetTypeByMetadataName(TypeHelpers.ConfigurationBinder.SymbolFullName),
 			// Helper symbols
 			SystemCANotNull: compilation.GetTypeByMetadataName(TypeHelpers.NotNullAttribute.SymbolFullName),
 			// Debugging support
@@ -64,9 +54,7 @@ sealed record class GenerationContext(
 		yield return GetState(HostAppAttribute, nameof(HostAppAttribute));
 		yield return GetState(AppResourceAttribute, nameof(AppResourceAttribute));
 		yield return GetState(ServiceLifetime, nameof(ServiceLifetime));
-		yield return GetState(Options, nameof(Options));
-		yield return GetState(OptionsServiceCollectionExtensions, nameof(OptionsServiceCollectionExtensions));
-		yield return GetState(OptionsBuilderConfigurationExtensions, nameof(OptionsBuilderConfigurationExtensions));
+		yield return GetState(ConfigurationBinder, nameof(ConfigurationBinder));
 		yield return GetState(SystemCANotNull, nameof(SystemCANotNull));
 	}
 

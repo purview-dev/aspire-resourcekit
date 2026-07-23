@@ -50,21 +50,9 @@ static class SourceGenHelpers
 					if (generationContext.ServiceLifetime is null)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceLifetimeMissing));
 
-					if (
-						generationContext.Options is null
-						|| generationContext.OptionsServiceCollectionExtensions is null
-					)
+					if (generationContext.ConfigurationBinder is null)
 					{
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.OptionDependencyMissing));
-					}
-
-					if (generationContext.OptionsBuilderConfigurationExtensions is null)
-					{
-						diagnostics.Add(
-							GeneratorDiagnostics.Create(
-								GeneratorDiagnostics.OptionsBuilderConfigurationExtensionMissing
-							)
-						);
 					}
 
 					return new GenerationModel(
@@ -108,6 +96,7 @@ static class SourceGenHelpers
 		)
 		{
 			var declaration = (TypeDeclarationSyntax)context.TargetNode;
+			var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
 			logger?.Debug($"Checking target {declaration.Identifier} based on {attributeType.TypeName}");
 
 			if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
@@ -121,6 +110,18 @@ static class SourceGenHelpers
 				logger?.Error($"Declaration is not partial for {symbol.Name}");
 				return GeneratorResult<TargetSymbolDescriptor>.Fail(
 					GeneratorDiagnostics.Create(GeneratorDiagnostics.ClassMustBePartial, symbol, declaration)
+				);
+			}
+
+			if (HasNonEmptyConstructors(classDeclaration, symbol.Name))
+			{
+				logger?.Error($"Declaration has non-empty constructors for {symbol.Name}");
+				return GeneratorResult<TargetSymbolDescriptor>.Fail(
+					DiagnosticInfo.Create(
+						GeneratorDiagnostics.NonEmptyConstructorsNotSupported,
+						declaration.Identifier.GetLocation(),
+						symbol.Name
+					)
 				);
 			}
 
@@ -180,6 +181,30 @@ static class SourceGenHelpers
 			);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
+		}
+
+		static bool HasNonEmptyConstructors(ClassDeclarationSyntax classDeclaration, string className)
+		{
+			if (classDeclaration.ParameterList is not null && classDeclaration.ParameterList.Parameters.Count > 0)
+				return true;
+
+			foreach (
+				var constructor in classDeclaration
+					.Members.OfType<ConstructorDeclarationSyntax>()
+					.Where(c => string.Equals(c.Identifier.ValueText, className, StringComparison.Ordinal))
+			)
+			{
+				if (constructor.ParameterList.Parameters.Count > 0)
+					return true;
+
+				if (constructor.ExpressionBody is not null || constructor.Initializer is not null)
+					return true;
+
+				if (constructor.Body is not null && constructor.Body.Statements.Count > 0)
+					return true;
+			}
+
+			return false;
 		}
 	}
 

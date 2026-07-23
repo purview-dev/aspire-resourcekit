@@ -32,15 +32,15 @@ public sealed record GenerationDriverContext(
 
 	/// <summary>
 	/// Omits the <c>Microsoft.Extensions.Options</c> metadata reference so
-	/// the <c>IOptions</c> type and <c>AddOptions&lt;&gt;</c> extension method are unavailable to the generator, exercising the
+	/// configuration-related extension dependencies are unavailable to the generator, exercising the
 	/// <see cref="GeneratorDiagnostics.OptionDependencyMissing" /> diagnostic.
 	/// </summary>
 	public static readonly GenerationDriverContext WithoutOptions = new(IncludeOptionsReference: false);
 
 	/// <summary>
-	/// Omits the <c>Microsoft.Extensions.Options</c> metadata reference so
-	/// the <c>BindConfiguration&lt;&gt;</c> extension method is unavailable to the generator, exercising the
-	/// <see cref="GeneratorDiagnostics.OptionsBuilderConfigurationExtensionMissing" /> diagnostic.
+	/// Omits the options/configuration extension metadata reference so
+	/// the configuration binder dependency is unavailable to the generator, exercising the
+	/// <see cref="GeneratorDiagnostics.OptionDependencyMissing" /> diagnostic.
 	/// </summary>
 	public static readonly GenerationDriverContext WithoutOptionsConfigurationExtension = new(
 		IncludeOptionsConfigurationExtensionReference: false

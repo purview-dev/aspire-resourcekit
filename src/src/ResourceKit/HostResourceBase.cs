@@ -1,13 +1,28 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 
 namespace Purview.Aspire.ResourceKit;
 
-public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<THostApp>
-	where THostApp : class
+public abstract class HostResourceBase<THostApp, TResource> : IAppResource<THostApp>
+	where THostApp : class, IHostApp
 	where TResource : class, IResource
 {
-	public abstract string Name { get; }
+	protected HostResourceBase(string? name = null)
+	{
+		Name = string.IsNullOrWhiteSpace(name) ? GetType().Name : name;
+	}
+
+	public string Name
+	{
+		get;
+		set
+		{
+			ArgumentException.ThrowIfNullOrWhiteSpace(value);
+			field = value;
+		}
+	}
 
 	public bool IsEnabled { get; set; } = true;
 
@@ -25,15 +40,17 @@ public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<TH
 		}
 	} = default!;
 
-	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => true;
+	// Unless overridden, this methods returns the value of IsEnabled, which is true by default.
+	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => IsEnabled;
 
 	protected abstract IResourceBuilder<TResource> BuildResource(IDistributedApplicationBuilder builder);
 
 	protected virtual void ConfigureResource(THostApp app) { }
 
-	public void Build(IDistributedApplicationBuilder builder)
+	public void Build([NotNull] IDistributedApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
+		ArgumentException.ThrowIfNullOrWhiteSpace(Name, nameof(Name));
 
 		IsEnabled = IsResourceEnabled(builder);
 		if (!IsEnabled)
@@ -42,7 +59,7 @@ public abstract class HostAppResource<THostApp, TResource> : IHostAppResource<TH
 		ResourceBuilder = BuildResource(builder);
 	}
 
-	public void Configure(THostApp app)
+	public void Configure([NotNull] THostApp app)
 	{
 		ArgumentNullException.ThrowIfNull(app);
 

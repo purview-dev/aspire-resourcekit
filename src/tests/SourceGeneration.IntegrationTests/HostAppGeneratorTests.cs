@@ -100,4 +100,68 @@ class TestingHostApp
 		// Assert
 		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.ClassMustBePartial);
 	}
+
+	[Test]
+	public async Task Generate_GivenHostAppWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp
+{
+	public TestingHostApp(string value)
+	{
+	}
+}
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonEmptyConstructorsNotSupported);
+	}
+
+	[Test]
+	public async Task Generate_GivenAppResourceWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp;
+
+[AppResource]
+partial class RedisAppResource : TestingHostAppResourceBase<object>
+{
+	public RedisAppResource()
+	{
+		var value = 42;
+	}
+}
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonEmptyConstructorsNotSupported);
+	}
 }

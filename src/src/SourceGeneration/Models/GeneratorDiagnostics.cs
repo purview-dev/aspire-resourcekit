@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 static class GeneratorDiagnostics
 {
-	const string Category = TypeHelpers.ResourceKitNamespace + "SourceGenerator";
+	const string Category = TypeHelpers.ResourceKitNamespace + ".SourceGenerator";
 
 	public static readonly DiagnosticDescriptor ClassMustBePartial = new(
 		id: "SG0001",
@@ -93,8 +93,8 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor OptionDependencyMissing = new(
 		id: "SG0010",
-		title: "IOptions type and AddOptions extension method missing",
-		messageFormat: "Add the `Microsoft.Extensions.Options` NuGet package",
+		title: "Configuration binder type missing",
+		messageFormat: "Add the `Microsoft.Extensions.Configuration.Binder` NuGet package",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
@@ -102,8 +102,17 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor OptionsBuilderConfigurationExtensionMissing = new(
 		id: "SG0011",
-		title: "BindConfiguration extension method missing",
+		title: "Options configuration extension method missing",
 		messageFormat: "Add the `Microsoft.Extensions.Options.ConfigurationExtensions` NuGet package",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor NonEmptyConstructorsNotSupported = new(
+		id: "SG0012",
+		title: "Non-empty constructors are not supported",
+		messageFormat: "'{0}' must not declare constructors with parameters or executable constructor bodies",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

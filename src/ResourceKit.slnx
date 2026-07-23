@@ -15,7 +15,6 @@
 	</Folder>
 	<Folder Name="/src/examples/">
 		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />
-		<Project Path="src/Example.PublishAppHost/Example.PublishAppHost.csproj" />
 		<Project Path="src/Example.Service/Example.Service.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
