@@ -7,17 +7,24 @@ readonly record struct ResourceDefinitionAttributeData(
   bool Exists,
   string? Name,
   string? PropertyName,
-  bool GenerateOptions
+  bool GenerateOptions,
+  bool IsGeneric,
+  string? GenericResourceTypeName
 )
 {
-  public static readonly ResourceDefinitionAttributeData Empty = new(false, null, null, true);
+  static readonly SymbolDisplayFormat FullyQualifiedFormat = SymbolDisplayFormat.FullyQualifiedFormat;
+
+  public static readonly ResourceDefinitionAttributeData Empty = new(false, null, null, true, false, null);
 
   public static ResourceDefinitionAttributeData FromAttributeData(
     GenerationContext executionContext,
     ImmutableArray<AttributeData> attributeData
   )
   {
-    if (executionContext.ResourceDefinitionAttribute is not null)
+    if (
+      executionContext.ResourceDefinitionAttribute is not null
+      || executionContext.GenericResourceDefinitionAttribute is not null
+    )
     {
       for (var i = 0; i < attributeData.Length; i++)
       {
@@ -38,17 +45,28 @@ readonly record struct ResourceDefinitionAttributeData(
     var attributeSymbol = executionContext.ResourceDefinitionAttribute;
     var exists =
       attributeSymbol is not null
-      && SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
+      && SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
+    var genericAttributeSymbol = executionContext.GenericResourceDefinitionAttribute;
+    var isGeneric =
+      genericAttributeSymbol is not null
+      && attributeData.AttributeClass is INamedTypeSymbol namedAttribute
+      && SymbolEqualityComparer.Default.Equals(namedAttribute.ConstructedFrom, genericAttributeSymbol);
+
+    exists = exists || isGeneric;
+
     var name = (string?)null;
     var propertyName = (string?)null;
     var generateOptions = true;
+    var genericResourceTypeName = (string?)null;
 
     if (exists)
     {
-      ReadAttributeArguments(attributeData!, ref name, ref propertyName, ref generateOptions);
+      ReadAttributeArguments(attributeData, ref name, ref propertyName, ref generateOptions);
+      if (isGeneric && attributeData.AttributeClass is INamedTypeSymbol attrClass && attrClass.TypeArguments.Length == 1)
+        genericResourceTypeName = attrClass.TypeArguments[0].ToDisplayString(FullyQualifiedFormat);
     }
 
-    return new(exists, name, propertyName, generateOptions);
+    return new(exists, name, propertyName, generateOptions, isGeneric, genericResourceTypeName);
   }
 
   static void ReadAttributeArguments(

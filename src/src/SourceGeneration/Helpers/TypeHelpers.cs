@@ -16,6 +16,11 @@ static class TypeHelpers
 		ResourceKitNamespace
 	);
 
+	public static readonly TypeValueObject GenericResourceDefinitionAttribute = new(
+		"ResourceDefinitionAttribute`1",
+		ResourceKitNamespace
+	);
+
 	// Library types
 	public static readonly TypeValueObject HostAppBase = new(nameof(HostAppBase), ResourceKitNamespace);
 

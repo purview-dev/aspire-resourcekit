@@ -9,5 +9,7 @@ sealed record class TargetSymbolDescriptor(
 	bool IsHostApp,
 	string? Name,
 	string? PropertyName,
-	bool GenerateOptions
+	bool GenerateOptions,
+	bool IsGenericResourceDefinition,
+	string? GenericResourceTypeName
 );

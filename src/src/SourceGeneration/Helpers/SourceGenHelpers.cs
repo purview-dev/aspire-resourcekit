@@ -29,6 +29,11 @@ static class SourceGenHelpers
 			TypeHelpers.ResourceDefinitionAttribute,
 			logger
 		);
+		var genericAppResourceValueProvider = GetGenerationValueProviders(
+			context,
+			TypeHelpers.GenericResourceDefinitionAttribute,
+			logger
+		);
 		var appResourceAliasValueProvider = GetGenerationValueProviders(
 			context,
 			new TypeValueObject("AppResourceAttribute", TypeHelpers.ResourceKitNamespace),
@@ -38,12 +43,16 @@ static class SourceGenHelpers
 		return isDisabledValueProvider
 			.Combine(generationContextValueProvider)
 			.Combine(hostAppValueProvider.Collect())
-			.Combine(appResourceValueProvider.Collect().Combine(appResourceAliasValueProvider.Collect()))
+			.Combine(
+				appResourceValueProvider
+					.Collect()
+					.Combine(genericAppResourceValueProvider.Collect().Combine(appResourceAliasValueProvider.Collect()))
+			)
 			.Select(
 				static (nested, _) =>
 				{
-					var (((isDisabled, generationContext), hostApps), (appResources, appResourceAliases)) = nested;
-					var allAppResources = appResources.AddRange(appResourceAliases);
+					var (((isDisabled, generationContext), hostApps), (appResources, (genericAppResources, appResourceAliases))) = nested;
+					var allAppResources = appResources.AddRange(genericAppResources).AddRange(appResourceAliases);
 
 					generationContext.Logger?.Debug("Combined all value providers:");
 					generationContext.Logger?.Debug($"Disabled: {isDisabled}", 1);
@@ -146,6 +155,8 @@ static class SourceGenHelpers
 			string? name;
 			string? propertyName;
 			bool generateOptions;
+			bool isGenericResourceDefinition;
+			string? genericResourceTypeName;
 
 			if (isHostApp)
 			{
@@ -153,6 +164,8 @@ static class SourceGenHelpers
 				name = data.Name;
 				propertyName = null;
 				generateOptions = data.GenerateOptions;
+				isGenericResourceDefinition = false;
+				genericResourceTypeName = null;
 
 				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
 				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
@@ -163,13 +176,26 @@ static class SourceGenHelpers
 				name = data.Name;
 				propertyName = data.PropertyName;
 				generateOptions = data.GenerateOptions;
+				isGenericResourceDefinition = data.IsGeneric;
+				genericResourceTypeName = data.GenericResourceTypeName;
 
 				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
 				logger?.Debug($"found PropertyName: '{propertyName ?? "<null>"}'", 1);
 				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
+				logger?.Debug($"found GenericAttribute: '{isGenericResourceDefinition}'", 1);
+				logger?.Debug($"found GenericResourceTypeName: '{genericResourceTypeName ?? "<null>"}'", 1);
 			}
 
-			TargetSymbolDescriptor result = new(symbol, declaration, isHostApp, name, propertyName, generateOptions);
+			TargetSymbolDescriptor result = new(
+				symbol,
+				declaration,
+				isHostApp,
+				name,
+				propertyName,
+				generateOptions,
+				isGenericResourceDefinition,
+				genericResourceTypeName
+			);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
 		}

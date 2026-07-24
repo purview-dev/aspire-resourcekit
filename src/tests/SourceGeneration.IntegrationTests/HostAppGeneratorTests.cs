@@ -164,4 +164,121 @@ partial class RedisAppResource : TestingHostAppResourceBase<object>
 		// Assert
 		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonEmptyConstructorsNotSupported);
 	}
+
+	[Test]
+	public async Task Generate_GivenResourceWithExplicitIncorrectBase_GeneratesMustDeriveFromBaseDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp;
+
+[ResourceDefinition]
+partial class RedisAppResource : global::Purview.Aspire.ResourceKit.ResourceKitBase<TestingHostApp, global::Aspire.Hosting.ApplicationModel.Resource>
+{
+	protected override global::Aspire.Hosting.ApplicationModel.IResourceBuilder<global::Aspire.Hosting.ApplicationModel.Resource> BuildResource(global::Aspire.Hosting.IDistributedApplicationBuilder builder)
+		=> throw new global::System.NotImplementedException();
+}
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.ResourceMustDeriveFromBase);
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceWithoutExplicitBaseAndNonGenericResourceDefinition_GeneratesNonGenericRequiresExplicitBaseDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp;
+
+[ResourceDefinition]
+partial class RedisAppResource;
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase);
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceWithExplicitBaseAndGenericResourceDefinition_GeneratesGenericCannotHaveExplicitBaseDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp;
+
+[ResourceDefinition<global::Aspire.Hosting.ApplicationModel.Resource>]
+partial class RedisAppResource : TestingHostAppResourceBase<global::Aspire.Hosting.ApplicationModel.Resource>;
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase);
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceWithGenericAndNonGenericResourceDefinition_GeneratesMixedUsageDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing;
+
+[HostApp]
+partial class TestingHostApp;
+
+[ResourceDefinition]
+[ResourceDefinition<global::Aspire.Hosting.ApplicationModel.Resource>]
+partial class RedisAppResource;
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(
+			source,
+			GenerationDriverContext.DoNotThrowOnGenerationException,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported);
+	}
 }

@@ -9,7 +9,7 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class ResourceDefinitionAttribute : global::System.Attribute
+public class ResourceDefinitionAttribute : global::System.Attribute
 {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute"/> class.
@@ -56,4 +56,42 @@ public sealed class ResourceDefinitionAttribute : global::System.Attribute
 	/// Gets or sets a value indicating whether resource options types should be generated.
 	/// </summary>
 	public bool GenerateOptions { get; set; } = true;
+}
+
+/// <summary>
+/// Marks a resource definition class that uses source-generated host-app inheritance and explicitly
+/// provides the Aspire resource type.
+/// </summary>
+/// <typeparam name="TResource">The Aspire resource type.</typeparam>
+{{CodeGen}}
+[global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+public sealed class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute
+{
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute{TResource}"/> class.
+	/// </summary>
+	public ResourceDefinitionAttribute()
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute{TResource}"/> class.
+	/// </summary>
+	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
+	/// <param name="propertyName">Generated host-app property name for this resource.</param>
+	/// <param name="generateOptions">Whether resource options types should be generated.</param>
+	public ResourceDefinitionAttribute(string name, string propertyName, bool generateOptions = true)
+		: base(name, propertyName, generateOptions)
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute{TResource}"/> class.
+	/// </summary>
+	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
+	/// <param name="generateOptions">Whether resource options types should be generated.</param>
+	public ResourceDefinitionAttribute(string name, bool generateOptions = true)
+		: base(name, generateOptions)
+	{
+	}
 }

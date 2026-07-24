@@ -129,6 +129,41 @@ namespace Testing
 	}
 
 	[Test]
+	public async Task Generate_GivenGenericResourceDefinitionWithoutExplicitBase_AutoInheritsGeneratedHostResourceBase(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing
+{
+	[HostApp]
+	public partial class TestingHostApp { }
+
+	[ResourceDefinition<global::Aspire.Hosting.ApplicationModel.Resource>(""redis"")]
+	public partial class RedisAppResource
+	{
+		protected override global::Aspire.Hosting.ApplicationModel.IResourceBuilder<global::Aspire.Hosting.ApplicationModel.Resource> BuildResource(global::Aspire.Hosting.IDistributedApplicationBuilder builder)
+			=> throw new global::System.NotImplementedException();
+	}
+}
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = GetGeneratedSource(result);
+		await Assert
+			.That(generated)
+			.Contains("public partial class RedisAppResource : global::Testing.TestingHostAppResourceBase<");
+		await Assert.That(generated).Contains("Aspire.Hosting.ApplicationModel.Resource>");
+	}
+
+	[Test]
 	public async Task Generate_GivenHostAppWithMultipleResources_GeneratesExpectedResourcesList(
 		CancellationToken cancellationToken
 	)
@@ -267,6 +302,40 @@ namespace Testing
 		var generated = GetGeneratedSource(result);
 		await Assert.That(generated).Contains("public global::Testing.AzureStorageAppResource AzureStorage");
 		await Assert.That(generated).Contains("AzureStorage = new(azureStorageAppResourceOptions);");
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceTypeEndsWithResourceKitOrKit_AutoPropertyNameTrimsSuffix(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source =
+			@"
+namespace Testing
+{
+	[HostApp]
+	public partial class TestingHostApp { }
+
+	[ResourceDefinition]
+	public partial class CacheResourceKit : TestingHostAppResourceBase<object> { }
+
+	[ResourceDefinition]
+	public partial class SecretsKit : TestingHostAppResourceBase<object> { }
+}
+";
+
+		// Act
+		var (result, _) = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = GetGeneratedSource(result);
+		await Assert.That(generated).Contains("public global::Testing.CacheResourceKit Cache");
+		await Assert.That(generated).Contains("public global::Testing.SecretsKit Secrets");
+		await Assert.That(generated).Contains("public const string SectionName = \"Cache\";");
+		await Assert.That(generated).Contains("public const string SectionName = \"Secrets\";");
 	}
 
 	[Test]

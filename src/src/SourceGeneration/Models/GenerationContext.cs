@@ -9,6 +9,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 /// <param name="Writer"></param>
 /// <param name="HostAppAttribute"></param>
 /// <param name="ResourceDefinitionAttribute"></param>
+/// <param name="GenericResourceDefinitionAttribute"></param>
 /// <param name="IServiceCollection"></param>
 /// <param name="ConfigurationBinder">Required for IConfiguration.Get&lt;T&gt; options binding support.</param>
 /// <param name="SystemCANotNull"></param>
@@ -18,6 +19,7 @@ sealed record class GenerationContext(
 	// Purview.Aspire.ResourceKit symbols
 	INamedTypeSymbol? HostAppAttribute,
 	INamedTypeSymbol? ResourceDefinitionAttribute,
+	INamedTypeSymbol? GenericResourceDefinitionAttribute,
 	// Required symbols
 	INamedTypeSymbol? IServiceCollection,
 	INamedTypeSymbol? ConfigurationBinder,
@@ -41,6 +43,9 @@ sealed record class GenerationContext(
 			ResourceDefinitionAttribute: compilation.GetTypeByMetadataName(
 				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName
 			),
+			GenericResourceDefinitionAttribute: compilation.GetTypeByMetadataName(
+				TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName
+			),
 			// Required symbols
 			IServiceCollection: compilation.GetTypeByMetadataName(TypeHelpers.IServiceCollection.SymbolFullName),
 			ConfigurationBinder: compilation.GetTypeByMetadataName(TypeHelpers.ConfigurationBinder.SymbolFullName),
@@ -55,6 +60,7 @@ sealed record class GenerationContext(
 	{
 		yield return GetState(HostAppAttribute, nameof(HostAppAttribute));
 		yield return GetState(ResourceDefinitionAttribute, nameof(ResourceDefinitionAttribute));
+		yield return GetState(GenericResourceDefinitionAttribute, nameof(GenericResourceDefinitionAttribute));
 		yield return GetState(IServiceCollection, nameof(IServiceCollection));
 		yield return GetState(ConfigurationBinder, nameof(ConfigurationBinder));
 		yield return GetState(SystemCANotNull, nameof(SystemCANotNull));
