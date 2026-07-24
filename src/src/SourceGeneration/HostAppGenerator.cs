@@ -286,9 +286,16 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						? resourceOptionsClassName
 						: $"global::{hostNamespace}.{resourceOptionsClassName}";
 
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Represents a generated app resource implementation.");
+					writer.WriteLine("/// </summary>");
 					writer.WriteLine($"{resourceAccessPrefix}partial class {resSymbol.Name}");
 					using (writer.Block())
 					{
+						writer.WriteLine("/// <summary>");
+						writer.WriteLine("/// Initializes a new instance of the generated resource using bound options.");
+						writer.WriteLine("/// </summary>");
+						writer.WriteLine("/// <param name=\"options\">The resource options bound from configuration.</param>");
 						using (writer.Block($"public {resSymbol.Name}({resourceOptionsType} options) : base(options)"))
 						{
 							writer
@@ -297,6 +304,10 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 								.WriteLine("Options = options;");
 						}
 
+						writer.NewLine();
+						writer.WriteLine("/// <summary>");
+						writer.WriteLine("/// Gets the strongly typed options used to initialize this resource.");
+						writer.WriteLine("/// </summary>");
 						writer.NewLine().WriteLine($"{resourceOptionsType} Options {{ get; init; }}");
 					}
 
@@ -315,6 +326,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				using (writer.Block($"{baseAccessibility} abstract partial class {resourceOptionsBaseClassName}"))
 				{
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Gets or sets the logical resource name.");
+					writer.WriteLine("/// </summary>");
 					writer.WriteLine("public string? Name { get; set; }");
 				}
 
@@ -345,6 +359,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						)
 					)
 					{
+						writer.WriteLine("/// <summary>");
+						writer.WriteLine("/// Configuration section name for this resource options type.");
+						writer.WriteLine("/// </summary>");
 						writer
 							.WriteIndent()
 							.Write("public const string SectionName = ")
@@ -352,6 +369,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							.Write(";")
 							.NewLine()
 							.NewLine()
+							.WriteLine("/// <summary>")
+							.WriteLine("/// Initializes a new options instance with the default generated resource name.")
+							.WriteLine("/// </summary>")
 							.WriteLine($"public {resourceOptionsClassName}() => Name = \"{resourceName}\";");
 					}
 
@@ -360,6 +380,10 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			}
 
 			// --- Generated base class ---
+			writer.WriteLine("/// <summary>");
+			writer.WriteLine("/// Base class for generated resources associated with this host app.");
+			writer.WriteLine("/// </summary>");
+			writer.WriteLine("/// <typeparam name=\"TResource\">The Aspire resource type.</typeparam>");
 			using (
 				writer.Block(
 					$"{baseAccessibility} abstract class {baseClassName}<TResource> : ",
@@ -376,8 +400,15 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				if (resourceInfo.Any(r => r.GenerateOptions))
 				{
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Initializes a new instance of the generated resource base type.");
+					writer.WriteLine("/// </summary>");
 					writer.WriteLine($"protected {baseClassName}() {{ }}");
 					writer.NewLine();
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Initializes a new instance of the generated resource base type using options.");
+					writer.WriteLine("/// </summary>");
+					writer.WriteLine("/// <param name=\"options\">The generated resource options.</param>");
 					writer.WriteLine($"protected {baseClassName}({resourceOptionsBaseClassName} options)");
 					using (writer.Block())
 					{
@@ -392,12 +423,18 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			var accessPrefix = string.IsNullOrEmpty(hostAccessibility) ? string.Empty : hostAccessibility + " ";
 			if (generateOptions)
 			{
+				writer.WriteLine("/// <summary>");
+				writer.WriteLine("/// Represents the generated host app and composes all discovered resources.");
+				writer.WriteLine("/// </summary>");
 				writer.WriteLine(
 					$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
 				);
 			}
 			else
 			{
+				writer.WriteLine("/// <summary>");
+				writer.WriteLine("/// Represents the generated host app and composes all discovered resources.");
+				writer.WriteLine("/// </summary>");
 				writer.WriteLine(
 					$"{accessPrefix}partial class {hostAppTypeName} : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
 				);
@@ -412,6 +449,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				{
 					foreach (var (desc, _, propName, _, _, _) in resourceInfo)
 					{
+						writer.WriteLine("/// <summary>");
+						writer.WriteLine($"/// Gets the '{propName}' resource instance.");
+						writer.WriteLine("/// </summary>");
 						writer.WriteLine($"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName}");
 						using (writer.Block())
 						{
@@ -435,6 +475,10 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 				writer.NewLine();
 				// Build method
+				writer.WriteLine("/// <summary>");
+				writer.WriteLine("/// Builds and initializes all generated resources for this host app.");
+				writer.WriteLine("/// </summary>");
+				writer.WriteLine("/// <param name=\"builder\">The distributed application builder.</param>");
 				writer.WriteLine(
 					$"public override void Build({notNull}{TypeHelpers.IDistributedApplicationBuilder} builder)"
 				);
@@ -504,6 +548,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				using (writer.Block($"{baseAccessibility} sealed partial class {optionsClassName}"))
 				{
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Configuration section name for host app options.");
+					writer.WriteLine("/// </summary>");
 					writer
 						.WriteIndent()
 						.Write("public const string SectionName = ")
@@ -511,15 +558,26 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						.Write(";")
 						.NewLine()
 						.NewLine()
+						.WriteLine("/// <summary>")
+						.WriteLine("/// Gets the set of resource names that should be disabled.")
+						.WriteLine("/// </summary>")
 						.WriteLine(
 							"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
 						)
 						.NewLine();
 
 					writer
+						.WriteLine("/// <summary>")
+						.WriteLine("/// Gets or sets an optional predicate used to decide whether resources are enabled.")
+						.WriteLine("/// </summary>")
 						.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }")
 						.NewLine();
 
+					writer.WriteLine("/// <summary>");
+					writer.WriteLine("/// Determines whether a resource should be considered disabled.");
+					writer.WriteLine("/// </summary>");
+					writer.WriteLine("/// <param name=\"resourceName\">The logical resource name.</param>");
+					writer.WriteLine("/// <returns><see langword=\"true\"/> when disabled; otherwise <see langword=\"false\"/>.</returns>");
 					using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
 					{
 						using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
@@ -537,6 +595,11 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			// --- Builder extensions ---
 			using (writer.Block($"internal static class {hostAppTypeName}BuilderExtensions"))
 			{
+				writer.WriteLine("/// <summary>");
+				writer.WriteLine("/// Adds and configures the generated ResourceKit host app.");
+				writer.WriteLine("/// </summary>");
+				writer.WriteLine("/// <param name=\"builder\">The distributed application builder.</param>");
+				writer.WriteLine("/// <returns>The same builder instance for chaining.</returns>");
 				using (
 					writer.Block(
 						$"public static {TypeHelpers.IDistributedApplicationBuilder} {extensionMethodName}(",

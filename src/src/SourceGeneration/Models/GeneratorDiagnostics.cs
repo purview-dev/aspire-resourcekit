@@ -82,9 +82,9 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor ServiceLifetimeMissing = new(
+	public static readonly DiagnosticDescriptor ServiceCollectionMissing = new(
 		id: "SG0009",
-		title: "ServiceLifetime type missing",
+		title: "IServiceCollection type missing",
 		messageFormat: "Add the `Microsoft.Extensions.DependencyInjection.Abstractions` NuGet package",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,

@@ -1,52 +1,45 @@
 # Purview.Aspire.ResourceKit
 
-Testable Aspire AppHost resource composition with runtime isolation modes:
+`Purview.Aspire.ResourceKit` provides a source-generator-powered model for composing Aspire AppHost resources as strongly typed classes.
 
-- `Local`
-- `Running`
-- `Publishing`
+It is designed to make resource setup:
 
-You can selectively enable/disable resources and isolate names using prefix/suffix/overrides from config.
+- easier to test,
+- easier to navigate in IntelliSense,
+- and more maintainable as your AppHost grows.
 
 ## Generated App Resource model
 
 The package supports an AppModel style for composing Aspire AppHost resources:
 
-- Mark your host app with `[HostApp]` (exactly one required; more than one is an error).
-- Mark each resource with `[AppResource]` (optionally specifying `Name`, `PropertyName`, and `ServiceLifetime`).
-- Implement resources by inheriting the generated `{HostAppClassName}AppResourceBase<TResource>`.
-- Register everything with `builder.Add{HostAppClassName}()`.
+- Mark your host app with `[HostApp]` (exactly one per compilation).
+- Mark each resource with `[ResourceDefinition]`.
+- Implement resources by inheriting the generated `{HostAppClassName}ResourceBase<TResource>`.
+- Register everything with `builder.Add{HostAppClassName}ResourceKit()`.
 
 ### Attributes
 
 ```csharp
-[HostApp(Name = "MyApp", ServiceLifetime = AppServiceLifetime.Singleton)]
+[HostApp(Name = "MyApp")]
 sealed partial class MyAppHost { }
 
-[ResourceDefinition("azure-storage", PropertyName = "Storage", ServiceLifetime = AppServiceLifetime.Singleton)]
-sealed partial class AzureStorageAppResource : MyAppHostAppResourceBase<AzureStorageResource> { }
+[ResourceDefinition("azure-storage", PropertyName = "Storage")]
+sealed partial class AzureStorageAppResource : MyAppHostResourceBase<AzureStorageResource> { }
 ```
 
-- **`HostAppAttribute`** — marks the single host app class. Optional `Name` overrides the generated base-class name (default: `{ClassName}AppResourceBase`). Optional `ServiceLifetime` controls the DI lifetime.
-- **`ResourceDefinitionAttribute`** — marks an app resource. Optional `Name` sets the resource name (default: derived from the class name, minus any trailing `Resource`/`AppResource` suffix). Optional `PropertyName` overrides the generated host-app property name (default: PascalCase of the sanitized `Name`). Optional `ServiceLifetime` controls the DI lifetime.
-- **`AppServiceLifetime`** — enum (`Singleton`, `Scoped`, `Transient`) used on both attributes; mapped to `Microsoft.Extensions.DependencyInjection.ServiceLifetime` in the generated registration.
+- **`HostAppAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
+- **`ResourceDefinitionAttribute`** — marks a resource class. Optional `Name` sets the logical resource name. Optional `PropertyName` overrides the generated host-app property name. `GenerateOptions` controls per-resource options generation.
 
 ### Generated base class
 
-The source generator emits an abstract base class in the host app's namespace:
+The source generator emits an abstract base class in the host app namespace:
 
 ```csharp
-public abstract class MyAppHostAppResourceBase<TResource>
-    : HostAppResource<MyAppHost, TResource>, IHostAppResource<MyAppHost>
+public abstract class MyAppHostResourceBase<TResource>
+    : ResourceKitBase<MyAppHost, TResource>
     where TResource : class, IResource
 {
-    protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder, IServiceProvider services)
-    {
-        var options = services.GetService<MyAppHostAppOptions>();
-        if (options is not null && options.IsResourceDisabled(Name))
-            return false;
-        return base.IsResourceEnabled(builder, services);
-    }
+    // Your resource classes inherit this generated base type.
 }
 ```
 
@@ -54,15 +47,14 @@ public abstract class MyAppHostAppResourceBase<TResource>
 
 The source generator augments the host app partial class with:
 
-- **Resource properties** — `public {ResourceType} {PropertyName} { get; private set; } = default!;` for each app resource.
-- **`Initialise(IServiceProvider)`** — resolves each app resource from DI and assigns it to the corresponding property.
-- **`Build(IDistributedApplicationBuilder, IServiceProvider)`** — calls `BuildResource` on each resource (consulting `IsResourceEnabled`).
-- **`Configure(IServiceProvider)`** — calls `ConfigureResource` on each resource, allowing cross-resource wiring (e.g. `WithReference`, `WaitFor`).
+- **Resource properties** — one property per `[ResourceDefinition]` class.
+- **`Build(IDistributedApplicationBuilder)` override** — initializes resource instances, applies options-based enable/disable behavior, and builds resources.
+- **`Configure()`** — inherited flow that configures all enabled resources after build.
 
 ### Generated options class
 
 ```csharp
-public sealed class MyAppHostAppOptions
+public sealed class MyAppHostOptions
 {
     public HashSet<string> DisabledResources { get; } = new(StringComparer.Ordinal);
     public Func<string, bool>? IsResourceEnabledPredicate { get; set; }
@@ -70,40 +62,65 @@ public sealed class MyAppHostAppOptions
 }
 ```
 
-Use this to programmatically enable/disable resources at startup.
+Use this to programmatically enable/disable resources at startup when options generation is enabled.
 
 ### Builder extension
 
 ```csharp
-public static IDistributedApplicationBuilder AddMyAppHost(
-    this IDistributedApplicationBuilder builder,
-    Action<IServiceCollection>? configureServices = null,
-    Action<MyAppHostAppOptions>? configureOptions = null,
-    AppServiceLifetime? hostAppLifetime = null,
-    AppServiceLifetime? resourceLifetimeOverride = null)
+public static IDistributedApplicationBuilder AddMyAppHostResourceKit(
+    this IDistributedApplicationBuilder builder)
 ```
 
-- `configureServices` — register custom dependencies (e.g. `IEnvironmentTagProvider`, configuration services).
-- `configureOptions` — programmatically disable resources or set an enable predicate.
-- `hostAppLifetime` / `resourceLifetimeOverride` — override the DI lifetimes declared on the attributes.
+The generated extension builds/configures the host app and registers it as a singleton in DI.
 
 ### Execution order
 
-Inside `Add{HostApp}()`, before `DistributedApplication.Build()`:
+Inside `Add{HostApp}ResourceKit()`, before `DistributedApplication.Build()`:
 
-1. **`Initialise(IServiceProvider)`** — resolve all `[AppResource]` classes from DI (ctor-injected deps satisfied) and assign to host-app properties.
-2. **`Build(IDistributedApplicationBuilder, IServiceProvider)`** — for each resource: consult `IsResourceEnabled` (DI/options/config-driven) then run the user's `Build` (e.g. `builder.AddAzureStorage(Name)`), populating `ResourceBuilder` and sub-builders.
-3. **`Configure(IServiceProvider)`** — for each resource: run the user's `Configure` to wire cross-references (`WithReference`, `WaitFor`) now that all sub-builders are populated.
+1. **Instantiate resource classes** (using generated options where enabled).
+2. **Apply enable/disable state** from host options.
+3. **Call `Build`** for each enabled resource.
+4. **Call `Configure`** for each enabled resource.
 
 ### Diagnostics
 
-| ID   | Severity | Description |
-|------|----------|-------------|
+| ID | Severity | Description |
+| - | - | - |
 | SG0001 | Error | Class must be `partial` |
-| SG0002 | Info   | No app resources defined for the host app |
+| SG0002 | Info | No app resources defined for the host app |
 | SG0003 | Warning | No host app defined (but app resources exist) |
-| SG0004 | Error  | Multiple `[HostApp]` classes defined |
-| SG0005 | Error  | Duplicate resource property name |
-| SG0006 | Error  | App resource must derive from `{HostApp}AppResourceBase<T>` |
-| SG0007 | Error  | Resource name could not be derived and no `Name` was specified |
-| SG0008 | Error  | Explicit `PropertyName` is not a valid C# identifier |
+| SG0004 | Error | Multiple `[HostApp]` classes defined |
+| SG0005 | Error | Duplicate resource property name |
+| SG0006 | Error | App resource must derive from `{HostApp}ResourceBase<T>` |
+| SG0007 | Error | Resource name could not be derived and no `Name` was specified |
+| SG0008 | Error | Explicit `PropertyName` is not a valid C# identifier |
+
+## Minimal end-to-end sample
+
+```csharp
+using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
+using Purview.Aspire.ResourceKit;
+
+[HostApp]
+public sealed partial class ShopHost;
+
+[ResourceDefinition("api")]
+public sealed partial class ApiResource : ShopHostResourceBase<ProjectResource>
+{
+    protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddProject<Projects.Example_Service>(Name);
+}
+
+var builder = DistributedApplication.CreateBuilder(args);
+builder.AddShopHostResourceKit();
+```
+
+## Configuration reference
+
+When options are enabled:
+
+- Host options section: `{HostAppClassName}`
+- Resource options section: generated property name (or explicit `PropertyName`)
+
+You can disable resource `api` via config by adding it to `DisabledResources`.

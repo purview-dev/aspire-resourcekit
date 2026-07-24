@@ -23,8 +23,8 @@ static class TypeHelpers
 
 	// Other required types
 	// Required for DI
-	public static readonly TypeValueObject ServiceLifetime = new(
-		nameof(ServiceLifetime),
+	public static readonly TypeValueObject IServiceCollection = new(
+		nameof(IServiceCollection),
 		"Microsoft.Extensions.DependencyInjection"
 	);
 

@@ -3,9 +3,9 @@ using Microsoft.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-readonly record struct HostAppAttributeData(bool Exists, string? Name, bool GenerateOptions, int ServiceLifetime)
+readonly record struct HostAppAttributeData(bool Exists, string? Name, bool GenerateOptions)
 {
-	public static readonly HostAppAttributeData Empty = new(false, null, true, 0);
+	public static readonly HostAppAttributeData Empty = new(false, null, true);
 
 	public static HostAppAttributeData FromAttributeData(
 		GenerationContext executionContext,
@@ -36,24 +36,17 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
 		var name = (string?)null;
 		var generateOptions = true;
-		var serviceLifetime = 0;
 
 		if (exists)
-			(name, generateOptions, serviceLifetime) = ReadAttributeArguments(
-				attributeData!,
-				name,
-				generateOptions,
-				serviceLifetime
-			);
+			(name, generateOptions) = ReadAttributeArguments(attributeData!, name, generateOptions);
 
-		return new(exists, name, generateOptions, serviceLifetime);
+		return new(exists, name, generateOptions);
 	}
 
-	static (string? Name, bool GenerateOptions, int ServiceLifetime) ReadAttributeArguments(
+	static (string? Name, bool GenerateOptions) ReadAttributeArguments(
 		AttributeData attributeData,
 		string? name,
-		bool generateOptions,
-		int serviceLifetime
+		bool generateOptions
 	)
 	{
 		foreach (var ctorArg in attributeData.ConstructorArguments)
@@ -62,8 +55,6 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 				name = ctorName;
 			else if (ctorArg.Value is bool ctorGenerateOptions)
 				generateOptions = ctorGenerateOptions;
-			else if (ctorArg.Value is int ctorServiceLifetime)
-				serviceLifetime = ctorServiceLifetime;
 		}
 
 		foreach (var namedArg in attributeData.NamedArguments)
@@ -80,14 +71,9 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 						generateOptions = namedGenerateOptions;
 
 					break;
-				case nameof(ServiceLifetime):
-					if (namedArg.Value.Value is int namedServiceLifetime)
-						serviceLifetime = namedServiceLifetime;
-
-					break;
 			}
 		}
 
-		return (name, generateOptions, serviceLifetime);
+		return (name, generateOptions);
 	}
 }

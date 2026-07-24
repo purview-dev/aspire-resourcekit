@@ -9,7 +9,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 /// <param name="Writer"></param>
 /// <param name="HostAppAttribute"></param>
 /// <param name="ResourceDefinitionAttribute"></param>
-/// <param name="ServiceLifetime"></param>
+/// <param name="IServiceCollection"></param>
 /// <param name="ConfigurationBinder">Required for IConfiguration.Get&lt;T&gt; options binding support.</param>
 /// <param name="SystemCANotNull"></param>
 /// <param name="Logger"></param>
@@ -19,7 +19,7 @@ sealed record class GenerationContext(
 	INamedTypeSymbol? HostAppAttribute,
 	INamedTypeSymbol? ResourceDefinitionAttribute,
 	// Required symbols
-	INamedTypeSymbol? ServiceLifetime,
+	INamedTypeSymbol? IServiceCollection,
 	INamedTypeSymbol? ConfigurationBinder,
 	// Helper symbols
 	INamedTypeSymbol? SystemCANotNull,
@@ -42,7 +42,7 @@ sealed record class GenerationContext(
 				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName
 			),
 			// Required symbols
-			ServiceLifetime: compilation.GetTypeByMetadataName(TypeHelpers.ServiceLifetime.SymbolFullName),
+			IServiceCollection: compilation.GetTypeByMetadataName(TypeHelpers.IServiceCollection.SymbolFullName),
 			ConfigurationBinder: compilation.GetTypeByMetadataName(TypeHelpers.ConfigurationBinder.SymbolFullName),
 			// Helper symbols
 			SystemCANotNull: compilation.GetTypeByMetadataName(TypeHelpers.NotNullAttribute.SymbolFullName),
@@ -55,7 +55,7 @@ sealed record class GenerationContext(
 	{
 		yield return GetState(HostAppAttribute, nameof(HostAppAttribute));
 		yield return GetState(ResourceDefinitionAttribute, nameof(ResourceDefinitionAttribute));
-		yield return GetState(ServiceLifetime, nameof(ServiceLifetime));
+		yield return GetState(IServiceCollection, nameof(IServiceCollection));
 		yield return GetState(ConfigurationBinder, nameof(ConfigurationBinder));
 		yield return GetState(SystemCANotNull, nameof(SystemCANotNull));
 	}

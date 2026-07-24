@@ -56,8 +56,8 @@ static class SourceGenHelpers
 					List<DiagnosticInfo> diagnostics = [];
 					if (hostApps.Length > 1)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.MultipleHostAppsFoundnfo));
-					if (generationContext.ServiceLifetime is null)
-						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceLifetimeMissing));
+					if (generationContext.IServiceCollection is null)
+						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceCollectionMissing));
 
 					if (generationContext.ConfigurationBinder is null)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.OptionDependencyMissing));
@@ -102,7 +102,11 @@ static class SourceGenHelpers
 		{
 			var declaration = (TypeDeclarationSyntax)context.TargetNode;
 			var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
-			var generationContext = GenerationContext.Create(context.SemanticModel.Compilation, logger, cancellationToken);
+			var generationContext = GenerationContext.Create(
+				context.SemanticModel.Compilation,
+				logger,
+				cancellationToken
+			);
 			logger?.Debug($"Checking target {declaration.Identifier} based on {attributeType.TypeName}");
 
 			if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
@@ -142,7 +146,6 @@ static class SourceGenHelpers
 			string? name;
 			string? propertyName;
 			bool generateOptions;
-			var serviceLifetime = "Singleton";
 
 			if (isHostApp)
 			{
@@ -150,11 +153,9 @@ static class SourceGenHelpers
 				name = data.Name;
 				propertyName = null;
 				generateOptions = data.GenerateOptions;
-				serviceLifetime = ToServiceLifetimeName(data.ServiceLifetime);
 
 				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
 				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
-				logger?.Debug($"found ServiceLifetime: '{serviceLifetime}'", 1);
 			}
 			else
 			{
@@ -168,15 +169,7 @@ static class SourceGenHelpers
 				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
 			}
 
-			TargetSymbolDescriptor result = new(
-				symbol,
-				declaration,
-				isHostApp,
-				name,
-				propertyName,
-				generateOptions,
-				serviceLifetime
-			);
+			TargetSymbolDescriptor result = new(symbol, declaration, isHostApp, name, propertyName, generateOptions);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
 		}
@@ -190,7 +183,7 @@ static class SourceGenHelpers
 				var constructor in classDeclaration
 					.Members.OfType<ConstructorDeclarationSyntax>()
 					.Where(c => string.Equals(c.Identifier.ValueText, className, StringComparison.Ordinal))
-				)
+			)
 			{
 				if (constructor.ParameterList.Parameters.Count > 0)
 					return true;
@@ -204,13 +197,6 @@ static class SourceGenHelpers
 
 			return false;
 		}
-
-		static string ToServiceLifetimeName(int value) => value switch
-		{
-			1 => "Scoped",
-			2 => "Transient",
-			_ => "Singleton",
-		};
 	}
 
 	static IncrementalValueProvider<GenerationContext> GetGeneratorValueProvider(

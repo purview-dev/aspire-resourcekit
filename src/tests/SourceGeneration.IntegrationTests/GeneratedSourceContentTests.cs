@@ -26,7 +26,7 @@ namespace Testing
 		var (result, _) = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
-		await Assert.That(ExcludeGenAttribs(result)).Count().IsEqualTo(1);
+		await Assert.That(ExcludeGeneratedAttributes(result)).Count().IsEqualTo(1);
 
 		var generated = GetGeneratedSource(result);
 		await Assert.That(generated).Contains("partial class RedisAppResource");
@@ -35,18 +35,20 @@ namespace Testing
 			.That(generated)
 			.Contains("global::Purview.Aspire.ResourceKit.ResourceKitBase<global::Testing.TestingHostApp, TResource>");
 		await Assert.That(generated).Contains("abstract partial class TestingHostAppResourceOptionsBase");
-		await Assert.That(generated).Contains("sealed partial class RedisAppResourceOptions : TestingHostAppResourceOptionsBase");
+		await Assert
+			.That(generated)
+			.Contains("sealed partial class RedisAppResourceOptions : TestingHostAppResourceOptionsBase");
 		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
 		await Assert.That(generated).Contains("public RedisAppResourceOptions() => Name = \"redis\";");
-		await Assert.That(generated).Contains("protected TestingHostAppResourceBase(TestingHostAppResourceOptionsBase options)");
+		await Assert
+			.That(generated)
+			.Contains("protected TestingHostAppResourceBase(TestingHostAppResourceOptionsBase options)");
 		await Assert
 			.That(generated)
 			.Contains(
 				"partial class TestingHostApp(TestingHostAppOptions hostAppOptions) : global::Purview.Aspire.ResourceKit.HostAppBase<global::Testing.TestingHostApp>"
 			);
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.RedisAppResource Redis");
+		await Assert.That(generated).Contains("public global::Testing.RedisAppResource Redis");
 		await Assert.That(generated).Contains("private set");
 		await Assert.That(generated).Contains("has not been initialized. Call Build first.");
 		await Assert
@@ -67,7 +69,11 @@ namespace Testing
 		await Assert.That(generated).Contains(".ValidateOnStart();");
 		await Assert.That(generated).Contains("builder.Services.AddOptions<RedisAppResourceOptions>()");
 		await Assert.That(generated).Contains(".BindConfiguration(RedisAppResourceOptions.SectionName)");
-		await Assert.That(generated).Contains("var redisAppResourceOptions = builder.Configuration.GetSection(RedisAppResourceOptions.SectionName).Get<RedisAppResourceOptions>() ?? new RedisAppResourceOptions();");
+		await Assert
+			.That(generated)
+			.Contains(
+				"var redisAppResourceOptions = builder.Configuration.GetSection(RedisAppResourceOptions.SectionName).Get<RedisAppResourceOptions>() ?? new RedisAppResourceOptions();"
+			);
 		await Assert.That(generated.Contains("public RedisAppResource()", StringComparison.Ordinal)).IsFalse();
 		await Assert
 			.That(generated)
@@ -147,12 +153,8 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = GetGeneratedSource(result);
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.RedisAppResource Redis");
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.SqlServerAppResource SqlServer");
+		await Assert.That(generated).Contains("public global::Testing.RedisAppResource Redis");
+		await Assert.That(generated).Contains("public global::Testing.SqlServerAppResource SqlServer");
 		await Assert.That(generated).Contains("Redis = new(redisAppResourceOptions);");
 		await Assert.That(generated).Contains("SqlServer = new(sqlServerAppResourceOptions);");
 		await Assert.That(generated).Contains("Resources = [");
@@ -182,9 +184,7 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = GetGeneratedSource(result);
-		await Assert
-			.That(generated)
-			.Contains("public RedisAppResourceOptions() => Name = \"my-redis\";");
+		await Assert.That(generated).Contains("public RedisAppResourceOptions() => Name = \"my-redis\";");
 	}
 
 	[Test]
@@ -239,12 +239,8 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = GetGeneratedSource(result);
-		await Assert
-			.That(generated)
-			.Contains("public RedisAppResourceOptions() => Name = \"Redis\";");
-		await Assert
-			.That(generated)
-			.Contains("public SqlServerResourceOptions() => Name = \"SqlServer\";");
+		await Assert.That(generated).Contains("public RedisAppResourceOptions() => Name = \"Redis\";");
+		await Assert.That(generated).Contains("public SqlServerResourceOptions() => Name = \"SqlServer\";");
 	}
 
 	[Test]
@@ -269,9 +265,7 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = GetGeneratedSource(result);
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.AzureStorageAppResource AzureStorage");
+		await Assert.That(generated).Contains("public global::Testing.AzureStorageAppResource AzureStorage");
 		await Assert.That(generated).Contains("AzureStorage = new(azureStorageAppResourceOptions);");
 	}
 
@@ -297,9 +291,7 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = GetGeneratedSource(result);
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.KeyVaultAppResource KeyVault");
+		await Assert.That(generated).Contains("public global::Testing.KeyVaultAppResource KeyVault");
 		await Assert.That(generated).Contains("KeyVault = new(keyVaultAppResourceOptions);");
 	}
 
@@ -329,9 +321,7 @@ namespace Testing.Resources
 
 		var generated = GetGeneratedSource(result);
 		await Assert.That(generated).Contains("namespace Testing.Host");
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.Resources.RedisAppResource Redis");
+		await Assert.That(generated).Contains("public global::Testing.Resources.RedisAppResource Redis");
 		await Assert.That(generated).Contains("Redis = new(redisAppResourceOptions);");
 		await Assert.That(generated).Contains("abstract class TestingHostAppResourceBase<TResource>");
 	}
@@ -360,9 +350,7 @@ namespace Testing
 		await Assert.That(generated).Contains("sealed partial class TestingHostAppOptions");
 		await Assert.That(generated).Contains("ValidateOnStart();");
 		await Assert.That(generated).Contains("AddTestingHostAppResourceKit");
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.RedisAppResource Redis");
+		await Assert.That(generated).Contains("public global::Testing.RedisAppResource Redis");
 	}
 
 	[Test]

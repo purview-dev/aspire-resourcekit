@@ -1,6 +1,5 @@
 using System.Reflection;
 using Microsoft.CodeAnalysis;
-using Microsoft.Extensions.DependencyInjection;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
@@ -35,7 +34,6 @@ namespace Testing
 
 		await Assert.That(text).Contains("class HostAppAttribute");
 		await Assert.That(text).Contains("string? Name");
-		await Assert.That(text).Contains("ServiceLifetime");
 		await Assert.That(text).Contains("AttributeTargets.Class");
 		await Assert.That(text).Contains("AllowMultiple = false");
 		await Assert.That(text).Contains("Inherited = false");
@@ -131,10 +129,6 @@ namespace Testing
 		var nameProp = type.GetProperty("Name");
 		await Assert.That(nameProp).IsNotNull();
 		await Assert.That(nameProp!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-
-		var lifetimeProp = type.GetProperty("ServiceLifetime");
-		await Assert.That(lifetimeProp).IsNotNull();
-		await Assert.That(lifetimeProp!.PropertyType.FullName).IsEqualTo(typeof(ServiceLifetime).FullName);
 	}
 
 	[Test]
@@ -147,9 +141,7 @@ namespace Testing
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert
-			.That(type.GetProperty("GenerateOptions")!.PropertyType.FullName)
-			.IsEqualTo(typeof(bool).FullName);
+		await Assert.That(type.GetProperty("GenerateOptions")!.PropertyType.FullName).IsEqualTo(typeof(bool).FullName);
 	}
 
 	[Test]

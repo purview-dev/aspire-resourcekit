@@ -4,30 +4,47 @@
 
 namespace Purview.Aspire.ResourceKit;
 
+/// <summary>
+/// Marks the single host application type used by ResourceKit source generation.
+/// </summary>
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class HostAppAttribute : global::System.Attribute
 {
+	/// <summary>
+	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// </summary>
 	public HostAppAttribute()
 	{
 	}
 
-	public HostAppAttribute(string name, bool generateOptions = true, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime serviceLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+	/// <summary>
+	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// </summary>
+	/// <param name="name">Optional logical host app name used for generated type naming.</param>
+	/// <param name="generateOptions">Whether host app options types should be generated.</param>
+	public HostAppAttribute(string name, bool generateOptions = true)
 	{
 		Name = name;
 		GenerateOptions = generateOptions;
-		ServiceLifetime = serviceLifetime;
 	}
 
-	public HostAppAttribute(bool generateOptions, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime serviceLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+	/// <summary>
+	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// </summary>
+	/// <param name="generateOptions">Whether host app options types should be generated.</param>
+	public HostAppAttribute(bool generateOptions)
 	{
 		GenerateOptions = generateOptions;
-		ServiceLifetime = serviceLifetime;
 	}
 
+	/// <summary>
+	/// Gets or sets an optional logical host app name used in generated type names.
+	/// </summary>
 	public string? Name { get; set; }
 
+	/// <summary>
+	/// Gets or sets a value indicating whether host app options types should be generated.
+	/// </summary>
 	public bool GenerateOptions { get; set; } = true;
-
-	public global::Microsoft.Extensions.DependencyInjection.ServiceLifetime ServiceLifetime { get; set; } = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton;
 }

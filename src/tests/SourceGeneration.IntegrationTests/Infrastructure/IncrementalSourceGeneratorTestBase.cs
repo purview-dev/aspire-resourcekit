@@ -44,7 +44,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 			namespacesToInclude.AddRange(["// Source generator namespaces", TypeHelpers.ResourceKitNamespace]);
 
 		if (
-			driverContext.IncludeServiceTimelifeReference
+			driverContext.IncludeIServiceCollectionReference
 			|| driverContext.IncludeOptionsReference
 			|| driverContext.IncludeOptionsConfigurationExtensionReference
 		)
@@ -67,11 +67,11 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 
 		var syntaxTree = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken);
 		var references = BuildBclReferences();
-		if (driverContext.IncludeServiceTimelifeReference)
+		if (driverContext.IncludeIServiceCollectionReference)
 		{
 			references = references.Add(
 				MetadataReference.CreateFromFile(
-					typeof(Microsoft.Extensions.DependencyInjection.ServiceLifetime).Assembly.Location
+					typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location
 				)
 			);
 		}
@@ -184,7 +184,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		return System.Reflection.Assembly.Load(assemblyStream.ToArray());
 	}
 
-	protected static IEnumerable<SyntaxTree> ExcludeGenAttribs(GeneratorDriverRunResult result)
+	protected static IEnumerable<SyntaxTree> ExcludeGeneratedAttributes(GeneratorDriverRunResult result)
 	{
 		return result.GeneratedTrees.Where(tree =>
 			!TypeHelpers.GeneratedTypes.Any(attr =>
@@ -199,7 +199,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 	/// </summary>
 	public string GetGeneratedSource(GeneratorDriverRunResult result)
 	{
-		var genTree = ExcludeGenAttribs(result).FirstOrDefault();
+		var genTree = ExcludeGeneratedAttributes(result).FirstOrDefault();
 
 		return genTree?.GetText().ToString() ?? string.Empty;
 	}

@@ -1,41 +1,44 @@
-# Aspire Resource Isolation Package (isolated workspace)
+# ResourceKit solution workspace
 
-It provides a NuGet package for Aspire resource composition:
+This folder contains the .NET solution for `Purview.Aspire.ResourceKit`, including runtime library code, source generation, tests, and example apps.
 
-- configuration-driven behaviour,
-- local mode,
-- running mode,
-- publishing mode,
-- resource-level enable/disable and naming isolation.
+## Layout
 
-## Projects
+### Source projects
 
-- `src/ResourceKit` - NuGet package source.
-- `tests/ResourceKit.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
-- `tests/ResourceKit.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
-- `src/Example.AppHost` - local/running example AppHost.
-- `src/Example.PublishAppHost` - publish-aware example AppHost.
-- `src/Example.Service` - minimal service for examples/tests.
+- `src/ResourceKit` — runtime APIs consumed by AppHost projects.
+- `src/SourceGeneration` — Roslyn incremental generator (attributes + generated host/resource wiring).
+- `src/Example.AppHost` — sample AppHost using generated ResourceKit composition.
+- `src/Example.ManualAppHost` — sample AppHost showing manual composition patterns.
+- `src/Example.Service` — sample service used by examples/tests.
+- `src/Example.ServiceDefaults` — shared service defaults for examples.
 
-## Core usage
+### Test projects
 
-1. Load settings from configuration:
-   - `ConfigurationIsolationSettingsProvider`
-2. Build an `AppIsolationContext`:
-   - mode is resolved from config and publish runtime.
-3. Register resources with `IsolatedResourceCollection`:
-   - use `DelegateIsolatedResource<TResource>` for full flexibility.
-4. Call `Initialise(builder)`:
-   - builds first, then configures dependencies.
+- `tests/ResourceKit.UnitTests`
+- `tests/ResourceKit.IntegrationTests`
+- `tests/SourceGeneration.UnitTests`
+- `tests/SourceGeneration.IntegrationTests`
 
-## Packing
+Reports are written to `TestResults/`.
 
-Run packaging from this folder against:
+## Day-to-day workflow
 
-- `src/ResourceKit/ResourceKit.csproj`
+1. Update runtime/source-generation code under `src/src`.
+2. Validate behavior through the corresponding `src/tests` project(s).
+3. Exercise the end-to-end examples in `src/src/Example.*` when making API or generation changes.
 
-or
+## Packaging
 
-- `just pack`
+The NuGet package is produced from:
 
-The package metadata is already configured (`PackageId`, symbols, readme, version).
+- `src/src/ResourceKit/ResourceKit.csproj`
+
+The package includes runtime APIs plus the source generator analyzer assembly.
+
+## Consumer documentation
+
+For package usage guidance (attributes, generated output, configuration, and examples), see:
+
+- `../README.md`
+- `src/ResourceKit/README.md`

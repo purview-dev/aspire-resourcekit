@@ -4,14 +4,26 @@
 
 namespace Purview.Aspire.ResourceKit;
 
+/// <summary>
+/// Marks a resource definition class that participates in generated host app composition.
+/// </summary>
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class ResourceDefinitionAttribute : global::System.Attribute
 {
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute"/> class.
+	/// </summary>
 	public ResourceDefinitionAttribute()
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute"/> class.
+	/// </summary>
+	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
+	/// <param name="propertyName">Generated host-app property name for this resource.</param>
+	/// <param name="generateOptions">Whether resource options types should be generated.</param>
 	public ResourceDefinitionAttribute(string name, string propertyName, bool generateOptions = true)
 	{
 		Name = name;
@@ -19,15 +31,29 @@ public sealed class ResourceDefinitionAttribute : global::System.Attribute
 		GenerateOptions = generateOptions;
 	}
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute"/> class.
+	/// </summary>
+	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
+	/// <param name="generateOptions">Whether resource options types should be generated.</param>
 	public ResourceDefinitionAttribute(string name, bool generateOptions = true)
 	{
 		Name = name;
 		GenerateOptions = generateOptions;
 	}
 
+	/// <summary>
+	/// Gets or sets the logical resource name used in Aspire resource registration.
+	/// </summary>
 	public string? Name { get; set; }
 
+	/// <summary>
+	/// Gets or sets the generated host-app property name for this resource.
+	/// </summary>
 	public string? PropertyName { get; set; }
 
+	/// <summary>
+	/// Gets or sets a value indicating whether resource options types should be generated.
+	/// </summary>
 	public bool GenerateOptions { get; set; } = true;
 }
