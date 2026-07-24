@@ -2,7 +2,7 @@ using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[AppResource(Name = Platform.ResourceKits.AzureStorage)]
+[ResourceDefinition(Platform.ResourceKits.AzureStorage)]
 sealed partial class AzureStorageAppResource : ExampleHostAppResourceBase<AzureStorageResource>
 {
 	public IResourceBuilder<AzureBlobStorageResource> Blobs { get; private set; } = default!;

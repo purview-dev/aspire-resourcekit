@@ -5,11 +5,11 @@ using Aspire.Hosting.ApplicationModel;
 
 namespace Purview.Aspire.ResourceKit;
 
-public abstract class HostResourceBase<THostApp, TResource> : IAppResource<THostApp>
+public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THostApp>
 	where THostApp : class, IHostApp
 	where TResource : class, IResource
 {
-	protected HostResourceBase(string? name = null)
+	protected ResourceKitBase(string? name = null)
 	{
 		Name = string.IsNullOrWhiteSpace(name) ? GetType().Name : name;
 	}

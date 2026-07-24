@@ -16,4 +16,29 @@ static class Helpers
 
 		await Assert.That(response.StatusCode).IsEqualTo(System.Net.HttpStatusCode.OK);
 	}
+
+	public static async Task ConnectionStringIsUnavailableAsync<TAppHost>(
+		AspireFixture<TAppHost> fixture,
+		string resourceName,
+		CancellationToken cancellationToken
+	)
+		where TAppHost : class
+	{
+		bool hasConnectionString;
+		try
+		{
+			var connectionString = await fixture.GetConnectionStringAsync(resourceName, cancellationToken);
+			hasConnectionString = !string.IsNullOrWhiteSpace(connectionString);
+		}
+		catch (InvalidOperationException)
+		{
+			hasConnectionString = false;
+		}
+		catch (ArgumentException)
+		{
+			hasConnectionString = false;
+		}
+
+		await Assert.That(hasConnectionString).IsFalse();
+	}
 }

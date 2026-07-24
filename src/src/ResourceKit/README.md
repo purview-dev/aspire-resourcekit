@@ -23,12 +23,12 @@ The package supports an AppModel style for composing Aspire AppHost resources:
 [HostApp(Name = "MyApp", ServiceLifetime = AppServiceLifetime.Singleton)]
 sealed partial class MyAppHost { }
 
-[AppResource(Name = "azure-storage", PropertyName = "Storage", ServiceLifetime = AppServiceLifetime.Singleton)]
+[ResourceDefinition("azure-storage", PropertyName = "Storage", ServiceLifetime = AppServiceLifetime.Singleton)]
 sealed partial class AzureStorageAppResource : MyAppHostAppResourceBase<AzureStorageResource> { }
 ```
 
 - **`HostAppAttribute`** — marks the single host app class. Optional `Name` overrides the generated base-class name (default: `{ClassName}AppResourceBase`). Optional `ServiceLifetime` controls the DI lifetime.
-- **`AppResourceAttribute`** — marks an app resource. Optional `Name` sets the resource name (default: derived from the class name, minus any trailing `Resource`/`AppResource` suffix). Optional `PropertyName` overrides the generated host-app property name (default: PascalCase of the sanitized `Name`). Optional `ServiceLifetime` controls the DI lifetime.
+- **`ResourceDefinitionAttribute`** — marks an app resource. Optional `Name` sets the resource name (default: derived from the class name, minus any trailing `Resource`/`AppResource` suffix). Optional `PropertyName` overrides the generated host-app property name (default: PascalCase of the sanitized `Name`). Optional `ServiceLifetime` controls the DI lifetime.
 - **`AppServiceLifetime`** — enum (`Singleton`, `Scoped`, `Transient`) used on both attributes; mapped to `Microsoft.Extensions.DependencyInjection.ServiceLifetime` in the generated registration.
 
 ### Generated base class

@@ -144,7 +144,7 @@ namespace Testing;
 [HostApp]
 partial class TestingHostApp;
 
-[AppResource]
+[ResourceDefinition]
 partial class RedisAppResource : TestingHostAppResourceBase<object>
 {
 	public RedisAppResource()

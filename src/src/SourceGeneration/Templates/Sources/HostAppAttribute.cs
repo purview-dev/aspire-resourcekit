@@ -8,7 +8,26 @@ namespace Purview.Aspire.ResourceKit;
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public sealed class HostAppAttribute : global::System.Attribute
 {
+	public HostAppAttribute()
+	{
+	}
+
+	public HostAppAttribute(string name, bool generateOptions = true, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime serviceLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+	{
+		Name = name;
+		GenerateOptions = generateOptions;
+		ServiceLifetime = serviceLifetime;
+	}
+
+	public HostAppAttribute(bool generateOptions, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime serviceLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+	{
+		GenerateOptions = generateOptions;
+		ServiceLifetime = serviceLifetime;
+	}
+
 	public string? Name { get; set; }
+
+	public bool GenerateOptions { get; set; } = true;
 
 	public global::Microsoft.Extensions.DependencyInjection.ServiceLifetime ServiceLifetime { get; set; } = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton;
 }

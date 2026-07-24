@@ -57,7 +57,7 @@ public sealed class HostAppResourceTests
 
 	sealed class TestHostApp : HostAppBase<TestHostApp>;
 
-	sealed class TestAppResource(bool enabled = true) : HostResourceBase<TestHostApp, ParameterResource>(name: "test")
+	sealed class TestAppResource(bool enabled = true) : ResourceKitBase<TestHostApp, ParameterResource>(name: "test")
 	{
 		public bool BuildCalled { get; private set; }
 
@@ -77,7 +77,7 @@ public sealed class HostAppResourceTests
 		}
 	}
 
-	sealed class DelegatingTestAppResource() : HostResourceBase<TestHostApp, ParameterResource>("test")
+	sealed class DelegatingTestAppResource() : ResourceKitBase<TestHostApp, ParameterResource>("test")
 	{
 		// Does NOT override IsResourceEnabled(builder, services) — should delegate to builder-only.
 		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => false;

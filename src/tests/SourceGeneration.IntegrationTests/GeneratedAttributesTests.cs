@@ -42,20 +42,22 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesAppResourceAttributeSource(CancellationToken cancellationToken)
+	public async Task Generate_GivenEmptySource_GeneratesResourceDefinitionAttributeSource(
+		CancellationToken cancellationToken
+	)
 	{
 		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "AppResourceAttribute.g.cs");
+		var tree = GetGeneratedTree(result, "ResourceDefinitionAttribute.g.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
 		var text = syntaxTree.ToString();
 
-		await Assert.That(text).Contains("class AppResourceAttribute");
+		await Assert.That(text).Contains("class ResourceDefinitionAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("string? PropertyName");
-		await Assert.That(text).Contains("ServiceLifetime");
+		await Assert.That(text).Contains("bool GenerateOptions");
 	}
 
 	[Test]
@@ -97,7 +99,7 @@ namespace Testing
 		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
 
 		var hostAppTree = GetGeneratedTree(result, "HostAppAttribute.g.cs");
-		var appResourceTree = GetGeneratedTree(result, "AppResourceAttribute.g.cs");
+		var appResourceTree = GetGeneratedTree(result, "ResourceDefinitionAttribute.g.cs");
 
 		hostAppTree = await Assert.That(hostAppTree).IsNotNull();
 		appResourceTree = await Assert.That(appResourceTree).IsNotNull();
@@ -117,7 +119,7 @@ namespace Testing
 		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
 
 		await Assert.That(assembly.GetType(TypeHelpers.HostAppAttribute.SymbolFullName)).IsNotNull();
-		await Assert.That(assembly.GetType(TypeHelpers.AppResourceAttribute.SymbolFullName)).IsNotNull();
+		await Assert.That(assembly.GetType(TypeHelpers.ResourceDefinitionAttribute.SymbolFullName)).IsNotNull();
 	}
 
 	[Test]
@@ -136,18 +138,18 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Compile_GivenEmptySource_AppResourceAttributeHasExpectedMembers(
+	public async Task Compile_GivenEmptySource_ResourceDefinitionAttributeHasExpectedMembers(
 		CancellationToken cancellationToken
 	)
 	{
 		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
-		var type = assembly.GetType(TypeHelpers.AppResourceAttribute.SymbolFullName)!;
+		var type = assembly.GetType(TypeHelpers.ResourceDefinitionAttribute.SymbolFullName)!;
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert
-			.That(type.GetProperty("ServiceLifetime")!.PropertyType.FullName)
-			.IsEqualTo(typeof(ServiceLifetime).FullName);
+			.That(type.GetProperty("GenerateOptions")!.PropertyType.FullName)
+			.IsEqualTo(typeof(bool).FullName);
 	}
 
 	[Test]
@@ -159,7 +161,7 @@ namespace Testing
 			var fullName in new[]
 			{
 				TypeHelpers.HostAppAttribute.SymbolFullName,
-				TypeHelpers.AppResourceAttribute.SymbolFullName,
+				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName,
 			}
 		)
 		{

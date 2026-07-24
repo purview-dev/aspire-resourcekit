@@ -3,7 +3,7 @@ using Aspire.Hosting.Azure;
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
 sealed partial class PostgresAppResource()
-	: HostResourceBase<ExampleHostApp, AzurePostgresFlexibleServerResource>(Platform.ResourceKits.Postgres)
+	: ResourceKitBase<ExampleHostApp, AzurePostgresFlexibleServerResource>(Platform.ResourceKits.Postgres)
 {
 	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; } = default!;
 

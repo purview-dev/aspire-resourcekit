@@ -24,26 +24,35 @@ static class SourceGenHelpers
 		var isDisabledValueProvider = IsSourceGeneratorDisabledValueProvider(context, logger);
 		var generationContextValueProvider = GetGeneratorValueProvider(context, logger);
 		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.HostAppAttribute, logger);
-		var appResourceValueProvider = GetGenerationValueProviders(context, TypeHelpers.AppResourceAttribute, logger);
+		var appResourceValueProvider = GetGenerationValueProviders(
+			context,
+			TypeHelpers.ResourceDefinitionAttribute,
+			logger
+		);
+		var appResourceAliasValueProvider = GetGenerationValueProviders(
+			context,
+			new TypeValueObject("AppResourceAttribute", TypeHelpers.ResourceKitNamespace),
+			logger
+		);
 
 		return isDisabledValueProvider
-			.Combine(generationContextValueProvider) // (bool, GenerationContext)
-			.Combine(hostAppValueProvider.Collect()) // ((bool, GenerationContext), ImmutableArray<T>)
-			.Combine(appResourceValueProvider.Collect()) // (((bool, GenerationContext), ImmutableArray<T>), ImmutableArray<T>)
+			.Combine(generationContextValueProvider)
+			.Combine(hostAppValueProvider.Collect())
+			.Combine(appResourceValueProvider.Collect().Combine(appResourceAliasValueProvider.Collect()))
 			.Select(
 				static (nested, _) =>
 				{
-					var (((isDisabled, generationContext), hostApps), appResources) = nested;
+					var (((isDisabled, generationContext), hostApps), (appResources, appResourceAliases)) = nested;
+					var allAppResources = appResources.AddRange(appResourceAliases);
 
 					generationContext.Logger?.Debug("Combined all value providers:");
 					generationContext.Logger?.Debug($"Disabled: {isDisabled}", 1);
 					generationContext.Logger?.Debug($"Host Apps: {hostApps.Length}", 1);
-					generationContext.Logger?.Debug($"App Resources: {appResources.Length}", 1);
-					generationContext.Logger?.Debug($"Generation Context:", 1);
+					generationContext.Logger?.Debug($"App Resources: {allAppResources.Length}", 1);
+					generationContext.Logger?.Debug("Generation Context:", 1);
 					foreach (var info in generationContext.GetDebugInfo())
 						generationContext.Logger?.Debug(info, 2);
 
-					// Work out any diagnostics we might need to raise here.
 					List<DiagnosticInfo> diagnostics = [];
 					if (hostApps.Length > 1)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.MultipleHostAppsFoundnfo));
@@ -51,15 +60,13 @@ static class SourceGenHelpers
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceLifetimeMissing));
 
 					if (generationContext.ConfigurationBinder is null)
-					{
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.OptionDependencyMissing));
-					}
 
 					return new GenerationModel(
 						IsSourceGeneratorEnabled: !isDisabled,
 						GenerationContext: generationContext,
 						HostApp: hostApps.FirstOrDefault(),
-						AppResources: appResources,
+						AppResources: allAppResources,
 						Diagnostics: [.. diagnostics]
 					);
 				}
@@ -74,7 +81,6 @@ static class SourceGenHelpers
 	{
 		logger?.Debug($"Generating value providers for {attributeType}");
 
-		// Create a syntax provider that finds classes with the specified attribute.
 		var targetSymbols = context
 			.SyntaxProvider.ForAttributeWithMetadataName(
 				attributeType.SymbolFullName,
@@ -85,7 +91,6 @@ static class SourceGenHelpers
 
 		return targetSymbols;
 
-		// We only want to consider class declarations for generation, so we filter the syntax nodes accordingly.
 		static bool IsSyntaxTargetForGeneration(SyntaxNode node) => node is ClassDeclarationSyntax;
 
 		static GeneratorResult<TargetSymbolDescriptor> GetSemanticTargetForGeneration(
@@ -97,6 +102,7 @@ static class SourceGenHelpers
 		{
 			var declaration = (TypeDeclarationSyntax)context.TargetNode;
 			var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
+			var generationContext = GenerationContext.Create(context.SemanticModel.Compilation, logger, cancellationToken);
 			logger?.Debug($"Checking target {declaration.Identifier} based on {attributeType.TypeName}");
 
 			if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
@@ -133,42 +139,33 @@ static class SourceGenHelpers
 			else
 				logger?.Debug($"for App Resource {symbol.Name}", 1);
 
-			// Parse attribute named arguments.
-			string? name = null;
-			string? propertyName = null;
-			string? serviceLifetime = null;
+			string? name;
+			string? propertyName;
+			bool generateOptions;
+			var serviceLifetime = "Singleton";
 
-			if (context.Attributes.Length > 0)
+			if (isHostApp)
 			{
-				foreach (var namedArg in context.Attributes[0].NamedArguments)
-				{
-					switch (namedArg.Key)
-					{
-						case "Name":
-							name = namedArg.Value.Value?.ToString();
-							logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
+				var data = HostAppAttributeData.FromAttributeData(generationContext, context.Attributes);
+				name = data.Name;
+				propertyName = null;
+				generateOptions = data.GenerateOptions;
+				serviceLifetime = ToServiceLifetimeName(data.ServiceLifetime);
 
-							break;
-						case "PropertyName":
-							propertyName = namedArg.Value.Value?.ToString();
+				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
+				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
+				logger?.Debug($"found ServiceLifetime: '{serviceLifetime}'", 1);
+			}
+			else
+			{
+				var data = ResourceDefinitionAttributeData.FromAttributeData(generationContext, context.Attributes);
+				name = data.Name;
+				propertyName = data.PropertyName;
+				generateOptions = data.GenerateOptions;
 
-							logger?.Debug($"found PropertyName: '{propertyName ?? "<null>"}'", 1);
-							break;
-						case "ServiceLifetime":
-							serviceLifetime = namedArg.Value.Value is int li
-								? li switch
-								{
-									1 => "Scoped",
-									2 => "Transient",
-									_ => "Singleton",
-								}
-								: "Singleton";
-
-							logger?.Debug($"found ServiceLifetime: '{serviceLifetime ?? "<null>"}'", 1);
-
-							break;
-					}
-				}
+				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
+				logger?.Debug($"found PropertyName: '{propertyName ?? "<null>"}'", 1);
+				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
 			}
 
 			TargetSymbolDescriptor result = new(
@@ -177,7 +174,8 @@ static class SourceGenHelpers
 				isHostApp,
 				name,
 				propertyName,
-				serviceLifetime ?? "Singleton"
+				generateOptions,
+				serviceLifetime
 			);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
@@ -192,7 +190,7 @@ static class SourceGenHelpers
 				var constructor in classDeclaration
 					.Members.OfType<ConstructorDeclarationSyntax>()
 					.Where(c => string.Equals(c.Identifier.ValueText, className, StringComparison.Ordinal))
-			)
+				)
 			{
 				if (constructor.ParameterList.Parameters.Count > 0)
 					return true;
@@ -206,6 +204,13 @@ static class SourceGenHelpers
 
 			return false;
 		}
+
+		static string ToServiceLifetimeName(int value) => value switch
+		{
+			1 => "Scoped",
+			2 => "Transient",
+			_ => "Singleton",
+		};
 	}
 
 	static IncrementalValueProvider<GenerationContext> GetGeneratorValueProvider(
@@ -213,7 +218,6 @@ static class SourceGenHelpers
 		GenerationLogger? logger
 	)
 	{
-		// Collect the generation context, which includes references to required attributes and the logger
 		var generationContextValueProvider = context
 			.CompilationProvider.Select(
 				(compilation, cancellationToken) => GenerationContext.Create(compilation, logger, cancellationToken)
@@ -228,7 +232,6 @@ static class SourceGenHelpers
 		GenerationLogger? logger
 	)
 	{
-		// Opt-out: set <DisableAspireResourceKitSourceGenerator>true</DisableAspireResourceKitSourceGenerator> to skip generation.
 		var isDisabledValueProvider = context
 			.AnalyzerConfigOptionsProvider.Select(
 				(opts, _) =>

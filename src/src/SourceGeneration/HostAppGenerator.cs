@@ -90,7 +90,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				if (hostAppSymbol is not null && resourceDescriptors.Count > 0)
 				{
 					var descriptor = model.HostApp.Value!;
-					var baseClassName = $"{descriptor.Name ?? descriptor.Symbol.Name}ResourceBase";
+					var baseClassName = $"{descriptor.Name ?? descriptor.Symbol.Name}{TypeHelpers.BaseClassSuffix}";
 					var seenPropertyNames = new HashSet<string>(StringComparer.Ordinal);
 
 					foreach (var resource in resourceDescriptors)
@@ -183,7 +183,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				var hostAppDescriptor = model.HostApp.Value!;
 				var generatedModel = new GeneratedHostAppModel(hostAppDescriptor, [.. resourceDescriptors]);
 				var source = BuildHostAppSource(generatedModel, model.GenerationContext);
-				var fileName = $"{hostAppSymbol.Name}.AppResources.g.cs";
+				var fileName = $"{hostAppSymbol.Name}.AppResourceKit.g.cs";
 
 				sourceProductionContext.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
 			}
@@ -201,8 +201,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		var hostAppTypeName = hostAppType.Name;
 		var hostAccessibility = GetAccessibilityKeyword(hostAppType.DeclaredAccessibility);
 		var baseAccessibility = string.IsNullOrEmpty(hostAccessibility) ? "internal" : hostAccessibility;
-		var baseClassName = $"{hostAppDescriptor.Name ?? hostAppTypeName}ResourceBase";
+		var baseClassName = $"{hostAppDescriptor.Name ?? hostAppTypeName}{TypeHelpers.BaseClassSuffix}";
 		var optionsClassName = $"{hostAppTypeName}Options";
+		var generateOptions = hostAppDescriptor.GenerateOptions;
 		var extensionMethodName = $"Add{hostAppTypeName}ResourceKit";
 		var notNull = generationContext.SystemCANotNull is null ? null : $"[{TypeHelpers.NotNullAttribute}] ";
 
@@ -211,7 +212,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				TargetSymbolDescriptor Descriptor,
 				string ResourceName,
 				string PropertyName,
-				string ParameterName
+				string ParameterName,
+				bool GenerateOptions,
+				string OptionsClassName
 			)>();
 
 		generationContext.Logger?.Info($"Generating {hostAppType}...");
@@ -227,7 +230,16 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			if (!IsValidIdentifier(propertyName) || !seenPropertyNames.Add(propertyName))
 				continue;
 
-			resourceInfo.Add((resource, resourceName, propertyName, ToCamelCase(propertyName)));
+			resourceInfo.Add(
+				(
+					resource,
+					resourceName,
+					propertyName,
+					ToCamelCase(propertyName),
+					resource.GenerateOptions,
+					$"{resource.Symbol.Name}Options"
+				)
+			);
 		}
 
 		CodeWriter writer = new();
@@ -241,34 +253,112 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				.NewLine()
 				.WriteLine("using global::Microsoft.Extensions.Configuration;")
 				.WriteLine("using global::Microsoft.Extensions.DependencyInjection;")
+				.WriteLine("using global::Microsoft.Extensions.Options;")
 				.WriteLine("using global::System;")
 				.NewLine();
 
-			// --- Per-resource partials (Name override) in block-scoped namespaces ---
-			//string? currentNs = null;
-			//IDisposable? nsScope = null;
-			//foreach (var (desc, resName, _, _) in resourceInfo)
-			//{
-			//	var resSymbol = desc.Symbol;
-			//	var resNs = resSymbol.ContainingNamespace.IsGlobalNamespace
-			//		? null
-			//		: resSymbol.ContainingNamespace.ToDisplayString();
-			//	if (resNs != currentNs)
-			//	{
-			//		nsScope?.Dispose();
-			//		nsScope = resNs is not null ? writer.Block($"namespace {resNs}") : null;
-			//		currentNs = resNs;
-			//	}
+			// --- Per-resource option constructor partials in each resource namespace ---
+			if (resourceInfo.Any(r => r.GenerateOptions))
+			{
+				string? currentNs = null;
+				IDisposable? nsScope = null;
+				foreach (var (desc, _, _, _, generateResourceOptions, resourceOptionsClassName) in resourceInfo)
+				{
+					if (!generateResourceOptions)
+						continue;
 
-			//	writer.WriteLine($"partial class {resSymbol.Name};");
+					var resSymbol = desc.Symbol;
+					var resNs = resSymbol.ContainingNamespace.IsGlobalNamespace
+						? null
+						: resSymbol.ContainingNamespace.ToDisplayString();
+					if (resNs != currentNs)
+					{
+						nsScope?.Dispose();
+						nsScope = resNs is not null ? writer.Block($"namespace {resNs}") : null;
+						currentNs = resNs;
+					}
 
-			//	writer.NewLine();
-			//}
+					var resourceAccessibility = GetAccessibilityKeyword(resSymbol.DeclaredAccessibility);
+					var resourceAccessPrefix = string.IsNullOrEmpty(resourceAccessibility)
+						? string.Empty
+						: resourceAccessibility + " ";
+					var resourceOptionsType = hostNamespace is null
+						? resourceOptionsClassName
+						: $"global::{hostNamespace}.{resourceOptionsClassName}";
 
-			//nsScope?.Dispose();
-			//writer.NewLine();
+					writer.WriteLine($"{resourceAccessPrefix}partial class {resSymbol.Name}");
+					using (writer.Block())
+					{
+						using (writer.Block($"public {resSymbol.Name}({resourceOptionsType} options) : base(options)"))
+						{
+							writer
+								.WriteLine("global::System.ArgumentNullException.ThrowIfNull(options);")
+								.NewLine()
+								.WriteLine("Options = options;");
+						}
+
+						writer.NewLine().WriteLine($"{resourceOptionsType} Options {{ get; init; }}");
+					}
+
+					writer.NewLine();
+				}
+
+				nsScope?.Dispose();
+				writer.NewLine();
+			}
+
 			// --- Host app namespace block (base class + partial + options + extensions) ---
 			IDisposable? hostNs = hostNamespace is not null ? writer.Block($"namespace {hostNamespace}") : null;
+
+			var resourceOptionsBaseClassName = $"{hostAppTypeName}ResourceOptionsBase";
+			if (resourceInfo.Any(r => r.GenerateOptions))
+			{
+				using (writer.Block($"{baseAccessibility} abstract partial class {resourceOptionsBaseClassName}"))
+				{
+					writer.WriteLine("public string? Name { get; set; }");
+				}
+
+				writer.NewLine();
+
+				foreach (
+					var (
+						desc,
+						resourceName,
+						propertyName,
+						_,
+						generateResourceOptions,
+						resourceOptionsClassName
+					) in resourceInfo
+				)
+				{
+					if (!generateResourceOptions)
+						continue;
+
+					var resourceAccessibility = GetAccessibilityKeyword(desc.Symbol.DeclaredAccessibility);
+					var resourceAccessPrefix = string.IsNullOrEmpty(resourceAccessibility)
+						? string.Empty
+						: resourceAccessibility + " ";
+
+					using (
+						writer.Block(
+							$"{resourceAccessPrefix}sealed partial class {resourceOptionsClassName} : {resourceOptionsBaseClassName}"
+						)
+					)
+					{
+						writer
+							.WriteIndent()
+							.Write("public const string SectionName = ")
+							.Quote(propertyName)
+							.Write(";")
+							.NewLine()
+							.NewLine()
+							.WriteLine($"public {resourceOptionsClassName}() => Name = \"{resourceName}\";");
+					}
+
+					writer.NewLine();
+				}
+			}
+
 			// --- Generated base class ---
 			using (
 				writer.Block(
@@ -277,19 +367,41 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						w.NewLine()
 							.Indent()
 							.MultiLine(
-								$"{TypeHelpers.HostResourceBase}<{hostAppTypeDisplay}, TResource>",
+								$"{TypeHelpers.ResourceKitBase}<{hostAppTypeDisplay}, TResource>",
 								$"where TResource : class, {TypeHelpers.IResource}"
 							)
 							.Unindent()
 				)
-			) { }
+			)
+			{
+				if (resourceInfo.Any(r => r.GenerateOptions))
+				{
+					writer.WriteLine($"protected {baseClassName}() {{ }}");
+					writer.NewLine();
+					writer.WriteLine($"protected {baseClassName}({resourceOptionsBaseClassName} options)");
+					using (writer.Block())
+					{
+						writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(options);");
+						writer.WriteLine("Name = options.Name ?? Name;");
+					}
+				}
+			}
 
 			writer.NewLine();
 			// --- Host app partial class ---
 			var accessPrefix = string.IsNullOrEmpty(hostAccessibility) ? string.Empty : hostAccessibility + " ";
-			writer.WriteLine(
-				$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
-			);
+			if (generateOptions)
+			{
+				writer.WriteLine(
+					$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
+				);
+			}
+			else
+			{
+				writer.WriteLine(
+					$"{accessPrefix}partial class {hostAppTypeName} : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
+				);
+			}
 
 			// (accessibility prefix handled above)
 			using (writer.Block())
@@ -298,13 +410,26 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					writer.WriteLine("// No app resources were discovered for this host app.");
 				else
 				{
-					foreach (var (desc, _, propName, _) in resourceInfo)
+					foreach (var (desc, _, propName, _, _, _) in resourceInfo)
 					{
-						writer
-							.WriteLine(
-								$"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName} {{ get; }} = new() {{ Name = \"{desc.Name}\" }};"
-							)
-							.NewLine();
+						writer.WriteLine($"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName}");
+						using (writer.Block())
+						{
+							writer.WriteLine(
+								$"get => field ?? throw new global::System.InvalidOperationException(\"The '{propName}' resource has not been initialized. Call Build first.\");"
+							);
+							writer.WriteLine("private set");
+							using (writer.Block())
+							{
+								writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(value);");
+								writer.WriteLine(
+									$"if (field is not null) throw new global::System.InvalidOperationException(\"The '{propName}' resource has already been initialized.\");"
+								);
+								writer.WriteLine("field = value;");
+							}
+						}
+
+						writer.NewLine();
 					}
 				}
 
@@ -317,18 +442,43 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
 					writer.NewLine();
-					if (resourceInfo.Count == 0)
-						writer.WriteLine("// No app resources were discovered for this host app.");
-					else
+
+					foreach (
+						var (desc, _, propName, _, generateResourceOptions, resourceOptionsClassName) in resourceInfo
+					)
+					{
+						if (generateResourceOptions)
+						{
+							writer.WriteLine(
+								$"var {ToCamelCase(desc.Symbol.Name)}Options = builder.Configuration.GetSection({resourceOptionsClassName}.SectionName).Get<{resourceOptionsClassName}>() ?? new {resourceOptionsClassName}();"
+							);
+							writer.WriteLine($"{propName} = new({ToCamelCase(desc.Symbol.Name)}Options);");
+						}
+						else
+						{
+							writer.WriteLine($"{propName} = new() {{ Name = \"{desc.Name}\" }};");
+						}
+
+						writer.NewLine();
+					}
+
+					if (generateOptions && resourceInfo.Count > 0)
 					{
 						writer.WriteLine("// Set the enabled/ disabled state for each app resource.");
-						foreach (var (_, _, propName, _) in resourceInfo)
+						foreach (var (_, _, propName, _, _, _) in resourceInfo)
 						{
 							writer.WriteLine(
 								$"{propName}.IsEnabled = !hostAppOptions.IsResourceDisabled({propName}.Name);"
 							);
 						}
 
+						writer.NewLine();
+					}
+
+					if (resourceInfo.Count == 0)
+						writer.WriteLine("// No app resources were discovered for this host app.");
+					else
+					{
 						writer
 							.NewLine()
 							.WriteLine("// Provide the list of app resources to the base class.")
@@ -350,33 +500,36 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 			writer.NewLine();
 			// --- AppOptions class ---
-			using (writer.Block($"{baseAccessibility} sealed partial class {optionsClassName}"))
+			if (generateOptions)
 			{
-				writer
-					.WriteIndent()
-					.Write("public const string SectionName = ")
-					.Quote(hostAppTypeName)
-					.Write(";")
-					.NewLine()
-					.NewLine()
-					.WriteLine(
-						"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
-					)
-					.NewLine();
-
-				writer
-					.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }")
-					.NewLine();
-
-				using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
+				using (writer.Block($"{baseAccessibility} sealed partial class {optionsClassName}"))
 				{
-					using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
-						writer.WriteLine("return true;");
+					writer
+						.WriteIndent()
+						.Write("public const string SectionName = ")
+						.Quote(hostAppTypeName)
+						.Write(";")
+						.NewLine()
+						.NewLine()
+						.WriteLine(
+							"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
+						)
+						.NewLine();
 
-					using (writer.Block("if (IsResourceEnabledPredicate is not null)", separator: null))
-						writer.WriteLine("return !IsResourceEnabledPredicate(resourceName);");
+					writer
+						.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }")
+						.NewLine();
 
-					writer.WriteLine("return false;");
+					using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
+					{
+						using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
+							writer.WriteLine("return true;");
+
+						using (writer.Block("if (IsResourceEnabledPredicate is not null)", separator: null))
+							writer.WriteLine("return !IsResourceEnabledPredicate(resourceName);");
+
+						writer.WriteLine("return false;");
+					}
 				}
 			}
 
@@ -394,14 +547,38 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				{
 					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
 					writer.NewLine();
-					using (
-						writer.Indented(
-							$"var options = builder.Configuration.GetSection({optionsClassName}.SectionName)"
-						)
-					)
-						writer.WriteLine($".Get<{optionsClassName}>() ?? new {optionsClassName}();");
-					writer.NewLine();
-					writer.WriteLine($"{hostAppTypeDisplay} hostApp = new (options);");
+					if (generateOptions)
+					{
+						writer.WriteLine($"builder.Services.AddOptions<{optionsClassName}>()");
+						writer
+							.Indent()
+							.WriteLine($".BindConfiguration({optionsClassName}.SectionName)")
+							.WriteLine(".ValidateOnStart();")
+							.Unindent();
+						writer.NewLine();
+						writer.WriteLine(
+							$"{hostAppTypeDisplay} hostApp = new (builder.Configuration.GetSection({optionsClassName}.SectionName).Get<{optionsClassName}>() ?? new {optionsClassName}());"
+						);
+					}
+					else
+					{
+						writer.WriteLine($"{hostAppTypeDisplay} hostApp = new ();");
+					}
+
+					foreach (var (_, _, _, _, generateResourceOptions, resourceOptionsClassName) in resourceInfo)
+					{
+						if (!generateResourceOptions)
+							continue;
+
+						writer.NewLine();
+						writer.WriteLine($"builder.Services.AddOptions<{resourceOptionsClassName}>()");
+						writer
+							.Indent()
+							.WriteLine($".BindConfiguration({resourceOptionsClassName}.SectionName)")
+							.WriteLine(".ValidateOnStart();")
+							.Unindent();
+					}
+
 					writer.NewLine();
 					writer.WriteLine("hostApp.Build(builder);");
 					writer.WriteLine("hostApp.Configure();");

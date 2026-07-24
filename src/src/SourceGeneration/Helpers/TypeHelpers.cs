@@ -7,17 +7,19 @@ static class TypeHelpers
 	// Generated type information...
 	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
+	public const string BaseClassSuffix = "ResourceBase";
+
 	public static readonly TypeValueObject HostAppAttribute = new(nameof(HostAppAttribute), ResourceKitNamespace);
 
-	public static readonly TypeValueObject AppResourceAttribute = new(
-		nameof(AppResourceAttribute),
+	public static readonly TypeValueObject ResourceDefinitionAttribute = new(
+		nameof(ResourceDefinitionAttribute),
 		ResourceKitNamespace
 	);
 
 	// Library types
 	public static readonly TypeValueObject HostAppBase = new(nameof(HostAppBase), ResourceKitNamespace);
 
-	public static readonly TypeValueObject HostResourceBase = new(nameof(HostResourceBase), ResourceKitNamespace);
+	public static readonly TypeValueObject ResourceKitBase = new(nameof(ResourceKitBase), ResourceKitNamespace);
 
 	// Other required types
 	// Required for DI
@@ -46,5 +48,5 @@ static class TypeHelpers
 	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
 
 	// Generated attributes (make sure this is after they're all initialised!)
-	public static readonly TypeValueObject[] GeneratedTypes = [HostAppAttribute, AppResourceAttribute];
+	public static readonly TypeValueObject[] GeneratedTypes = [HostAppAttribute, ResourceDefinitionAttribute];
 }

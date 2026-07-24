@@ -67,7 +67,7 @@ static class GeneratorDiagnostics
 	public static readonly DiagnosticDescriptor ResourceNameNotDerivable = new(
 		id: "SG0007",
 		title: "Resource name could not be determined",
-		messageFormat: "A resource name could not be derived from '{0}' and no Name was specified on the AppResourceAttribute",
+		messageFormat: "A resource name could not be derived from '{0}' and no Name was specified on the ResourceDefinitionAttribute",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

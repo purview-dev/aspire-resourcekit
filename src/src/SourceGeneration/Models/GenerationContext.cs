@@ -8,7 +8,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 /// </summary>
 /// <param name="Writer"></param>
 /// <param name="HostAppAttribute"></param>
-/// <param name="AppResourceAttribute"></param>
+/// <param name="ResourceDefinitionAttribute"></param>
 /// <param name="ServiceLifetime"></param>
 /// <param name="ConfigurationBinder">Required for IConfiguration.Get&lt;T&gt; options binding support.</param>
 /// <param name="SystemCANotNull"></param>
@@ -17,7 +17,7 @@ sealed record class GenerationContext(
 	CodeWriter Writer,
 	// Purview.Aspire.ResourceKit symbols
 	INamedTypeSymbol? HostAppAttribute,
-	INamedTypeSymbol? AppResourceAttribute,
+	INamedTypeSymbol? ResourceDefinitionAttribute,
 	// Required symbols
 	INamedTypeSymbol? ServiceLifetime,
 	INamedTypeSymbol? ConfigurationBinder,
@@ -38,7 +38,9 @@ sealed record class GenerationContext(
 		return new(
 			Writer: new(),
 			HostAppAttribute: compilation.GetTypeByMetadataName(TypeHelpers.HostAppAttribute.SymbolFullName),
-			AppResourceAttribute: compilation.GetTypeByMetadataName(TypeHelpers.AppResourceAttribute.SymbolFullName),
+			ResourceDefinitionAttribute: compilation.GetTypeByMetadataName(
+				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName
+			),
 			// Required symbols
 			ServiceLifetime: compilation.GetTypeByMetadataName(TypeHelpers.ServiceLifetime.SymbolFullName),
 			ConfigurationBinder: compilation.GetTypeByMetadataName(TypeHelpers.ConfigurationBinder.SymbolFullName),
@@ -52,7 +54,7 @@ sealed record class GenerationContext(
 	public IEnumerable<string> GetDebugInfo()
 	{
 		yield return GetState(HostAppAttribute, nameof(HostAppAttribute));
-		yield return GetState(AppResourceAttribute, nameof(AppResourceAttribute));
+		yield return GetState(ResourceDefinitionAttribute, nameof(ResourceDefinitionAttribute));
 		yield return GetState(ServiceLifetime, nameof(ServiceLifetime));
 		yield return GetState(ConfigurationBinder, nameof(ConfigurationBinder));
 		yield return GetState(SystemCANotNull, nameof(SystemCANotNull));

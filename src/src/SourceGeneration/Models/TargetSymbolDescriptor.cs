@@ -9,5 +9,6 @@ sealed record class TargetSymbolDescriptor(
 	bool IsHostApp,
 	string? Name,
 	string? PropertyName,
+	bool GenerateOptions,
 	string ServiceLifetime
 );

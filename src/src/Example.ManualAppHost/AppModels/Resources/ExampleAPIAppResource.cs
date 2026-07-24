@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
 sealed partial class ExampleAPIAppResource()
-	: HostResourceBase<ExampleHostApp, ProjectResource>(Platform.ResourceKits.API)
+	: ResourceKitBase<ExampleHostApp, ProjectResource>(Platform.ResourceKits.API)
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
@@ -19,7 +19,7 @@ sealed partial class ExampleAPIAppResource()
 		if (app.KeyVault.IsEnabled)
 			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder).WaitFor(app.KeyVault.ResourceBuilder);
 
-		// Or another optional...
-		ResourceBuilder.WithReference(app.Redis.ResourceBuilder, optional: !app.Redis.IsEnabled);
+		if (app.Redis.IsEnabled)
+			ResourceBuilder.WithReference(app.Redis.ResourceBuilder);
 	}
 }

@@ -7,7 +7,7 @@ namespace Purview.Aspire.ResourceKit;
 public abstract class HostAppBase<THostApp> : IHostApp
 	where THostApp : HostAppBase<THostApp>, IHostApp
 {
-	protected ImmutableArray<IAppResource<THostApp>> Resources { get; set; }
+	protected ImmutableArray<IAppResourceKit<THostApp>> Resources { get; set; }
 
 	public virtual void Build([NotNull] IDistributedApplicationBuilder builder)
 	{

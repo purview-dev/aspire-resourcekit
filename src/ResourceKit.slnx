@@ -17,7 +17,7 @@
 		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />
 		<Project Path="src/Example.ManualAppHost/Example.ManualAppHost.csproj" />
 		<Project Path="src/Example.Service/Example.Service.csproj" />
-		<Project Path="src/Example.ServiceDefaults/Example.ServiceDefaults.csproj" Id="6c3268b5-a38e-495e-91a6-fb760cbc5b21" />
+		<Project Path="src/Example.ServiceDefaults/Example.ServiceDefaults.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
 		<Project Path="tests/ResourceKit.IntegrationTests/ResourceKit.IntegrationTests.csproj" />

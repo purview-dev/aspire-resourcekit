@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[AppResource(Name = Platform.ResourceKits.API)]
+[ResourceDefinition(Platform.ResourceKits.API)]
 sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectResource>
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
@@ -11,7 +11,7 @@ sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectR
 	protected override void ConfigureResource([NotNull] ExampleHostApp app)
 	{
 		if (app.PublishMarker.IsEnabled)
-			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", app.PublishMarker.ResourceBuilder);
+			ResourceBuilder.WithEnvironment(Options.PublishEnvironmentVariableName, app.PublishMarker.ResourceBuilder);
 
 		ResourceBuilder.WithReference(app.Postgres.Database).WaitFor(app.Postgres.Database);
 		ResourceBuilder.WithReference(app.AzureStorage.Blobs).WaitFor(app.AzureStorage.Blobs);
@@ -19,7 +19,7 @@ sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectR
 		if (app.KeyVault.IsEnabled)
 			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder).WaitFor(app.KeyVault.ResourceBuilder);
 
-		// Or another optional...
-		ResourceBuilder.WithReference(app.Redis.ResourceBuilder, optional: !app.Redis.IsEnabled);
+		if (app.Redis.IsEnabled)
+			ResourceBuilder.WithReference(app.Redis.ResourceBuilder);
 	}
 }

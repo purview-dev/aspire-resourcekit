@@ -3,7 +3,7 @@ using Aspire.Hosting;
 
 namespace Purview.Aspire.ResourceKit;
 
-public interface IAppResource<in THostApp>
+public interface IAppResourceKit<in THostApp>
 	where THostApp : class
 {
 	string Name { get; }
