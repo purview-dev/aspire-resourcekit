@@ -1,0 +1,19 @@
+using Aspire.Hosting.Azure;
+
+namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
+
+[AppResource(Name = Platform.ResourceKits.Postgres)]
+sealed partial class PostgresAppResource : ExampleHostAppResourceBase<AzurePostgresFlexibleServerResource>
+{
+	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; } = default!;
+
+	protected override IResourceBuilder<AzurePostgresFlexibleServerResource> BuildResource(
+		IDistributedApplicationBuilder builder
+	)
+	{
+		var sql = builder.AddAzurePostgresFlexibleServer(Name).RunAsContainer();
+		Database = sql.AddDatabase(Platform.ResourceKits.PostgresDb);
+
+		return sql;
+	}
+}

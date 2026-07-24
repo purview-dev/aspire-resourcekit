@@ -7,8 +7,8 @@ namespace Purview.Aspire.ResourceKit;
 public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example_AppHost> fixture)
 {
 	[Test]
-	public async Task AppHost_StartsAndIsReachableThroughFixture(CancellationToken cancellationToken)
+	public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)
 	{
-		await Helpers.AppHostStartedAsync(fixture, cancellationToken);
+		await Helpers.APIIsHealthyAsync(fixture, cancellationToken);
 	}
 }

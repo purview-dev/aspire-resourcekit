@@ -14,10 +14,10 @@ sealed class ExampleHostApp : HostAppBase<ExampleHostApp>
 
 	public RedisAppResource Redis { get; } = new();
 
-	public SqlServerAppResource SqlServer { get; } = new();
+	public PostgresAppResource Postgres { get; } = new();
 
 	public ExampleHostApp()
 	{
-		Resources = [AzureStorage, ExampleAPI, KeyVault, PublishMarker, Redis, SqlServer];
+		Resources = [AzureStorage, ExampleAPI, KeyVault, PublishMarker, Redis, Postgres];
 	}
 }

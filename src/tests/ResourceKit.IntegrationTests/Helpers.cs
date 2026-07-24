@@ -4,7 +4,7 @@ namespace Purview.Aspire.ResourceKit;
 
 static class Helpers
 {
-	public static async Task AppHostStartedAsync<TAppHost>(
+	public static async Task APIIsHealthyAsync<TAppHost>(
 		AspireFixture<TAppHost> fixture,
 		CancellationToken cancellationToken
 	)

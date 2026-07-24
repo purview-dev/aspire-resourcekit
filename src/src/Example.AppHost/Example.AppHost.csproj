@@ -1,9 +1,13 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
+		<ProjectReference
+			Include="..\Example.ServiceDefaults\Example.ServiceDefaults.csproj"
+			IsAspireProjectResource="false"
+		/>
 		<ProjectReference Include="..\ResourceKit\ResourceKit.csproj" IsAspireProjectResource="false" />
 		<ProjectReference
 			Include="..\SourceGeneration\SourceGeneration.csproj"
@@ -16,8 +20,8 @@
 	<ItemGroup>
 		<PackageReference Include="Aspire.Hosting" />
 		<PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
+		<PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
 		<PackageReference Include="Aspire.Hosting.Azure.Redis" />
 		<PackageReference Include="Aspire.Hosting.Azure.Storage" />
-		<PackageReference Include="Aspire.Hosting.Azure.Sql" />
 	</ItemGroup>
 </Project>

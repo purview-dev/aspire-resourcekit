@@ -2,25 +2,24 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[AppResource(Name = "api")]
-sealed partial class ExampleApiAppResource : ExampleHostAppResourceBase<ProjectResource>
+[AppResource(Name = Platform.ResourceKits.API)]
+sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectResource>
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
 	protected override void ConfigureResource([NotNull] ExampleHostApp app)
 	{
-		// Examples using IoC
 		if (app.PublishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", app.PublishMarker.ResourceBuilder);
 
-		ResourceBuilder.WithReference(app.SqlServer.Database);
-		ResourceBuilder.WithReference(app.AzureStorage.Blobs);
+		ResourceBuilder.WithReference(app.Postgres.Database).WaitFor(app.Postgres.Database);
+		ResourceBuilder.WithReference(app.AzureStorage.Blobs).WaitFor(app.AzureStorage.Blobs);
 
 		if (app.KeyVault.IsEnabled)
-			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder);
+			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder).WaitFor(app.KeyVault.ResourceBuilder);
 
-		// Example of using the `app` parameter.
+		// Or another optional...
 		ResourceBuilder.WithReference(app.Redis.ResourceBuilder, optional: !app.Redis.IsEnabled);
 	}
 }

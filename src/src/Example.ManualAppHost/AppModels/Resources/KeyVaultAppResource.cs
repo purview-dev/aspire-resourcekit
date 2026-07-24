@@ -3,7 +3,8 @@ using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
-sealed partial class KeyVaultAppResource() : HostResourceBase<ExampleHostApp, AzureKeyVaultResource>("key-vault")
+sealed partial class KeyVaultAppResource()
+	: HostResourceBase<ExampleHostApp, AzureKeyVaultResource>(Platform.ResourceKits.KeyVault)
 {
 	protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;

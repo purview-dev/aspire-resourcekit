@@ -10,7 +10,7 @@
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CS0436;</NoWarn>
 		<!-- Ignoring XML comments for now -->
-		<NoWarn>$(NoWarn);CS1574;CS1591;</NoWarn>
+		<NoWarn>$(NoWarn);CS1574;CS1591;CA2234;</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Label="NuGet package metadata">
