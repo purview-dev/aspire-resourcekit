@@ -7,6 +7,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<AssemblyName>Purview.Aspire.ResourceKit</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -33,7 +34,7 @@
 
 	<Target Name="IncludeResourceKitSourceGenerator" DependsOnTargets="Build">
 		<Error
-			Condition="!Exists('$(ProjectSdkSourceGeneratorAssembly)')"
+			Condition="!Exists('$(ResourceKitSourceGeneratorAssembly)')"
 			Text="The Purview Aspire ResourceKit Source Generator was not found at '$(ResourceKitSourceGeneratorAssembly)'."
 		/>
 
