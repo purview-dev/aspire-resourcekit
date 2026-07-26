@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 sealed record DiagnosticInfo(
 	DiagnosticDescriptor Descriptor,

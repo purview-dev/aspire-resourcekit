@@ -1,21 +1,15 @@
-﻿using Aspire.Hosting.Azure;
+using Aspire.Hosting.Azure;
 
-namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
+namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[HostResource]
-sealed partial class AzureStorageAppResource : HostAppResource<ExampleHostApp, AzureStorageResource>
+[ResourceDefinition(Platform.ResourceKits.AzureStorage)]
+sealed partial class AzureStorageAppResource : ExampleHostAppResourceBase<AzureStorageResource>
 {
-	public override string Name { get; } = "azure-storage";
-
 	public IResourceBuilder<AzureBlobStorageResource> Blobs { get; private set; } = default!;
 
-	protected override IResourceBuilder<AzureStorageResource> Build(IDistributedApplicationBuilder builder) =>
+	protected override IResourceBuilder<AzureStorageResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddAzureStorage(Name).RunAsEmulator();
 
-	protected override void Configure(ExampleHostApp app)
-	{
-		Blobs = ResourceBuilder.AddBlobs("blobs");
-
-		base.Configure(app);
-	}
+	protected override void ConfigureResource(ExampleHostApp app) =>
+		Blobs = ResourceBuilder.AddBlobs(Platform.ResourceKits.AzureStorageBlob);
 }

@@ -1,46 +1,44 @@
-# Aspire Resource Isolation Package (isolated workspace)
+# ResourceKit solution workspace
 
-This folder is a fully isolated package workspace under:
+This folder contains the .NET solution for `Purview.Aspire.ResourceKit`, including runtime library code, source generation, tests, and example apps.
 
-- `sampels/package`
+## Layout
 
-It provides a reusable NuGet package that models Aspire resource composition similarly to your `AppModels`, with explicit support for:
+### Source projects
 
-- configuration-driven behavior,
-- local mode,
-- running mode,
-- publishing mode,
-- resource-level enable/disable and naming isolation.
+- `src/ResourceKit` — runtime APIs consumed by AppHost projects.
+- `src/SourceGeneration` — Roslyn incremental generator (attributes + generated host/resource wiring).
+- `src/Example.AppHost` — sample AppHost using generated ResourceKit composition.
+- `src/Example.ManualAppHost` — sample AppHost showing manual composition patterns.
+- `src/Example.Service` — sample service used by examples/tests.
+- `src/Example.ServiceDefaults` — shared service defaults for examples.
 
-## Projects
+### Test projects
 
-- `src/Howden.MAADevEng.Aspire.ResourceIsolation` - NuGet package source.
-- `tests/Howden.MAADevEng.Aspire.ResourceIsolation.UnitTests` - unit tests (`TUnit`, `TUnit.Mocks`).
-- `tests/Howden.MAADevEng.Aspire.ResourceIsolation.IntegrationTests` - Aspire integration tests (`TUnit.Aspire`).
-- `examples/ResourceIsolation.Example.AppHost` - local/running example AppHost.
-- `examples/ResourceIsolation.Example.PublishAppHost` - publish-aware example AppHost.
-- `examples/ResourceIsolation.Example.Service` - minimal service for examples/tests.
+- `tests/ResourceKit.UnitTests`
+- `tests/ResourceKit.IntegrationTests`
+- `tests/SourceGeneration.UnitTests`
+- `tests/SourceGeneration.IntegrationTests`
 
-## Core usage
+Reports are written to `TestResults/`.
 
-1. Load settings from configuration:
-   - `ConfigurationIsolationSettingsProvider`
-2. Build an `AppIsolationContext`:
-   - mode is resolved from config and publish runtime.
-3. Register resources with `IsolatedResourceCollection`:
-   - use `DelegateIsolatedResource<TResource>` for full flexibility.
-4. Call `Initialise(builder)`:
-   - builds first, then configures dependencies.
+## Day-to-day workflow
 
-## Packing
+1. Update runtime/source-generation code under `src/src`.
+2. Validate behavior through the corresponding `src/tests` project(s).
+3. Exercise the end-to-end examples in `src/src/Example.*` when making API or generation changes.
 
-Run packaging from this folder against:
+## Packaging
 
-- `src/Howden.MAADevEng.Aspire.ResourceIsolation/Howden.MAADevEng.Aspire.ResourceIsolation.csproj`
+The NuGet package is produced from:
 
-The package metadata is already configured (`PackageId`, symbols, readme, version).
+- `src/src/ResourceKit/ResourceKit.csproj`
 
-## Notes
+The package includes runtime APIs plus the source generator analyzer assembly.
 
-- This workspace intentionally does not depend on your `src/backend` projects.
-- Resource names can be isolated with prefix/suffix and overrides per resource key.
+## Consumer documentation
+
+For package usage guidance (attributes, generated output, configuration, and examples), see:
+
+- `../README.md`
+- `src/ResourceKit/README.md`

@@ -1,6 +1,6 @@
 {
   "name": "purview-aspire-appresources",
-  "version": "1.0.0-prerelease.1",
+  "version": "1.0.0-prerelease.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/purview-dev/purview-aspire-appresources.git"

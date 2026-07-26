@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\src\SourceGeneration\SourceGeneration.csproj" />
-	</ItemGroup>
-</Project>

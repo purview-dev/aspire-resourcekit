@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="TUnit.Aspire" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Example.AppHost\Example.AppHost.csproj" />
+		<ProjectReference Include="..\..\src\Example.ManualAppHost\Example.ManualAppHost.csproj" />
+	</ItemGroup>
+</Project>

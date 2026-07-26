@@ -1,36 +1,25 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
+namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[HostResource]
-sealed partial class ExampleApiAppResource(
-	PublishMarkerAppResource publishMarker,
-	SqlServerAppResource sqlServer,
-	AzureStorageAppResource azureStorage,
-	KeyVaultAppResource keyVault,
-	RedisAppResource redis,
-	IEnvironmentTagProvider environmentTagProvider
-) : HostAppResource<ExampleHostApp, ProjectResource>
+[ResourceDefinition(Platform.ResourceKits.API)]
+sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectResource>
 {
-	public override string Name { get; } = "example-api";
-
-	protected override IResourceBuilder<ProjectResource> Build(IDistributedApplicationBuilder builder) =>
+	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
-	protected override void Configure([NotNull] ExampleHostApp app)
+	protected override void ConfigureResource([NotNull] ExampleHostApp app)
 	{
-		if (publishMarker.IsEnabled)
-			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", publishMarker.ResourceBuilder);
+		if (app.PublishMarker.IsEnabled)
+			ResourceBuilder.WithEnvironment(Options.PublishEnvironmentVariableName, app.PublishMarker.ResourceBuilder);
 
-		ResourceBuilder.WithEnvironment("HOST_APP_ENVIRONMENT", environmentTagProvider.GetTag());
-		ResourceBuilder.WithEnvironment("HOST_APP_METADATA", app.Metadata.EnvironmentTag);
+		ResourceBuilder.WithReference(app.Postgres.Database).WaitFor(app.Postgres.Database);
+		ResourceBuilder.WithReference(app.AzureStorage.Blobs).WaitFor(app.AzureStorage.Blobs);
 
-		ResourceBuilder.WithReference(sqlServer.Database);
-		ResourceBuilder.WithReference(azureStorage.Blobs);
+		if (app.KeyVault.IsEnabled)
+			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder).WaitFor(app.KeyVault.ResourceBuilder);
 
-		if (keyVault.IsEnabled)
-			ResourceBuilder.WithReference(keyVault.ResourceBuilder);
-
-		ResourceBuilder.WithReference(redis.ResourceBuilder);
+		if (app.Redis.IsEnabled)
+			ResourceBuilder.WithReference(app.Redis.ResourceBuilder);
 	}
 }

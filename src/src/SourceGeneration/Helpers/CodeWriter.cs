@@ -1,14 +1,15 @@
-﻿using System.Collections.Immutable;
-using System.Text;
+﻿using System.Text;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 sealed class CodeWriter
 {
-	static readonly ImmutableDictionary<int, string> IndentCache = CreateIndentCache();
+	const char IndentCharacter = '\t';
+	static readonly Dictionary<int, string> IndentCache = new() { [0] = string.Empty };
 
 	readonly StringBuilder _builder = new();
 	int _indentLevel;
+	bool _atLineStart = true;
 
 	public CodeWriter Indent()
 	{
@@ -37,30 +38,42 @@ sealed class CodeWriter
 	public CodeWriter NewLine()
 	{
 		_builder.AppendLine();
+		_atLineStart = true;
 
 		return this;
 	}
 
 	public CodeWriter WriteLine(string? value = null)
 	{
-		WriteIndent();
+		if (value is null)
+			return NewLine();
+
+		if (_atLineStart)
+			WriteIndent();
+
 		_builder.AppendLine(value);
+		_atLineStart = true;
 
 		return this;
 	}
 
 	public CodeWriter WriteIndent()
 	{
-		_builder.Append(IndentCache[_indentLevel]);
+		_builder.Append(GetIndent(_indentLevel));
+		_atLineStart = false;
 		return this;
 	}
 
-	public CodeWriter Write(string value)
+	public CodeWriter Write(string? value)
 	{
-		if (string.IsNullOrWhiteSpace(value))
-			throw new ArgumentNullException(nameof(value));
+		if (string.IsNullOrEmpty(value))
+			return this;
+
+		if (_atLineStart)
+			WriteIndent();
 
 		_builder.Append(value);
+		_atLineStart = false;
 
 		return this;
 	}
@@ -76,40 +89,129 @@ sealed class CodeWriter
 
 	public CodeWriter QuoteLine(string? value = null) => Quote(value).WriteLine();
 
-	public IDisposable Block(string? header = null, string seperator = "{", string? closingSeperator = null)
+	public IDisposable Block(
+		string? header = null,
+		string? separator = "{",
+		string? closingSeparator = null,
+		Action<CodeWriter>? additionalParts = null
+	)
 	{
 		if (header != null)
-			WriteLine(header);
-
-		WriteLine(seperator);
-		Indent();
-
-		if (closingSeperator == null)
 		{
-			// When the closing seperator is null, it's effectively 'auto'.
-			if (seperator == "{")
-				closingSeperator = "}";
-			else if (seperator == "(")
-				closingSeperator = ")";
+			if (_atLineStart)
+				WriteIndent();
+
+			Write(header);
+			additionalParts?.Invoke(this);
+			if (!_atLineStart)
+				NewLine();
 		}
 
-		return new BlockScope(this, closingSeperator);
+		if (separator != null)
+			WriteLine(separator);
+
+		Indent();
+
+		closingSeparator ??= GetDefaultClosingToken(separator);
+
+		return new BlockScope(this, closingSeparator);
+	}
+
+	public CodeWriter MultiLine(params string[] parts)
+	{
+		foreach (var part in parts)
+			WriteLine(part);
+
+		return this;
+	}
+
+	public CodeWriter MultiLineParameters(params string[] parameters)
+	{
+		if (parameters.Length == 0)
+		{
+			Write(")");
+			return this;
+		}
+
+		NewLine();
+		Indent();
+		for (var i = 0; i < parameters.Length; i++)
+		{
+			var isLast = i == parameters.Length - 1;
+			WriteLine(isLast ? $"{parameters[i]})" : $"{parameters[i]},");
+		}
+
+		Unindent();
+
+		return this;
+	}
+
+	public CodeWriter MultiLineItems(params string[] items)
+	{
+		for (var i = 0; i < items.Length; i++)
+		{
+			var isLast = i == items.Length - 1;
+			WriteLine(isLast ? items[i] : $"{items[i]},");
+		}
+
+		return this;
+	}
+
+	public IDisposable Indented()
+	{
+		Indent();
+		return new IndentScope(this);
+	}
+
+	public IDisposable Indented(string line)
+	{
+		WriteLine(line);
+		return Indented();
 	}
 
 	void Reset()
 	{
 		_builder.Clear();
 		_indentLevel = 0;
+		_atLineStart = true;
 	}
 
-	public IDisposable Begin() => new ClearScope(this);
+	public IDisposable Begin()
+	{
+		Reset();
+		return new NoopScope();
+	}
 
 	public override string ToString() => _builder.ToString();
 
-	static ImmutableDictionary<int, string> CreateIndentCache() =>
-		Enumerable.Range(0, 7).Select(i => new KeyValuePair<int, string>(i, new('\t', i))).ToImmutableDictionary();
+	static string GetIndent(int indentLevel)
+	{
+		if (!IndentCache.TryGetValue(indentLevel, out var indent))
+		{
+			indent = new string(IndentCharacter, indentLevel);
+			IndentCache[indentLevel] = indent;
+		}
 
-	sealed class ClearScope(CodeWriter writer) : IDisposable
+		return indent;
+	}
+
+	static string? GetDefaultClosingToken(string? openingToken)
+	{
+		return openingToken switch
+		{
+			"{" => "}",
+			"(" => ")",
+			"[" => "]",
+			_ => null,
+		};
+	}
+
+	sealed class NoopScope : IDisposable
+	{
+		public void Dispose() { }
+	}
+
+	sealed class IndentScope(CodeWriter writer) : IDisposable
 	{
 		bool _disposed;
 
@@ -118,7 +220,7 @@ sealed class CodeWriter
 			if (_disposed)
 				return;
 
-			writer.Reset();
+			writer.Unindent();
 
 			_disposed = true;
 		}

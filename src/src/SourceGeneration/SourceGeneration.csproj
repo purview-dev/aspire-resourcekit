@@ -10,6 +10,7 @@
 		<TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);PackSourceGeneratorSymbols</TargetsForTfmSpecificDebugSymbolsInPackage>
 		<!-- Exclude Purview.Telemetry.SourceGenerator since this is a netstandard2.0 analyzer project -->
 		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
+		<AssemblyName>Purview.Aspire.ResourceKit.SourceGeneration</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

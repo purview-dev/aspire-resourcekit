@@ -1,0 +1,79 @@
+﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
+
+readonly record struct HostAppAttributeData(bool Exists, string? Name, bool GenerateOptions)
+{
+	public static readonly HostAppAttributeData Empty = new(false, null, true);
+
+	public static HostAppAttributeData FromAttributeData(
+		GenerationContext executionContext,
+		ImmutableArray<AttributeData> attributeData
+	)
+	{
+		if (executionContext.HostAppAttribute is not null)
+		{
+			for (var i = 0; i < attributeData.Length; i++)
+			{
+				var result = FromAttributeData(executionContext, attributeData[i]);
+				if (result.Exists)
+					return result;
+			}
+		}
+
+		return Empty;
+	}
+
+	public static HostAppAttributeData FromAttributeData(
+		GenerationContext executionContext,
+		AttributeData attributeData
+	)
+	{
+		var attributeSymbol = executionContext.HostAppAttribute;
+		var exists =
+			attributeSymbol is not null
+			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
+		var name = (string?)null;
+		var generateOptions = true;
+
+		if (exists)
+			(name, generateOptions) = ReadAttributeArguments(attributeData!, name, generateOptions);
+
+		return new(exists, name, generateOptions);
+	}
+
+	static (string? Name, bool GenerateOptions) ReadAttributeArguments(
+		AttributeData attributeData,
+		string? name,
+		bool generateOptions
+	)
+	{
+		foreach (var ctorArg in attributeData.ConstructorArguments)
+		{
+			if (ctorArg.Value is string ctorName)
+				name = ctorName;
+			else if (ctorArg.Value is bool ctorGenerateOptions)
+				generateOptions = ctorGenerateOptions;
+		}
+
+		foreach (var namedArg in attributeData.NamedArguments)
+		{
+			switch (namedArg.Key)
+			{
+				case nameof(Name):
+					if (namedArg.Value.Value is string namedName)
+						name = namedName;
+
+					break;
+				case nameof(GenerateOptions):
+					if (namedArg.Value.Value is bool namedGenerateOptions)
+						generateOptions = namedGenerateOptions;
+
+					break;
+			}
+		}
+
+		return (name, generateOptions);
+	}
+}

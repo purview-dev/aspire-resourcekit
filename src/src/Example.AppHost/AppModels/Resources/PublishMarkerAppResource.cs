@@ -1,15 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Purview.Aspire.ResourceIsolation.Example.AppHost.AppModels.Resources;
+namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[HostResource]
-sealed partial class PublishMarkerAppResource : HostAppResource<ExampleHostApp, ParameterResource>
+[ResourceDefinition(Platform.ResourceKits.PublishMarker)]
+sealed partial class PublishMarkerAppResource : ExampleHostAppResourceBase<ParameterResource>
 {
-	public override string Name { get; } = "publish-marker";
-
 	protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 
-	protected override IResourceBuilder<ParameterResource> Build(IDistributedApplicationBuilder builder) =>
+	protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddParameter(Name, "enabled", secret: false);
 }

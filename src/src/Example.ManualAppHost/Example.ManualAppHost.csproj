@@ -1,0 +1,31 @@
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+	<PropertyGroup>
+		<!--
+			This isn't required, but it proves the point that it all works
+			without the source generator.
+		-->
+		<DisablePurviewAspireResourceKitSourceGenerator>true</DisablePurviewAspireResourceKitSourceGenerator>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
+		<ProjectReference
+			Include="..\Example.ServiceDefaults\Example.ServiceDefaults.csproj"
+			IsAspireProjectResource="false"
+		/>
+		<ProjectReference Include="..\ResourceKit\ResourceKit.csproj" IsAspireProjectResource="false" />
+		<ProjectReference
+			Include="..\SourceGeneration\SourceGeneration.csproj"
+			IsAspireProjectResource="false"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting" />
+		<PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
+		<PackageReference Include="Aspire.Hosting.Azure.Redis" />
+		<PackageReference Include="Aspire.Hosting.Azure.Storage" />
+		<PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
+	</ItemGroup>
+</Project>

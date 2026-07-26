@@ -1,18 +1,27 @@
 ﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+	<PropertyGroup>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
-		<ProjectReference Include="..\ResourceIsolation\ResourceIsolation.csproj" IsAspireProjectResource="false" />
-		<ProjectReference Include="..\SourceGeneration\SourceGeneration.csproj" IsAspireProjectResource="false" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+		<ProjectReference
+			Include="..\Example.ServiceDefaults\Example.ServiceDefaults.csproj"
+			IsAspireProjectResource="false"
+		/>
+		<ProjectReference Include="..\ResourceKit\ResourceKit.csproj" IsAspireProjectResource="false" />
+		<ProjectReference
+			Include="..\SourceGeneration\SourceGeneration.csproj"
+			IsAspireProjectResource="false"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Aspire.Hosting" />
 		<PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
+		<PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
 		<PackageReference Include="Aspire.Hosting.Azure.Redis" />
 		<PackageReference Include="Aspire.Hosting.Azure.Storage" />
-		<PackageReference Include="Aspire.Hosting.Azure.Sql" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Analyzer Include="..\SourceGeneration\bin\$(Configuration)\netstandard2.0\Purview.Aspire.ResourceIsolation.SourceGeneration.dll" />
 	</ItemGroup>
 </Project>

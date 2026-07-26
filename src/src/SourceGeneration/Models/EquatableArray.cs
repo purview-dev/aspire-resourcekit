@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<EquatableArray<T>>, IEnumerable<T>
 	where T : IEquatable<T>

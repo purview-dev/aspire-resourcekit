@@ -1,21 +1,34 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-		<TUnitVersion>1.60.0</TUnitVersion>
+		<TUnitVersion>1.61.38</TUnitVersion>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />
+		<PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.4.6" />
+		<PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Hosting" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.3.5" />
 		<PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="13.3.5" />
 		<PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="13.4.6" />
+		<PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="13.4.6" />
-		<PackageVersion Include="Aspire.Hosting.Azure.Sql" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.4.6" />
+		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="13.4.6" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
+		<PackageVersion
+			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+			Version="10.0.10"
+		/>
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+		<PackageVersion
+			Include="Microsoft.Extensions.Options.ConfigurationExtensions"
+			Version="10.0.10"
+		/>
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
 		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
-		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" />
 		<PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.0" />
 		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="10.8.0" />
 		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="4.2.0" />
@@ -23,5 +36,12 @@
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
+		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0" />
+		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
+		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
 	</ItemGroup>
 </Project>

@@ -1,9 +1,8 @@
 ﻿<Project>
 	<PropertyGroup>
-		<NamespacePrefix>Purview.Aspire.ResourceIsolation</NamespacePrefix>
+		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<IsPackable>false</IsPackable>
-		<UsePackageJsonVersion>Strict</UsePackageJsonVersion>
-		<RepositoryUrl>https://github.com/purview-dev/purview-aspire-appresources</RepositoryUrl>
+		<RepositoryUrl>https://github.com/purview-dev/purview-aspire-resourcekit</RepositoryUrl>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
@@ -11,7 +10,7 @@
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CS0436;</NoWarn>
 		<!-- Ignoring XML comments for now -->
-		<NoWarn>$(NoWarn);CS1574;CS1591;</NoWarn>
+		<NoWarn>$(NoWarn);CS1574;CS1591;CA2234;</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Label="NuGet package metadata">

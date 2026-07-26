@@ -1,19 +1,57 @@
-﻿namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+﻿using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class TypeHelpers
 {
-	public const string HostAppAttributeName = "HostAppAttribute";
-	public const string HostResourceAttributeName = "HostResourceAttribute";
+	// Generated type information...
+	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
-	public static readonly string[] GeneratedTypes = [HostAppAttributeName, HostResourceAttributeName];
+	public const string BaseClassSuffix = "ResourceBase";
 
-	public const string ResourceIsolationNamespace = "Purview.Aspire.ResourceIsolation";
+	public static readonly TypeValueObject HostAppAttribute = new(nameof(HostAppAttribute), ResourceKitNamespace);
 
-	public const string FullHostAppAttributeName = ResourceIsolationNamespace + "." + HostAppAttributeName;
-	public const string FullHostResourceAttributeName = ResourceIsolationNamespace + "." + HostResourceAttributeName;
+	public static readonly TypeValueObject ResourceDefinitionAttribute = new(
+		nameof(ResourceDefinitionAttribute),
+		ResourceKitNamespace
+	);
 
-	public const string HostResourceInterfaceName = "IHostAppResource";
+	public static readonly TypeValueObject GenericResourceDefinitionAttribute = new(
+		"ResourceDefinitionAttribute`1",
+		ResourceKitNamespace
+	);
 
-	public const string DisableAspireResourceIsolationSourceGeneratorProperty =
-		"DisableAspireResourceIsolationSourceGenerator";
+	// Library types
+	public static readonly TypeValueObject HostAppBase = new(nameof(HostAppBase), ResourceKitNamespace);
+
+	public static readonly TypeValueObject ResourceKitBase = new(nameof(ResourceKitBase), ResourceKitNamespace);
+
+	// Other required types
+	// Required for DI
+	public static readonly TypeValueObject IServiceCollection = new(
+		nameof(IServiceCollection),
+		"Microsoft.Extensions.DependencyInjection"
+	);
+
+	public static readonly TypeValueObject ConfigurationBinder = new(
+		nameof(ConfigurationBinder),
+		"Microsoft.Extensions.Configuration"
+	);
+
+	// Aspire types.
+	public static readonly TypeValueObject IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
+	public static readonly TypeValueObject IDistributedApplicationBuilder = new(
+		nameof(IDistributedApplicationBuilder),
+		"Aspire.Hosting"
+	);
+
+	// Other useful types
+	public static readonly TypeValueObject NotNullAttribute = new(
+		nameof(NotNullAttribute),
+		"System.Diagnostics.CodeAnalysis"
+	);
+	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
+
+	// Generated attributes (make sure this is after they're all initialised!)
+	public static readonly TypeValueObject[] GeneratedTypes = [HostAppAttribute, ResourceDefinitionAttribute];
 }

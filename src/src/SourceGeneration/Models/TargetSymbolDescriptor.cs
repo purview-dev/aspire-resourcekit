@@ -1,6 +1,15 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-sealed record class TargetSymbolDescriptor(INamedTypeSymbol Symbol, TypeDeclarationSyntax Declaration, bool IsHostApp);
+sealed record class TargetSymbolDescriptor(
+	INamedTypeSymbol Symbol,
+	TypeDeclarationSyntax Declaration,
+	bool IsHostApp,
+	string? Name,
+	string? PropertyName,
+	bool GenerateOptions,
+	bool IsGenericResourceDefinition,
+	string? GenericResourceTypeName
+);

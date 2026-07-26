@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Text;
-using Purview.Aspire.ResourceIsolation.SourceGeneration.Helpers;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-namespace Purview.Aspire.ResourceIsolation.SourceGeneration.Templates;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Templates;
 
 static class EmbeddedResources
 {
