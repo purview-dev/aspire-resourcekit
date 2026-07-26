@@ -412,7 +412,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							writer.WriteLine("/// <summary>");
 							writer.WriteLine("/// Gets the strongly typed options used to initialize this resource.");
 							writer.WriteLine("/// </summary>");
-							writer.NewLine().WriteLine($"{resourceOptionsType} Options {{ get; init; }}");
+							writer.NewLine().WriteLine($"public {resourceOptionsType} Options {{ get; init; }}");
 						}
 					}
 
