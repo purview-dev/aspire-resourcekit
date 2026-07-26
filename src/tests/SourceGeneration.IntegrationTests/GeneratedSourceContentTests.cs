@@ -37,7 +37,7 @@ namespace Testing
 		await Assert.That(generated).Contains("abstract partial class TestingHostAppResourceOptionsBase");
 		await Assert
 			.That(generated)
-			.Contains("sealed partial class RedisAppResourceOptions : TestingHostAppResourceOptionsBase");
+			.Contains("sealed partial class RedisAppResourceOptions : global::Testing.TestingHostAppResourceOptionsBase");
 		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
 		await Assert.That(generated).Contains("public RedisAppResourceOptions() => Name = \"redis\";");
 		await Assert

@@ -1,9 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[ResourceDefinition(Platform.ResourceKits.API)]
-sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectResource>
+[ResourceDefinition<ProjectResource>(Platform.ResourceKits.API)]
+sealed partial class ExampleAPIAppResource
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
@@ -22,4 +23,10 @@ sealed partial class ExampleAPIAppResource : ExampleHostAppResourceBase<ProjectR
 		if (app.Redis.IsEnabled)
 			ResourceBuilder.WithReference(app.Redis.ResourceBuilder);
 	}
+}
+
+partial class ExampleAPIAppResourceOptions
+{
+	[Required(AllowEmptyStrings = false)]
+	public string PublishEnvironmentVariableName { get; set; } = "PUBLISH_MARKER";
 }

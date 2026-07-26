@@ -2,8 +2,8 @@ using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[ResourceDefinition(Platform.ResourceKits.Redis)]
-sealed partial class RedisAppResource : ExampleHostAppResourceBase<AzureManagedRedisResource>
+[ResourceDefinition<AzureManagedRedisResource>(Platform.ResourceKits.Redis)]
+sealed partial class RedisAppResource
 {
 	protected override IResourceBuilder<AzureManagedRedisResource> BuildResource(
 		IDistributedApplicationBuilder builder
