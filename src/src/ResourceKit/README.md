@@ -14,7 +14,6 @@ The package supports an AppModel style for composing Aspire AppHost resources:
 
 - Mark your host app with `[HostApp]` (exactly one per compilation).
 - Mark each resource with `[ResourceDefinition]`.
-- Implement resources by inheriting the generated `{HostAppClassName}ResourceBase<TResource>`.
 - Register everything with `builder.Add{HostAppClassName}ResourceKit()`.
 
 ### Attributes
@@ -23,8 +22,8 @@ The package supports an AppModel style for composing Aspire AppHost resources:
 [HostApp(Name = "MyApp")]
 sealed partial class MyAppHost { }
 
-[ResourceDefinition("azure-storage", PropertyName = "Storage")]
-sealed partial class AzureStorageAppResource : MyAppHostResourceBase<AzureStorageResource> { }
+[ResourceDefinition<AzureStorageResource>("azure-storage", PropertyName = "Storage")]
+sealed partial class AzureStorageAppResource
 ```
 
 - **`HostAppAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
@@ -35,7 +34,7 @@ sealed partial class AzureStorageAppResource : MyAppHostResourceBase<AzureStorag
 The source generator emits an abstract base class in the host app namespace:
 
 ```csharp
-public abstract class MyAppHostResourceBase<TResource>
+ abstract class MyAppHostResourceBase<TResource>
     : ResourceKitBase<MyAppHost, TResource>
     where TResource : class, IResource
 {
@@ -103,10 +102,10 @@ using Aspire.Hosting.ApplicationModel;
 using Purview.Aspire.ResourceKit;
 
 [HostApp]
-public sealed partial class ShopHost;
+sealed partial class ShopHost;
 
-[ResourceDefinition("api")]
-public sealed partial class ApiResource : ShopHostResourceBase<ProjectResource>
+[ResourceDefinition<ProjectResource>("api")]
+sealed partial class ApiResource
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);

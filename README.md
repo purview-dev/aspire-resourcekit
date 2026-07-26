@@ -19,8 +19,7 @@ Add the NuGet package to your AppHost project:
 
 1. Create a partial host app type and annotate it with `[HostApp]`.
 2. Create partial resource types and annotate each with `[ResourceDefinition]`.
-3. Inherit resource types from the generated `{HostAppName}ResourceBase<TResource>` base.
-4. Register everything with `builder.Add{HostAppName}ResourceKit()`.
+3. Register everything with `builder.Add{HostAppName}ResourceKit()`.
 
 ### Example
 
@@ -30,10 +29,10 @@ using Aspire.Hosting.ApplicationModel;
 using Purview.Aspire.ResourceKit;
 
 [HostApp(Name = "Example")]
-public sealed partial class ExampleHostApp;
+sealed partial class ExampleHostApp;
 
-[ResourceDefinition("api")]
-public sealed partial class ApiResource : ExampleHostAppResourceBase<ProjectResource>
+[ResourceDefinition<ProjectResource>("api")]
+sealed partial class ApiResource
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);
