@@ -108,7 +108,8 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					);
 				}
 
-				resourceDescriptors = [
+				resourceDescriptors =
+				[
 					.. resourceDescriptors.Where(resource => !mixedUsageResourceSymbols.Contains(resource.Symbol)),
 				];
 
@@ -260,21 +261,9 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		var optionsClassName = $"{hostAppTypeName}Options";
 		var resourceOptionsBaseClassName = $"{hostAppTypeName}ResourceOptionsBase";
 		var generateOptions = hostAppDescriptor.GenerateOptions;
-		var extensionMethodName = $"Add{hostAppTypeName}ResourceKit";
 		var notNull = generationContext.SystemCANotNull is null ? null : $"[{TypeHelpers.NotNullAttribute}] ";
 
-		var resourceInfo =
-			new List<(
-				TargetSymbolDescriptor Descriptor,
-				string ResourceName,
-				string PropertyName,
-				string ParameterName,
-				bool GenerateOptions,
-				string OptionsClassName,
-				string OptionsTypeDisplay,
-				bool HasExplicitBaseType,
-				string? GenericResourceTypeName
-			)>();
+		List<ResourceInfo> resourceInfo = new[]);
 
 		generationContext.Logger?.Info($"Generating {hostAppType}...");
 
@@ -294,9 +283,10 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			var resourceNamespace = resource.Symbol.ContainingNamespace.IsGlobalNamespace
 				? null
 				: resource.Symbol.ContainingNamespace.ToDisplayString();
-			var optionsTypeDisplay = resourceNamespace is null || resourceNamespace == hostNamespace
-				? resourceOptionsClassName
-				: $"global::{resourceNamespace}.{resourceOptionsClassName}";
+			var optionsTypeDisplay =
+				resourceNamespace is null || resourceNamespace == hostNamespace
+					? resourceOptionsClassName
+					: $"global::{resourceNamespace}.{resourceOptionsClassName}";
 
 			resourceInfo.Add(
 				(
@@ -377,24 +367,18 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						);
 					}
 
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Represents a generated app resource implementation.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment("Represents a generated app resource implementation.");
 					if (generatedBaseType is null)
 						writer.WriteLine($"{resourceAccessPrefix}partial class {resSymbol.Name}");
 					else
-						writer.WriteLine(
-							$"{resourceAccessPrefix}partial class {resSymbol.Name} : {generatedBaseType}"
-						);
+						writer.WriteLine($"{resourceAccessPrefix}partial class {resSymbol.Name} : {generatedBaseType}");
 					using (writer.Block())
 					{
 						if (generateResourceOptions)
 						{
-							writer.WriteLine("/// <summary>");
-							writer.WriteLine(
-								"/// Initializes a new instance of the generated resource using bound options."
+							writer.WriteXmlComment(
+								"Initializes a new instance of the generated resource using bound options."
 							);
-							writer.WriteLine("/// </summary>");
 							writer.WriteLine(
 								"/// <param name=\"options\">The resource options bound from configuration.</param>"
 							);
@@ -409,9 +393,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							}
 
 							writer.NewLine();
-							writer.WriteLine("/// <summary>");
-							writer.WriteLine("/// Gets the strongly typed options used to initialize this resource.");
-							writer.WriteLine("/// </summary>");
+							writer.WriteXmlComment("Gets the strongly typed options used to initialize this resource.");
 							writer.NewLine().WriteLine($"public {resourceOptionsType} Options {{ get; init; }}");
 						}
 					}
@@ -429,19 +411,16 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 							)
 						)
 						{
-							writer.WriteLine("/// <summary>");
-							writer.WriteLine("/// Configuration section name for this resource options type.");
-							writer.WriteLine("/// </summary>");
+							writer.WriteXmlComment("Configuration section name for this resource options type.");
 							writer
 								.WriteIndent()
 								.Write("public const string SectionName = ")
 								.Quote(propertyName)
-								.Write(";")
+								.WriteLine(";")
 								.NewLine()
-								.NewLine()
-								.WriteLine("/// <summary>")
-								.WriteLine("/// Initializes a new options instance with the default generated resource name.")
-								.WriteLine("/// </summary>")
+								.WriteXmlComment(
+									"Initializes a new options instance with the default generated resource name."
+								)
 								.WriteLine($"public {resourceOptionsClassName}() => Name = \"{resourceName}\";");
 						}
 					}
@@ -460,17 +439,13 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				using (writer.Block($"{baseAccessibility} abstract partial class {resourceOptionsBaseClassName}"))
 				{
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Gets or sets the logical resource name.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment("Gets or sets the logical resource name.");
 					writer.WriteLine("public string? Name { get; set; }");
 				}
 			}
 
 			// --- Generated base class ---
-			writer.WriteLine("/// <summary>");
-			writer.WriteLine("/// Base class for generated resources associated with this host app.");
-			writer.WriteLine("/// </summary>");
+			writer.WriteXmlComment("Base class for generated resources associated with this host app.");
 			writer.WriteLine("/// <typeparam name=\"TResource\">The Aspire resource type.</typeparam>");
 			using (
 				writer.Block(
@@ -488,14 +463,12 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				if (resourceInfo.Any(r => r.GenerateOptions))
 				{
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Initializes a new instance of the generated resource base type.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment("Initializes a new instance of the generated resource base type.");
 					writer.WriteLine($"protected {baseClassName}() {{ }}");
 					writer.NewLine();
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Initializes a new instance of the generated resource base type using options.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment(
+						"Initializes a new instance of the generated resource base type using options."
+					);
 					writer.WriteLine("/// <param name=\"options\">The generated resource options.</param>");
 					writer.WriteLine($"protected {baseClassName}({resourceOptionsBaseClassName} options)");
 					using (writer.Block())
@@ -511,18 +484,17 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			var accessPrefix = string.IsNullOrEmpty(hostAccessibility) ? string.Empty : hostAccessibility + " ";
 			if (generateOptions)
 			{
-				writer.WriteLine("/// <summary>");
-				writer.WriteLine("/// Represents the generated host app and composes all discovered resources.");
-				writer.WriteLine("/// </summary>");
-				writer.WriteLine(
-					$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
-				);
+				writer
+					.WriteXmlComment("Represents the generated host app and composes all discovered resources.")
+					.WriteLine(
+						$"{accessPrefix}partial class {hostAppTypeName}({optionsClassName} hostAppOptions) : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
+					)
+					.NewLine()
+					.WriteLine($"public {optionsClassName} Options {{ get; }} = hostAppOptions;");
 			}
 			else
 			{
-				writer.WriteLine("/// <summary>");
-				writer.WriteLine("/// Represents the generated host app and composes all discovered resources.");
-				writer.WriteLine("/// </summary>");
+				writer.WriteXmlComment("Reference the generated host app type to access all discovered resources.");
 				writer.WriteLine(
 					$"{accessPrefix}partial class {hostAppTypeName} : {TypeHelpers.HostAppBase}<{hostAppTypeDisplay}>"
 				);
@@ -537,9 +509,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 				{
 					foreach (var (desc, _, propName, _, _, _, _, _, _) in resourceInfo)
 					{
-						writer.WriteLine("/// <summary>");
-						writer.WriteLine($"/// Gets the '{propName}' resource instance.");
-						writer.WriteLine("/// </summary>");
+						writer.WriteXmlComment($"Gets the '{propName}' resource instance.");
 						writer.WriteLine($"public {desc.Symbol.ToDisplayString(FullyQualifiedFormat)} {propName}");
 						using (writer.Block())
 						{
@@ -563,9 +533,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 
 				writer.NewLine();
 				// Build method
-				writer.WriteLine("/// <summary>");
-				writer.WriteLine("/// Builds and initializes all generated resources for this host app.");
-				writer.WriteLine("/// </summary>");
+				writer.WriteXmlComment("Builds and initializes all generated resources for this host app.");
 				writer.WriteLine("/// <param name=\"builder\">The distributed application builder.</param>");
 				writer.WriteLine(
 					$"public override void Build({notNull}{TypeHelpers.IDistributedApplicationBuilder} builder)"
@@ -622,7 +590,6 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 					else
 					{
 						writer
-							.NewLine()
 							.WriteLine("// Provide the list of app resources to the base class.")
 							.WriteLine("Resources = [")
 							.Indent()
@@ -646,9 +613,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			{
 				using (writer.Block($"{baseAccessibility} sealed partial class {optionsClassName}"))
 				{
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Configuration section name for host app options.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment("Configuration section name for host app options.");
 					writer
 						.WriteIndent()
 						.Write("public const string SectionName = ")
@@ -656,26 +621,24 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 						.Write(";")
 						.NewLine()
 						.NewLine()
-						.WriteLine("/// <summary>")
-						.WriteLine("/// Gets the set of resource names that should be disabled.")
-						.WriteLine("/// </summary>")
+						.WriteXmlComment("Gets the set of resource names that should be disabled.")
 						.WriteLine(
 							"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
 						)
 						.NewLine();
 
 					writer
-						.WriteLine("/// <summary>")
-						.WriteLine("/// Gets or sets an optional predicate used to decide whether resources are enabled.")
-						.WriteLine("/// </summary>")
+						.WriteXmlComment(
+							"Gets or sets an optional predicate used to decide whether resources are enabled."
+						)
 						.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }")
 						.NewLine();
 
-					writer.WriteLine("/// <summary>");
-					writer.WriteLine("/// Determines whether a resource should be considered disabled.");
-					writer.WriteLine("/// </summary>");
+					writer.WriteXmlComment("Determines whether a resource should be considered disabled.");
 					writer.WriteLine("/// <param name=\"resourceName\">The logical resource name.</param>");
-					writer.WriteLine("/// <returns><see langword=\"true\"/> when disabled; otherwise <see langword=\"false\"/>.</returns>");
+					writer.WriteLine(
+						"/// <returns><see langword=\"true\"/> when disabled; otherwise <see langword=\"false\"/>.</returns>"
+					);
 					using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
 					{
 						using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
@@ -690,80 +653,14 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			}
 
 			writer.NewLine();
-			// --- Builder extensions ---
-			using (writer.Block($"internal static class {hostAppTypeName}BuilderExtensions"))
-			{
-				writer.WriteLine("/// <summary>");
-				writer.WriteLine("/// Adds and configures the generated ResourceKit host app.");
-				writer.WriteLine("/// </summary>");
-				writer.WriteLine("/// <param name=\"builder\">The distributed application builder.</param>");
-				writer.WriteLine("/// <returns>The same builder instance for chaining.</returns>");
-				using (
-					writer.Block(
-						$"public static {TypeHelpers.IDistributedApplicationBuilder} {extensionMethodName}(",
-						additionalParts: w =>
-							w.MultiLineParameters($"{notNull}this {TypeHelpers.IDistributedApplicationBuilder} builder")
-					)
-				)
-				{
-					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);");
-					writer.NewLine();
-					if (generateOptions)
-					{
-						writer.WriteLine($"builder.Services.AddOptions<{optionsClassName}>()");
-						writer
-							.Indent()
-							.WriteLine($".BindConfiguration({optionsClassName}.SectionName)")
-							.WriteLine(".ValidateOnStart();")
-							.Unindent();
-						writer.NewLine();
-						writer.WriteLine(
-							$"{hostAppTypeDisplay} hostApp = new (builder.Configuration.GetSection({optionsClassName}.SectionName).Get<{optionsClassName}>() ?? new {optionsClassName}());"
-						);
-					}
-					else
-					{
-						writer.WriteLine($"{hostAppTypeDisplay} hostApp = new ();");
-					}
-
-					foreach (
-						var (
-							_,
-							_,
-							_,
-							_,
-							generateResourceOptions,
-							_,
-							resourceOptionsTypeDisplay,
-							_,
-							_
-						) in resourceInfo
-					)
-					{
-						if (!generateResourceOptions)
-							continue;
-
-						writer.NewLine();
-						writer.WriteLine($"builder.Services.AddOptions<{resourceOptionsTypeDisplay}>()");
-						writer
-							.Indent()
-							.WriteLine($".BindConfiguration({resourceOptionsTypeDisplay}.SectionName)")
-							.WriteLine(".ValidateOnStart();")
-							.Unindent();
-					}
-
-					writer.NewLine();
-					writer.WriteLine("hostApp.Build(builder);");
-					writer.WriteLine("hostApp.Configure();");
-					writer.NewLine();
-					writer.WriteLine("builder.Services.AddSingleton(hostApp);");
-					writer.NewLine();
-
-					writer.WriteLine("return builder;");
-				}
-			}
 
 			hostNs?.Dispose();
+
+			GenerateExtensionMethod(
+				writer,
+				(hostAppTypeName, hostAppTypeDisplay, optionsClassName, notNull, generateOptions)
+			);
+
 			source = writer.ToString();
 		}
 
@@ -835,8 +732,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("Resource", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "Resource".Length)
-		: typeName.EndsWith("Kit", StringComparison.Ordinal)
-			? typeName.Substring(0, typeName.Length - "Kit".Length)
+		: typeName.EndsWith("Kit", StringComparison.Ordinal) ? typeName.Substring(0, typeName.Length - "Kit".Length)
 		: typeName;
 
 	static string ToCamelCase(string value)
@@ -846,40 +742,7 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 			: char.ToLowerInvariant(value[0]) + value.Substring(1);
 	}
 
-	static string SanitizeForFileName(string typeName)
-	{
-		var sb = new StringBuilder(typeName.Length);
-		foreach (var c in typeName)
-		{
-			if (c is '_' or '.' or ':' or '<' or '>' or ',' or ' ' or '`' or '{' or '}')
-				sb.Append('_');
-			else
-				sb.Append(c);
-		}
-
-		return sb.ToString();
-	}
-
 	static string DeriveResourceName(string typeName) => TrimSuffix(typeName);
-
-	static string BuildPropertyNameFromResourceName(string name)
-	{
-		var sb = new StringBuilder(name.Length);
-		var capitalizeNext = true;
-		foreach (var c in name)
-		{
-			if (char.IsLetterOrDigit(c) || c == '_')
-			{
-				sb.Append(capitalizeNext ? char.ToUpperInvariant(c) : c);
-				capitalizeNext = false;
-			}
-			else
-				capitalizeNext = true;
-		}
-
-		var result = sb.ToString();
-		return string.IsNullOrEmpty(result) ? "Resource" : result;
-	}
 
 	static string BuildPropertyNameFromTypeName(string typeName)
 	{
@@ -900,5 +763,70 @@ public sealed partial class HostAppGenerator : IIncrementalGenerator, ILogSuppor
 		}
 
 		return true;
+	}
+}
+
+internal record struct ResourceInfo(
+	TargetSymbolDescriptor Descriptor,
+	string ResourceName,
+	string PropertyName,
+	string ParameterName,
+	bool GenerateOptions,
+	string OptionsClassName,
+	string OptionsTypeDisplay,
+	bool HasExplicitBaseType,
+	string? GenericResourceTypeName
+)
+{
+	public static implicit operator (
+		TargetSymbolDescriptor Descriptor,
+		string ResourceName,
+		string PropertyName,
+		string ParameterName,
+		bool GenerateOptions,
+		string OptionsClassName,
+		string OptionsTypeDisplay,
+		bool HasExplicitBaseType,
+		string? GenericResourceTypeName
+	)(ResourceInfo value)
+	{
+		return (
+			value.Descriptor,
+			value.ResourceName,
+			value.PropertyName,
+			value.ParameterName,
+			value.GenerateOptions,
+			value.OptionsClassName,
+			value.OptionsTypeDisplay,
+			value.HasExplicitBaseType,
+			value.GenericResourceTypeName
+		);
+	}
+
+	public static implicit operator ResourceInfo(
+		(
+			TargetSymbolDescriptor Descriptor,
+			string ResourceName,
+			string PropertyName,
+			string ParameterName,
+			bool GenerateOptions,
+			string OptionsClassName,
+			string OptionsTypeDisplay,
+			bool HasExplicitBaseType,
+			string? GenericResourceTypeName
+		) value
+	)
+	{
+		return new ResourceInfo(
+			value.Descriptor,
+			value.ResourceName,
+			value.PropertyName,
+			value.ParameterName,
+			value.GenerateOptions,
+			value.OptionsClassName,
+			value.OptionsTypeDisplay,
+			value.HasExplicitBaseType,
+			value.GenericResourceTypeName
+		);
 	}
 }

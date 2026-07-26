@@ -57,6 +57,18 @@ sealed class CodeWriter
 		return this;
 	}
 
+	public CodeWriter WriteXmlComment(params string[] summary)
+	{
+		if (summary == null || summary.Length == 0)
+			throw new ArgumentException("Summary cannot be null or empty.", nameof(summary));
+
+		WriteLine("/// <summary>");
+		foreach (var line in summary)
+			WriteLine($"/// {line}");
+
+		return WriteLine("/// </summary>");
+	}
+
 	public CodeWriter WriteIndent()
 	{
 		_builder.Append(GetIndent(_indentLevel));
