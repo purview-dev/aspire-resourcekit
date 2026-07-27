@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
@@ -124,7 +123,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 					foreach (var resourceKitDescriptor in resourceKitDescriptors)
 					{
 						var resourceKitSymbol = resourceKitDescriptor.Symbol;
-						var hasExplicitBaseType = HasExplicitBaseType(resourceKitDescriptor);
+						var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(resourceKitDescriptor);
 
 						if (resourceKitDescriptor.IsGenericResourceDefinition && hasExplicitBaseType)
 						{
@@ -152,7 +151,8 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 						}
 
 						// Derive the resource name (from attribute or type name).
-						var resourceName = resourceKitDescriptor.Name ?? DeriveResourceName(resourceKitSymbol.Name);
+						var resourceName =
+							resourceKitDescriptor.Name ?? TypeHelpers.DeriveResourceName(resourceKitSymbol.Name);
 						if (string.IsNullOrWhiteSpace(resourceName))
 						{
 							diagnostics.Add(
@@ -165,9 +165,8 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 							continue;
 						}
 
-						// Derive the property name from the resource type name when not explicitly overridden.
 						var propertyName = resourceKitDescriptor.PropertyName!;
-						if (!IsValidIdentifier(propertyName))
+						if (!TypeHelpers.IsValidIdentifier(propertyName))
 						{
 							diagnostics.Add(
 								DiagnosticInfo.Create(
@@ -194,7 +193,10 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 
 						// Check that resources with an explicit base derive from the expected generated base (SG0006).
 						// If no explicit base was declared, a generated partial will provide the host-specific base.
-						if (hasExplicitBaseType && !IsDerivedFromExpectedBase(resourceKitDescriptor, baseClassName))
+						if (
+							hasExplicitBaseType
+							&& !TypeHelpers.IsDerivedFromExpectedBase(resourceKitDescriptor, baseClassName)
+						)
 						{
 							diagnostics.Add(
 								DiagnosticInfo.Create(
@@ -263,62 +265,10 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 		);
 	}
 
-	static bool HasExplicitBaseType(TargetSymbolDescriptor descriptor) =>
-		descriptor.Declaration.BaseList is { Types.Count: > 0 };
-
-	static bool IsDerivedFromExpectedBase(TargetSymbolDescriptor descriptor, string expectedBaseName)
-	{
-		if (
-			descriptor.Symbol.BaseType is not null
-			&& string.Equals(descriptor.Symbol.BaseType.Name, expectedBaseName, StringComparison.Ordinal)
-		)
-			return true;
-
-		var declaredBaseTypes = descriptor.Declaration.BaseList?.Types;
-		if (declaredBaseTypes is null)
-			return false;
-
-		foreach (var baseType in declaredBaseTypes)
-		{
-			if (string.Equals(GetUnqualifiedTypeName(baseType.Type), expectedBaseName, StringComparison.Ordinal))
-				return true;
-		}
-
-		return false;
-	}
-
-	static string GetUnqualifiedTypeName(TypeSyntax typeSyntax) =>
-		typeSyntax switch
-		{
-			IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
-			GenericNameSyntax genericName => genericName.Identifier.ValueText,
-			QualifiedNameSyntax qualifiedName => GetUnqualifiedTypeName(qualifiedName.Right),
-			AliasQualifiedNameSyntax aliasQualifiedName => GetUnqualifiedTypeName(aliasQualifiedName.Name),
-			NullableTypeSyntax nullableType => GetUnqualifiedTypeName(nullableType.ElementType),
-			_ => typeSyntax.ToString(),
-		};
-
 	static string ToCamelCase(string value)
 	{
 		return string.IsNullOrEmpty(value) ? value
 			: value.Length == 1 ? char.ToLowerInvariant(value[0]).ToString()
 			: char.ToLowerInvariant(value[0]) + value.Substring(1);
-	}
-
-	static string DeriveResourceName(string typeName) => CodeGenHelpers.TrimSuffix(typeName);
-
-	static bool IsValidIdentifier(string? name)
-	{
-		if (string.IsNullOrEmpty(name))
-			return false;
-		if (!char.IsLetter(name![0]) && name[0] != '_')
-			return false;
-		for (var i = 1; i < name.Length; i++)
-		{
-			if (!char.IsLetterOrDigit(name[i]) && name[i] != '_')
-				return false;
-		}
-
-		return true;
 	}
 }

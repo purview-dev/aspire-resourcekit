@@ -4,20 +4,27 @@ namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels;
 
 sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 {
-	public AzureStorageAppResource AzureStorage { get; } = new();
+	public AzureStorageKit AzureStorage { get; init; }
 
-	public ExampleAPIAppResource ExampleAPI { get; } = new();
+	public ExampleAPIKit ExampleAPI { get; init; }
 
-	public KeyVaultAppResource KeyVault { get; } = new();
+	public KeyVaultKit KeyVault { get; init; }
 
-	public PublishMarkerAppResource PublishMarker { get; } = new();
+	public PublishMarkerKit PublishMarker { get; init; }
 
-	public RedisAppResource Redis { get; } = new();
+	public RedisKit Redis { get; init; }
 
-	public PostgresAppResource Postgres { get; } = new();
+	public PostgresKit Postgres { get; init; }
 
 	public ExampleHostKit()
 	{
+		AzureStorage = new(this);
+		ExampleAPI = new(this);
+		KeyVault = new(this);
+		PublishMarker = new(this);
+		Redis = new(this);
+		Postgres = new(this);
+
 		Resources = [AzureStorage, ExampleAPI, KeyVault, PublishMarker, Redis, Postgres];
 	}
 }

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 
@@ -10,7 +9,7 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 /// <typeparam name="THostKit">The host application type.</typeparam>
 /// <typeparam name="TResource">The Aspire <see cref="IResource"/> type this kit builds.</typeparam>
-public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostKit>
+public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostKit>, IResourceBuilder<TResource>
 	where THostKit : class, IHostKit
 	where TResource : class, IResource
 {
@@ -73,14 +72,14 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	/// <remarks>
 	/// The default implementation returns <see cref="IsEnabled"/>.
 	/// </remarks>
-	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => IsEnabled;
+	protected virtual bool IsResourceEnabled(IDistributedApplicationBuilder builder) => IsEnabled;
 
 	/// <summary>
 	/// Builds and returns the resource builder for this resource.
 	/// </summary>
 	/// <param name="builder">The distributed application builder.</param>
 	/// <returns>The resource builder created for this resource.</returns>
-	protected abstract IResourceBuilder<TResource> BuildResource([NotNull] IDistributedApplicationBuilder builder);
+	protected abstract IResourceBuilder<TResource> BuildResource(IDistributedApplicationBuilder builder);
 
 	/// <summary>
 	/// Configures cross-resource behavior after all resources have been built.
@@ -88,7 +87,7 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	protected virtual void ConfigureResource() { }
 
 	/// <inheritdoc/>
-	public void Build([NotNull] IDistributedApplicationBuilder builder)
+	public void Build(IDistributedApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
 		ArgumentException.ThrowIfNullOrWhiteSpace(Name, nameof(Name));
@@ -115,5 +114,21 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	{
 		if (!IsEnabled)
 			throw new InvalidOperationException($"The '{Name}' resource is not enabled and cannot be accessed.");
+	}
+
+	/// <inheritdoc />
+	public IDistributedApplicationBuilder ApplicationBuilder => ResourceBuilder.ApplicationBuilder;
+
+	/// <inheritdoc />
+	public TResource Resource => ResourceBuilder.Resource;
+
+	/// <inheritdoc />
+	public IResourceBuilder<TResource> WithAnnotation<TAnnotation>(
+		TAnnotation annotation,
+		ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append
+	)
+		where TAnnotation : IResourceAnnotation
+	{
+		return ResourceBuilder.WithAnnotation(annotation, behavior);
 	}
 }

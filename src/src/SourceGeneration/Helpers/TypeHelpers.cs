@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
@@ -53,6 +54,58 @@ static class TypeHelpers
 
 	public static bool IsAttribute(string typeName) =>
 		typeName.Length > AttributeSuffix.Length && typeName.EndsWith(AttributeSuffix, StringComparison.Ordinal);
+
+	public static bool HasExplicitBaseType(TargetSymbolDescriptor descriptor) =>
+		descriptor.Declaration.BaseList is { Types.Count: > 0 };
+
+	public static bool IsDerivedFromExpectedBase(TargetSymbolDescriptor descriptor, string expectedBaseName)
+	{
+		if (
+			descriptor.Symbol.BaseType is not null
+			&& string.Equals(descriptor.Symbol.BaseType.Name, expectedBaseName, StringComparison.Ordinal)
+		)
+			return true;
+
+		var declaredBaseTypes = descriptor.Declaration.BaseList?.Types;
+		if (declaredBaseTypes is null)
+			return false;
+
+		foreach (var baseType in declaredBaseTypes)
+		{
+			if (string.Equals(GetUnqualifiedTypeName(baseType.Type), expectedBaseName, StringComparison.Ordinal))
+				return true;
+		}
+
+		return false;
+	}
+
+	public static string GetUnqualifiedTypeName(TypeSyntax typeSyntax) =>
+		typeSyntax switch
+		{
+			IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
+			GenericNameSyntax genericName => genericName.Identifier.ValueText,
+			QualifiedNameSyntax qualifiedName => GetUnqualifiedTypeName(qualifiedName.Right),
+			AliasQualifiedNameSyntax aliasQualifiedName => GetUnqualifiedTypeName(aliasQualifiedName.Name),
+			NullableTypeSyntax nullableType => GetUnqualifiedTypeName(nullableType.ElementType),
+			_ => typeSyntax.ToString(),
+		};
+
+	public static string DeriveResourceName(string typeName) => CodeGenHelpers.TrimSuffix(typeName);
+
+	public static bool IsValidIdentifier(string? name)
+	{
+		if (string.IsNullOrEmpty(name))
+			return false;
+		if (!char.IsLetter(name![0]) && name[0] != '_')
+			return false;
+		for (var i = 1; i < name.Length; i++)
+		{
+			if (!char.IsLetterOrDigit(name[i]) && name[i] != '_')
+				return false;
+		}
+
+		return true;
+	}
 
 	// Generated type information...
 	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";

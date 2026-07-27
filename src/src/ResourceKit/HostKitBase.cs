@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
 
 namespace Purview.Aspire.ResourceKit;
@@ -9,7 +8,7 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 /// <typeparam name="THostKit">The concrete host kit type.</typeparam>
 public abstract class HostKitBase<THostKit> : IHostKit
-	where THostKit : HostKitBase<THostKit>, IHostKit
+	where THostKit : class, IHostKit
 {
 	/// <summary>
 	/// Gets or sets the resources managed by this host kit.
@@ -17,7 +16,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	protected ImmutableArray<IResourceKit<THostKit>> Resources { get; set; }
 
 	/// <inheritdoc/>
-	public virtual void Build([NotNull] IDistributedApplicationBuilder builder)
+	public virtual void Build(IDistributedApplicationBuilder builder)
 	{
 		foreach (var resource in Resources)
 			resource.Build(builder);

@@ -14,7 +14,8 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var notNull = context.SystemCANotNull is null ? null : $"{TypeHelpers.NotNullAttribute} ";
+		context.Logger?.Debug($"Generating extension method for host kit: {hostKit.HostKitType.TypeName}");
+
 		using (writer.NewLine().Block($"namespace {TypeHelpers.IDistributedApplicationBuilder.Namespace}"))
 		{
 			using (
@@ -30,7 +31,7 @@ partial class HostKitGenerator
 					writer.Block(
 						$"public static {TypeHelpers.IDistributedApplicationBuilder} {hostKit.ExtensionMethodName}(",
 						additionalParts: w =>
-							w.MultiLineParameters($"{notNull}this {TypeHelpers.IDistributedApplicationBuilder} builder")
+							w.MultiLineParameters($"this {TypeHelpers.IDistributedApplicationBuilder} builder")
 					)
 				)
 				{
@@ -38,30 +39,44 @@ partial class HostKitGenerator
 					writer.NewLine();
 					if (hostKit.ShouldGenerateOptions)
 					{
-						List<TypeValueObject> optionTypes =
-						[
-							hostKit.HostKitOptionsType,
-							.. hostKit.ResourceKits.Select(r => r.ResourceKitOptionsType),
-						];
-						foreach (var optionType in optionTypes)
+						if (hostKit.HasResourceKits)
 						{
-							writer.WriteLine($"builder.Services.AddOptions<{optionType}>()");
-							writer
-								.Indent()
-								.WriteLine($".BindConfiguration({optionType}.SectionName)")
-								.WriteLine(".ValidateOnStart();")
-								.Unindent();
+							writer.Comment(
+								"Bind the resource kit options from configuration, or create a new instance if not found."
+							);
+							foreach (var resourceKit in hostKit.ResourceKits)
+							{
+								writer
+									.WriteLine($"builder.Services.AddOptions<{resourceKit.ResourceKitOptionsType}>()")
+									.Indent()
+									.WriteLine($".BindConfiguration({resourceKit.ResourceKitOptionsType}.SectionName)")
+									.WriteLine(".ValidateOnStart();")
+									.Unindent()
+									.NewLine();
+							}
 						}
 
-						writer.NewLine();
+						writer
+							.Comment(
+								"Bind the host kit options from configuration, or create a new instance if not found."
+							)
+							.WriteLine($"builder.Services.AddOptions<{hostKit.HostKitOptionsType}>()")
+							.Indent()
+							.WriteLine($".BindConfiguration({hostKit.HostKitOptionsType}.SectionName)")
+							.WriteLine(".ValidateOnStart();")
+							.Unindent()
+							.NewLine();
+
 						writer
 							.WriteLine(
-								$"var hostKitOptions = new (builder.Configuration.GetSection({hostKit.HostKitOptionsType}.SectionName).Get<{hostKit.HostKitOptionsType}>() ?? new {hostKit.HostKitOptionsType}());"
+								$"var hostKitOptions = builder.Configuration.Get<{hostKit.HostKitOptionsType}>() ?? new();"
 							)
 							.NewLine();
 					}
 
-					writer.Write($"{hostKit.HostKitType} hostKit = new (");
+					writer
+						.Comment("Create an instance of the generated host kit and configure it.")
+						.Write($"{hostKit.HostKitType} hostKit = new (");
 					if (hostKit.ShouldGenerateOptions)
 						writer.Write("hostKitOptions");
 					writer.WriteLine(");");

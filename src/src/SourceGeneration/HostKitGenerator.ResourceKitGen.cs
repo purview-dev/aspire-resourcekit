@@ -14,15 +14,23 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
+		context.Logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
+
 		foreach (var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace))
 		{
 			var resourceNs = resourceKitGroup.Key is null ? null : writer.Block($"namespace {resourceKitGroup.Key}");
+
+			context.Logger?.Debug($"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}", 1);
 
 			foreach (var resourceKit in resourceKitGroup)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				var suffix = resourceKit.HasExplicitBaseType ? null : $" : {hostKit.HostKitResourceKitBaseType}";
+				context.Logger?.Debug($"Processing resource kit: {resourceKit.ResourceKitType.TypeName}", 2);
+
+				var suffix = resourceKit.HasExplicitBaseType
+					? null
+					: $" : {hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType)}";
 
 				// Generate the resource kit class
 				using (writer.Block($"partial class {resourceKit.ResourceKitType.TypeName}{suffix}"))
@@ -45,10 +53,11 @@ partial class HostKitGenerator
 					{
 						if (hostKit.ShouldGenerateOptions)
 						{
-							using (writer.Block("if (options == null)"))
-								writer.WriteLine("throw new global::System.ArgumentNullException(nameof(options));");
-
-							writer.NewLine().WriteLine("Options = options;");
+							writer
+								.NewLine()
+								.WriteLine(
+									"Options = options ?? throw new global::System.ArgumentNullException(nameof(options));"
+								);
 						}
 					}
 
@@ -58,11 +67,11 @@ partial class HostKitGenerator
 						writer
 							.NewLine()
 							.WriteXmlSummary("Gets the Resource Kit options.")
-							.WriteLine($"public {resourceKit.ResourceKitOptionsType} Options {{ get; }} = options;");
+							.WriteLine($"public {resourceKit.ResourceKitOptionsType} Options {{ get; }}");
 					}
 
 					if (hostKit.ShouldGenerateOptions)
-						GenerateResourceKitOptionsClass(writer.NewLine(), resourceKit, cancellationToken);
+						GenerateResourceKitOptionsClass(writer.NewLine(), resourceKit, context, cancellationToken);
 				}
 			}
 
@@ -73,10 +82,16 @@ partial class HostKitGenerator
 	static void GenerateResourceKitOptionsClass(
 		CodeWriter writer,
 		ResourceKitInfo resourceKit,
+		GenerationContext context,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
+
+		context.Logger?.Debug(
+			$"Generating Resource Kit Options class: {resourceKit.ResourceKitOptionsType.TypeName}",
+			3
+		);
 
 		using (writer.Block($"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"))
 		{

@@ -5,4 +5,5 @@ if (Environment.UserInteractive)
 builder.AddAspireResourceKit();
 
 var app = builder.Build();
+
 await app.RunAsync();

@@ -5,7 +5,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 if (Environment.UserInteractive)
 	Console.Title = $"[{builder.Environment.EnvironmentName}] Example.ManualAppHost v{AssemblyInfo.Version}";
 
-builder.AddResourceKit<ExampleHostKit>();
+builder.AddAspireResourceKit<ExampleHostKit>();
 
 var app = builder.Build();
 

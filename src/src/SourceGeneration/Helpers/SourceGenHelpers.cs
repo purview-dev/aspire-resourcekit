@@ -174,6 +174,8 @@ static class SourceGenHelpers
 				logger?.Debug($"GenericAttribute: '{isGenericResourceDefinition}'", 2);
 				logger?.Debug($"AspireResourceType: '{aspireResourceTypeSymbol?.ToDisplayString() ?? "<null>"}'", 2);
 
+				propertyName ??= CodeGenHelpers.TrimSuffix(symbol.Name);
+
 				if (!isGenericResourceDefinition)
 				{
 					logger?.Debug("Checking for explicit base class for non-generic resource definition", 1);

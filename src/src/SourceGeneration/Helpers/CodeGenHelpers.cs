@@ -88,8 +88,15 @@ static class CodeGenHelpers
 	)
 	{
 		TypeValueObject hostKitType = new(hostKitSymbol.Symbol);
+
+		var hostKitOptionsNamespace =
+			hostKitType.Namespace + (hostKitType.IsGlobalNamespace ? null : '.') + hostKitType.TypeName;
+
 		var hostKitOptionsType = hostKitSymbol.GenerateOptions
-			? new TypeValueObject($"{hostKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}", hostKitType.Namespace)
+			? new TypeValueObject(
+				$"{hostKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}",
+				hostKitOptionsNamespace
+			)
 			: TypeValueObject.Empty;
 		TypeValueObject hostKitResourceKitBaseType = new(
 			$"{hostKitType.TypeName}{TypeHelpers.ResourceKitBaseClassSuffix}",
@@ -100,12 +107,14 @@ static class CodeGenHelpers
 			{
 				TypeValueObject resourceKitType = new(r.Symbol);
 
-				var optionsNamespace =
-					resourceKitType.Namespace + (resourceKitType.IsGlobalNamespace ? null : '.') + r.Name;
+				var resourceKitOptionsNamespace =
+					resourceKitType.Namespace
+					+ (resourceKitType.IsGlobalNamespace ? null : '.')
+					+ resourceKitType.TypeName;
 				var resourceKitOptionsType = hostKitSymbol.GenerateOptions
 					? new TypeValueObject(
 						$"{resourceKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}",
-						optionsNamespace
+						resourceKitOptionsNamespace
 					)
 					: TypeValueObject.Empty;
 
@@ -124,7 +133,7 @@ static class CodeGenHelpers
 					accessibilityModifier,
 					r.PropertyName!,
 					resourceName,
-					!r.IsGenericResourceDefinition
+					TypeHelpers.HasExplicitBaseType(r)
 				);
 			})
 			.ToImmutableArray();

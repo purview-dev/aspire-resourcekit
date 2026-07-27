@@ -12,7 +12,6 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 /// <param name="GenericResourceDefinitionAttribute"></param>
 /// <param name="IServiceCollection"></param>
 /// <param name="ConfigurationBinder">Required for IConfiguration.Get&lt;T&gt; options binding support.</param>
-/// <param name="SystemCANotNull"></param>
 /// <param name="Logger"></param>
 sealed record class GenerationContext(
 	CodeWriter Writer,
@@ -23,8 +22,6 @@ sealed record class GenerationContext(
 	// Required symbols
 	INamedTypeSymbol? IServiceCollection,
 	INamedTypeSymbol? ConfigurationBinder,
-	// Helper symbols
-	INamedTypeSymbol? SystemCANotNull,
 	// Debugging support
 	GenerationLogger? Logger
 )
@@ -49,8 +46,6 @@ sealed record class GenerationContext(
 			// Required symbols
 			IServiceCollection: compilation.GetTypeByMetadataName(TypeHelpers.IServiceCollection.SymbolFullName),
 			ConfigurationBinder: compilation.GetTypeByMetadataName(TypeHelpers.ConfigurationBinder.SymbolFullName),
-			// Helper symbols
-			SystemCANotNull: compilation.GetTypeByMetadataName(TypeHelpers.NotNullAttribute.SymbolFullName),
 			// Debugging support
 			Logger: logging
 		);
@@ -63,7 +58,6 @@ sealed record class GenerationContext(
 		yield return GetState(GenericResourceDefinitionAttribute, nameof(GenericResourceDefinitionAttribute));
 		yield return GetState(IServiceCollection, nameof(IServiceCollection));
 		yield return GetState(ConfigurationBinder, nameof(ConfigurationBinder));
-		yield return GetState(SystemCANotNull, nameof(SystemCANotNull));
 	}
 
 	static string GetState(INamedTypeSymbol? symbol, string propertyName) =>

@@ -14,7 +14,7 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var notNull = context.SystemCANotNull is null ? null : $"{TypeHelpers.NotNullAttribute} ";
+		var notNull = (string?)null; //context.SystemCANotNull is null ? null : $"{TypeHelpers.NotNullAttribute} ";
 
 		context.Logger?.Info($"Generating {hostKitInfo.HostKitType.SymbolFullName}...");
 
@@ -46,7 +46,7 @@ partial class HostKitGenerator
 			// Write the Resource Kit properties
 			if (hostKitInfo.HasResourceKits)
 			{
-				GenerateHostKitResourceKitProperties(writer, hostKitInfo, cancellationToken);
+				GenerateHostKitResourceKitProperties(writer, hostKitInfo, context, cancellationToken);
 			}
 			else
 			{
@@ -88,7 +88,7 @@ partial class HostKitGenerator
 			.NewLine()
 			.Indent()
 			.Write(": ")
-			.WriteLine(TypeHelpers.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, TypeHelpers.IResource))
+			.WriteLine(TypeHelpers.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, "TResource"))
 			.WriteLine($"where TResource : class, {TypeHelpers.IResource}")
 			.Unindent();
 
@@ -118,12 +118,20 @@ partial class HostKitGenerator
 	static void GenerateHostKitResourceKitProperties(
 		CodeWriter writer,
 		HostKitInfo hostKitInfo,
+		GenerationContext context,
 		CancellationToken cancellationToken
 	)
 	{
+		context.Logger?.Debug(
+			$"Processing {hostKitInfo.ResourceKits.Length} resource kits for {hostKitInfo.HostKitType.SymbolFullName}...",
+			1
+		);
+
 		foreach (var resourceKit in hostKitInfo.ResourceKits)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
+
+			context.Logger?.Debug($"Generating properties for resource kit: {resourceKit.ResourceKitType.TypeName}", 2);
 
 			writer
 				.WriteXmlSummary($"Gets the <see cref=\"{resourceKit.ResourceKitType}\" /> resource instance.")
@@ -133,6 +141,9 @@ partial class HostKitGenerator
 				.WriteXml(
 					"<exception cref=\"System.ArgumentNullException\">Thrown if the resource is set to null.</exception>"
 				);
+
+			if (resourceKit.PropertyName is null)
+				throw new Exception("UH OH");
 
 			using (writer.Block($"public {resourceKit.ResourceKitType} {resourceKit.PropertyName}"))
 			{
@@ -211,7 +222,7 @@ partial class HostKitGenerator
 				foreach (var resourceKit in hostKitInfo.ResourceKits)
 				{
 					writer.WriteLine(
-						$"{resourceKit.PropertyName}.IsEnabled = !hostKit.IsResourceDisabled({resourceKit.PropertyName}.Name);"
+						$"{resourceKit.PropertyName}.IsEnabled = !Options.IsResourceDisabled({resourceKit.PropertyName}.Name);"
 					);
 				}
 

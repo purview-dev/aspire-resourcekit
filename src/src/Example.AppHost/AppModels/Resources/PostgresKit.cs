@@ -1,20 +1,21 @@
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
 [ResourceDefinition<AzurePostgresFlexibleServerResource>(Platform.ResourceKits.Postgres)]
-sealed partial class PostgresAppResource
+sealed partial class PostgresKit
 {
 	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; } = default!;
 
 	protected override IResourceBuilder<AzurePostgresFlexibleServerResource> BuildResource(
-		[NotNull] IDistributedApplicationBuilder builder
+		IDistributedApplicationBuilder builder
 	)
 	{
-		var sql = builder.AddAzurePostgresFlexibleServer(Name).RunAsContainer();
-		Database = sql.AddDatabase(Platform.ResourceKits.PostgresDb);
+		var postgres = builder.AddAzurePostgresFlexibleServer(Name);
+		postgres.RunAsContainer(c => c.WithPgWeb(p => p.WithParentRelationship(postgres)));
 
-		return sql;
+		Database = postgres.AddDatabase(Platform.ResourceKits.PostgresDb);
+
+		return postgres;
 	}
 }

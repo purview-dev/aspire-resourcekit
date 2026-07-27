@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
 
 namespace Purview.Aspire.ResourceKit;
@@ -8,7 +7,7 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 /// <typeparam name="THostKit">The host kit type.</typeparam>
 public interface IResourceKit<THostKit>
-	where THostKit : class
+	where THostKit : class, IHostKit
 {
 	/// <summary>
 	/// Gets the host kit instance associated with this resource.
@@ -29,7 +28,7 @@ public interface IResourceKit<THostKit>
 	/// Builds this resource into the distributed application builder.
 	/// </summary>
 	/// <param name="builder">The distributed application builder.</param>
-	void Build([NotNull] IDistributedApplicationBuilder builder);
+	void Build(IDistributedApplicationBuilder builder);
 
 	/// <summary>
 	/// Configures this resource using the resolved host kit instance.
