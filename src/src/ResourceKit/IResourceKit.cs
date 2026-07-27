@@ -4,16 +4,21 @@ using Aspire.Hosting;
 namespace Purview.Aspire.ResourceKit;
 
 /// <summary>
-/// Represents a resource kit component that participates in host application build and configure stages.
+/// Represents a resource kit component that participates in host kit build and configure stages.
 /// </summary>
-/// <typeparam name="THostApp">The host application type.</typeparam>
-public interface IAppResourceKit<in THostApp>
-	where THostApp : class
+/// <typeparam name="THostKit">The host kit type.</typeparam>
+public interface IResourceKit<THostKit>
+	where THostKit : class
 {
+	/// <summary>
+	/// Gets the host kit instance associated with this resource.
+	/// </summary>
+	THostKit HostKit { get; init; }
+
 	/// <summary>
 	/// Gets the logical name of the resource.
 	/// </summary>
-	string Name { get; }
+	string Name { get; init; }
 
 	/// <summary>
 	/// Gets or sets a value indicating whether this resource is enabled.
@@ -27,8 +32,7 @@ public interface IAppResourceKit<in THostApp>
 	void Build([NotNull] IDistributedApplicationBuilder builder);
 
 	/// <summary>
-	/// Configures this resource using the resolved host application instance.
+	/// Configures this resource using the resolved host kit instance.
 	/// </summary>
-	/// <param name="app">The host application instance.</param>
-	void Configure([NotNull] THostApp app);
+	void Configure();
 }

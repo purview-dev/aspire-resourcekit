@@ -7,7 +7,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 ///
 /// </summary>
 /// <param name="Writer"></param>
-/// <param name="HostAppAttribute"></param>
+/// <param name="HostKitAttribute"></param>
 /// <param name="ResourceDefinitionAttribute"></param>
 /// <param name="GenericResourceDefinitionAttribute"></param>
 /// <param name="IServiceCollection"></param>
@@ -17,7 +17,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 sealed record class GenerationContext(
 	CodeWriter Writer,
 	// Purview.Aspire.ResourceKit symbols
-	INamedTypeSymbol? HostAppAttribute,
+	INamedTypeSymbol? HostKitAttribute,
 	INamedTypeSymbol? ResourceDefinitionAttribute,
 	INamedTypeSymbol? GenericResourceDefinitionAttribute,
 	// Required symbols
@@ -39,7 +39,7 @@ sealed record class GenerationContext(
 
 		return new(
 			Writer: new(),
-			HostAppAttribute: compilation.GetTypeByMetadataName(TypeHelpers.HostAppAttribute.SymbolFullName),
+			HostKitAttribute: compilation.GetTypeByMetadataName(TypeHelpers.HostKitAttribute.SymbolFullName),
 			ResourceDefinitionAttribute: compilation.GetTypeByMetadataName(
 				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName
 			),
@@ -58,7 +58,7 @@ sealed record class GenerationContext(
 
 	public IEnumerable<string> GetDebugInfo()
 	{
-		yield return GetState(HostAppAttribute, nameof(HostAppAttribute));
+		yield return GetState(HostKitAttribute, nameof(HostKitAttribute));
 		yield return GetState(ResourceDefinitionAttribute, nameof(ResourceDefinitionAttribute));
 		yield return GetState(GenericResourceDefinitionAttribute, nameof(GenericResourceDefinitionAttribute));
 		yield return GetState(IServiceCollection, nameof(IServiceCollection));

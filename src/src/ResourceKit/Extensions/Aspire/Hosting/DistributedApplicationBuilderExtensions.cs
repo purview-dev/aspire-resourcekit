@@ -17,7 +17,7 @@ public static class DistributedApplicationBuilderExtensions
 		/// <typeparam name="THostApp">The host app type to register.</typeparam>
 		/// <returns>The same distributed application builder for chaining.</returns>
 		public IDistributedApplicationBuilder AddResourceKit<THostApp>()
-			where THostApp : class, IHostApp, new()
+			where THostApp : class, IHostKit, new()
 		{
 			ArgumentNullException.ThrowIfNull(builder);
 

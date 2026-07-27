@@ -2,7 +2,7 @@ using Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels;
 
-sealed class ExampleHostApp : HostAppBase<ExampleHostApp>
+sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 {
 	public AzureStorageAppResource AzureStorage { get; } = new();
 
@@ -16,7 +16,7 @@ sealed class ExampleHostApp : HostAppBase<ExampleHostApp>
 
 	public PostgresAppResource Postgres { get; } = new();
 
-	public ExampleHostApp()
+	public ExampleHostKit()
 	{
 		Resources = [AzureStorage, ExampleAPI, KeyVault, PublishMarker, Redis, Postgres];
 	}

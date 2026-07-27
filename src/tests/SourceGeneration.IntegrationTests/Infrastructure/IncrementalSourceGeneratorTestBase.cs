@@ -55,7 +55,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		if (driverContext.IncludeOptionsReference)
 			namespacesToInclude.Add("Microsoft.Extensions.Options");
 		if (driverContext.IncludeOptionsConfigurationExtensionReference)
-			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace);
+			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace!);
 
 		if (namespacesToInclude.Count > 0)
 		{

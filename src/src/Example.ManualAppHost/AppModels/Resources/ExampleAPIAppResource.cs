@@ -2,24 +2,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
-sealed partial class ExampleAPIAppResource()
-	: ResourceKitBase<ExampleHostApp, ProjectResource>(Platform.ResourceKits.API)
+sealed partial class ExampleAPIAppResource(ExampleHostKit hostKit)
+	: ResourceKitBase<ExampleHostKit, ProjectResource>(hostKit, Platform.ResourceKits.API)
 {
-	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddProject<Projects.Example_Service>(Name);
+	protected override IResourceBuilder<ProjectResource> BuildResource(
+		[NotNull] IDistributedApplicationBuilder builder
+	) => builder.AddProject<Projects.Example_Service>(Name);
 
-	protected override void ConfigureResource([NotNull] ExampleHostApp app)
+	protected override void ConfigureResource()
 	{
-		if (app.PublishMarker.IsEnabled)
-			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", app.PublishMarker.ResourceBuilder);
+		if (HostKit.PublishMarker.IsEnabled)
+			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", HostKit.PublishMarker.ResourceBuilder);
 
-		ResourceBuilder.WithReference(app.Postgres.Database).WaitFor(app.Postgres.Database);
-		ResourceBuilder.WithReference(app.AzureStorage.Blobs).WaitFor(app.AzureStorage.Blobs);
+		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
-		if (app.KeyVault.IsEnabled)
-			ResourceBuilder.WithReference(app.KeyVault.ResourceBuilder).WaitFor(app.KeyVault.ResourceBuilder);
+		if (HostKit.KeyVault.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.KeyVault.ResourceBuilder).WaitFor(HostKit.KeyVault.ResourceBuilder);
 
-		if (app.Redis.IsEnabled)
-			ResourceBuilder.WithReference(app.Redis.ResourceBuilder);
+		if (HostKit.Redis.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.Redis.ResourceBuilder);
 	}
 }

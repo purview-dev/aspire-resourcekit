@@ -26,7 +26,7 @@ sealed partial class MyAppHost { }
 sealed partial class AzureStorageAppResource
 ```
 
-- **`HostAppAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
+- **`HostKitAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
 - **`ResourceDefinitionAttribute`** — marks a resource class. Optional `Name` sets the logical resource name. Optional `PropertyName` overrides the generated host-app property name. `GenerateOptions` controls per-resource options generation.
 
 ### Generated base class

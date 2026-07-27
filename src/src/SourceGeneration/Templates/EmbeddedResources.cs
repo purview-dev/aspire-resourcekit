@@ -21,16 +21,10 @@ static class EmbeddedResources
 			);
 		}
 
-		using StreamReader reader = new(resourceStream, Encoding.UTF8);
-		var template = reader.ReadToEnd();
+		string template;
+		using (StreamReader reader = new(resourceStream, Encoding.UTF8))
+			template = reader.ReadToEnd();
 
-		template = template
-			.Replace(CodeGenHelpers.CodeGenReplacementToken, CodeGenHelpers.GetGeneratedCodeAttribute())
-			.Replace(
-				CodeGenHelpers.NonClassCodeGenReplacementToken,
-				CodeGenHelpers.GetNonClassGeneratedCodeAttribute()
-			);
-
-		return template;
+		return SourceGenHelpers.AddCodeGen(template);
 	}
 }

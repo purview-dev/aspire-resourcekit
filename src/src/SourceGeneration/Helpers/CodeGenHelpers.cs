@@ -1,5 +1,8 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Globalization;
+using Microsoft.CodeAnalysis;
+using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
@@ -78,4 +81,88 @@ static class CodeGenHelpers
 				return result;
 			}
 		);
+
+	public static HostKitInfo BuildHostKit(
+		TargetSymbolDescriptor hostKitSymbol,
+		ImmutableArray<TargetSymbolDescriptor> resourceKitSymbols
+	)
+	{
+		TypeValueObject hostKitType = new(hostKitSymbol.Symbol);
+		var hostKitOptionsType = hostKitSymbol.GenerateOptions
+			? new TypeValueObject($"{hostKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}", hostKitType.Namespace)
+			: TypeValueObject.Empty;
+		TypeValueObject hostKitResourceKitBaseType = new(
+			$"{hostKitType.TypeName}{TypeHelpers.ResourceKitBaseClassSuffix}",
+			hostKitType.Namespace
+		);
+		var resourceKits = resourceKitSymbols
+			.Select(r =>
+			{
+				TypeValueObject resourceKitType = new(r.Symbol);
+
+				var optionsNamespace =
+					resourceKitType.Namespace + (resourceKitType.IsGlobalNamespace ? null : '.') + r.Name;
+				var resourceKitOptionsType = hostKitSymbol.GenerateOptions
+					? new TypeValueObject(
+						$"{resourceKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}",
+						optionsNamespace
+					)
+					: TypeValueObject.Empty;
+
+				TypeValueObject aspireResourceType = new(r.AspireResourceTypeSymbol!);
+				var accessibilityModifier = GetAccessibilityKeyword(r.Symbol.DeclaredAccessibility);
+				var resourceName = r.Name;
+				var propertyName = r.PropertyName;
+				if (string.IsNullOrWhiteSpace(propertyName))
+					propertyName = TrimSuffix(r.Symbol.Name);
+
+				return new ResourceKitInfo(
+					r,
+					resourceKitType,
+					resourceKitOptionsType,
+					aspireResourceType,
+					accessibilityModifier,
+					r.PropertyName!,
+					resourceName,
+					!r.IsGenericResourceDefinition
+				);
+			})
+			.ToImmutableArray();
+
+		var accessibilityModifier = GetAccessibilityKeyword(hostKitSymbol.Symbol.DeclaredAccessibility);
+
+		return new(
+			hostKitSymbol,
+			hostKitType,
+			hostKitOptionsType,
+			hostKitResourceKitBaseType,
+			accessibilityModifier,
+			hostKitSymbol.ExtensionName ?? "AddAspireResourceKit",
+			resourceKits
+		);
+	}
+
+	static string GetAccessibilityKeyword(Accessibility accessibility)
+	{
+		return accessibility switch
+		{
+			Accessibility.Public => "public ",
+			Accessibility.Internal => "internal ",
+			Accessibility.Private => "private ",
+			Accessibility.Protected => "protected ",
+			Accessibility.ProtectedAndInternal => "private protected ",
+			Accessibility.ProtectedOrInternal => "protected internal ",
+			_ => string.Empty,
+		};
+	}
+
+	public static string TrimSuffix(string typeName) =>
+		typeName.EndsWith("AppResource", StringComparison.Ordinal)
+			? typeName.Substring(0, typeName.Length - "AppResource".Length)
+		: typeName.EndsWith("ResourceKit", StringComparison.Ordinal)
+			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
+		: typeName.EndsWith("Resource", StringComparison.Ordinal)
+			? typeName.Substring(0, typeName.Length - "Resource".Length)
+		: typeName.EndsWith("Kit", StringComparison.Ordinal) ? typeName.Substring(0, typeName.Length - "Kit".Length)
+		: typeName;
 }

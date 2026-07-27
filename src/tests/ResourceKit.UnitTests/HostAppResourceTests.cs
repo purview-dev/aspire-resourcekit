@@ -10,7 +10,8 @@ public sealed class HostAppResourceTests
 	public async Task Build_WhenDisabledByServices_DoesNotCallBuild()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var resource = new TestAppResource(enabled: false);
+		var hostApp = new TestHostKit();
+		var resource = new TestResourceKit(hostApp, enabled: false);
 
 		resource.Build(builder);
 
@@ -22,7 +23,8 @@ public sealed class HostAppResourceTests
 	public async Task Build_WhenEnabled_CallsBuildAndSetsResourceBuilder()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var resource = new TestAppResource(enabled: true);
+		var hostApp = new TestHostKit();
+		var resource = new TestResourceKit(hostApp, enabled: true);
 
 		resource.Build(builder);
 
@@ -35,11 +37,11 @@ public sealed class HostAppResourceTests
 	public async Task Configure_WhenDisabled_DoesNotCallConfigure()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostApp();
-		var resource = new TestAppResource(enabled: false);
+		var hostApp = new TestHostKit();
+		var resource = new TestResourceKit(hostApp, enabled: false);
 
 		resource.Build(builder);
-		resource.Configure(hostApp);
+		resource.Configure();
 
 		await Assert.That(resource.ConfigureCalled).IsFalse();
 	}
@@ -48,16 +50,18 @@ public sealed class HostAppResourceTests
 	public async Task IsResourceEnabled_WithServices_DelegatesToBuilderOnlyOverloadByDefault()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var resource = new DelegatingTestAppResource();
+		var hostApp = new TestHostKit();
+		var resource = new DelegatingTestResourceKit(hostApp);
 
 		resource.Build(builder);
 
 		await Assert.That(resource.IsEnabled).IsFalse();
 	}
 
-	sealed class TestHostApp : HostAppBase<TestHostApp>;
+	sealed class TestHostKit : HostKitBase<TestHostKit>;
 
-	sealed class TestAppResource(bool enabled = true) : ResourceKitBase<TestHostApp, ParameterResource>(name: "test")
+	sealed class TestResourceKit(TestHostKit hostKit, bool enabled = true)
+		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")
 	{
 		public bool BuildCalled { get; private set; }
 
@@ -65,24 +69,28 @@ public sealed class HostAppResourceTests
 
 		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => enabled;
 
-		protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder)
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		)
 		{
 			BuildCalled = true;
 			return builder.AddParameter(Name, "value", secret: false);
 		}
 
-		protected override void ConfigureResource(TestHostApp app)
+		protected override void ConfigureResource()
 		{
 			ConfigureCalled = true;
 		}
 	}
 
-	sealed class DelegatingTestAppResource() : ResourceKitBase<TestHostApp, ParameterResource>("test")
+	sealed class DelegatingTestResourceKit(TestHostKit hostKit)
+		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")
 	{
 		// Does NOT override IsResourceEnabled(builder, services) — should delegate to builder-only.
 		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => false;
 
-		protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder) =>
-			builder.AddParameter(Name, "value", secret: false);
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		) => builder.AddParameter(Name, "value", secret: false);
 	}
 }

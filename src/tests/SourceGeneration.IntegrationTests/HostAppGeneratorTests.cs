@@ -2,7 +2,7 @@
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
-public class HostAppGeneratorTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
+public class HostAppGeneratorTests : IncrementalSourceGeneratorTestBase<HostKitGenerator>
 {
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(CancellationToken cancellationToken)
@@ -71,7 +71,7 @@ namespace Testing
 		var (result, _) = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MultipleHostAppsFoundnfo);
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MultipleHostKitsFoundInfo);
 	}
 
 	[Test]

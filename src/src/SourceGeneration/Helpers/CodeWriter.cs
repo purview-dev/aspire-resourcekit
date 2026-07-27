@@ -57,7 +57,18 @@ sealed class CodeWriter
 		return this;
 	}
 
-	public CodeWriter WriteXmlComment(params string[] summary)
+	public CodeWriter WriteXml(params string[] xmlComment)
+	{
+		if (xmlComment == null || xmlComment.Length == 0)
+			throw new ArgumentException("Xml comment cannot be null or empty.", nameof(xmlComment));
+
+		foreach (var line in xmlComment)
+			WriteLine($"/// {line}");
+
+		return this;
+	}
+
+	public CodeWriter WriteXmlSummary(params string[] summary)
 	{
 		if (summary == null || summary.Length == 0)
 			throw new ArgumentException("Summary cannot be null or empty.", nameof(summary));
@@ -67,6 +78,21 @@ sealed class CodeWriter
 			WriteLine($"/// {line}");
 
 		return WriteLine("/// </summary>");
+	}
+
+	public CodeWriter Comment(params string[] comments)
+	{
+		if (comments == null || comments.Length == 0)
+			throw new ArgumentException("Comments cannot be null or empty.", nameof(comments));
+
+		if (comments.Length == 1)
+			return WriteLine($"// {comments[0]}");
+
+		WriteLine("/*");
+		foreach (var line in comments)
+			WriteLine($" * {line}");
+
+		return WriteLine(" */");
 	}
 
 	public CodeWriter WriteIndent()
@@ -81,6 +107,17 @@ sealed class CodeWriter
 		if (string.IsNullOrEmpty(value))
 			return this;
 
+		if (_atLineStart)
+			WriteIndent();
+
+		_builder.Append(value);
+		_atLineStart = false;
+
+		return this;
+	}
+
+	public CodeWriter Write(char value)
+	{
 		if (_atLineStart)
 			WriteIndent();
 

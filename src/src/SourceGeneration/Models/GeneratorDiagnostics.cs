@@ -21,26 +21,26 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor NoAppResourcesDefined = new(
 		id: "SG0002",
-		title: "No host resources defined",
-		messageFormat: "No host resources were defined for '{0}'",
+		title: "No Host Kit resources defined",
+		messageFormat: "No Host Kit resources were defined for '{0}'",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor NoHostAppInfoDefined = new(
+	public static readonly DiagnosticDescriptor NoHostKitInfoDefined = new(
 		id: "SG0003",
-		title: "No host app info defined",
-		messageFormat: "No host app info was defined",
+		title: "No Host Kit info defined",
+		messageFormat: "No Host Kit info was defined",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor MultipleHostAppsFoundnfo = new(
+	public static readonly DiagnosticDescriptor MultipleHostKitsFoundInfo = new(
 		id: "SG0004",
-		title: "Multiple host apps defined",
-		messageFormat: "Multiple host apps were defined in the app, only a single one is permitted",
+		title: "Multiple Host Kits defined",
+		messageFormat: "Multiple Host Kits were defined in the app, only a single one is permitted",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
@@ -140,6 +140,15 @@ static class GeneratorDiagnostics
 		id: "SG0015",
 		title: "Generic ResourceDefinition cannot have explicit base",
 		messageFormat: "'{0}' uses ResourceDefinition<TResource> and must not declare an explicit base type",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor NoAspireResourceFound = new(
+		id: "SG0016",
+		title: "No Aspire resource found",
+		messageFormat: "No Aspire resource, use the ResourceDefinition<TResource> or implement IResourceKit<TResource, or inherit from ResourceKitBase<THostKit, TResource>",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

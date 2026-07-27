@@ -5,10 +5,10 @@ using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
-/// Verifies the post-initialization attribute sources emitted by <see cref="HostAppGenerator"/>
+/// Verifies the post-initialization attribute sources emitted by <see cref="HostKitGenerator"/>
 /// and that a compilation containing only those attributes can be emitted and reflected over.
 /// </summary>
-public class GeneratedAttributesTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
+public class GeneratedAttributesTests : IncrementalSourceGeneratorTestBase<HostKitGenerator>
 {
 	const string EmptySource =
 		@"
@@ -22,17 +22,17 @@ namespace Testing
 		result.GeneratedTrees.FirstOrDefault(t => t.FilePath.EndsWith(filePathSuffix, StringComparison.Ordinal));
 
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesHostAppAttributeSource(CancellationToken cancellationToken)
+	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(CancellationToken cancellationToken)
 	{
 		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "HostAppAttribute.g.cs");
+		var tree = GetGeneratedTree(result, "HostKitAttribute.g.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
 		var text = syntaxTree.ToString();
 
-		await Assert.That(text).Contains("class HostAppAttribute");
+		await Assert.That(text).Contains("class HostKitAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("AttributeTargets.Class");
 		await Assert.That(text).Contains("AllowMultiple = false");
@@ -98,7 +98,7 @@ namespace Testing
 	{
 		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
 
-		var hostAppTree = GetGeneratedTree(result, "HostAppAttribute.g.cs");
+		var hostAppTree = GetGeneratedTree(result, "HostKitAttribute.g.cs");
 		var appResourceTree = GetGeneratedTree(result, "ResourceDefinitionAttribute.g.cs");
 
 		hostAppTree = await Assert.That(hostAppTree).IsNotNull();
@@ -118,16 +118,16 @@ namespace Testing
 	{
 		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
 
-		await Assert.That(assembly.GetType(TypeHelpers.HostAppAttribute.SymbolFullName)).IsNotNull();
+		await Assert.That(assembly.GetType(TypeHelpers.HostKitAttribute.SymbolFullName)).IsNotNull();
 		await Assert.That(assembly.GetType(TypeHelpers.ResourceDefinitionAttribute.SymbolFullName)).IsNotNull();
 		await Assert.That(assembly.GetType(TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName)).IsNotNull();
 	}
 
 	[Test]
-	public async Task Compile_GivenEmptySource_HostAppAttributeHasExpectedMembers(CancellationToken cancellationToken)
+	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
 		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
-		var type = assembly.GetType(TypeHelpers.HostAppAttribute.SymbolFullName)!;
+		var type = assembly.GetType(TypeHelpers.HostKitAttribute.SymbolFullName)!;
 
 		var nameProp = type.GetProperty("Name");
 		await Assert.That(nameProp).IsNotNull();
@@ -148,8 +148,12 @@ namespace Testing
 
 		var genericType = assembly.GetType(TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName)!;
 		await Assert.That(genericType.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(genericType.GetProperty("GenerateOptions")!.PropertyType.FullName).IsEqualTo(typeof(bool).FullName);
+		await Assert
+			.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName)
+			.IsEqualTo(typeof(string).FullName);
+		await Assert
+			.That(genericType.GetProperty("GenerateOptions")!.PropertyType.FullName)
+			.IsEqualTo(typeof(bool).FullName);
 	}
 
 	[Test]
@@ -160,7 +164,7 @@ namespace Testing
 		foreach (
 			var fullName in new[]
 			{
-				TypeHelpers.HostAppAttribute.SymbolFullName,
+				TypeHelpers.HostKitAttribute.SymbolFullName,
 				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName,
 				TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName,
 			}

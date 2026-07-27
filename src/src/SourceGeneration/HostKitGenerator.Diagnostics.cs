@@ -5,7 +5,7 @@ using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
-partial class HostAppGenerator
+partial class HostKitGenerator
 {
 	static void ReportDiagnostics(
 		SourceProductionContext context,

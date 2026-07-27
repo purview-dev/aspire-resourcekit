@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit;
 /// <summary>
 /// Defines the host application lifecycle for building and configuring Aspire resources.
 /// </summary>
-public interface IHostApp
+public interface IHostKit
 {
 	/// <summary>
 	/// Builds the host application's resources into the distributed application builder.

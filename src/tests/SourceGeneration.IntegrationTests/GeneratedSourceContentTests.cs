@@ -2,9 +2,9 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
 /// Asserts the structure and content of the host app source emitted by
-/// <see cref="HostAppGenerator"/> for a range of host app / app resource configurations.
+/// <see cref="HostKitGenerator"/> for a range of host app / app resource configurations.
 /// </summary>
-public class GeneratedSourceContentTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
+public class GeneratedSourceContentTests : IncrementalSourceGeneratorTestBase<HostKitGenerator>
 {
 	[Test]
 	public async Task Generate_GivenHostAppWithSingleResource_GeneratesExpectedHostAppSource(
@@ -37,7 +37,9 @@ namespace Testing
 		await Assert.That(generated).Contains("abstract partial class TestingHostAppResourceOptionsBase");
 		await Assert
 			.That(generated)
-			.Contains("sealed partial class RedisAppResourceOptions : global::Testing.TestingHostAppResourceOptionsBase");
+			.Contains(
+				"sealed partial class RedisAppResourceOptions : global::Testing.TestingHostAppResourceOptionsBase"
+			);
 		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
 		await Assert.That(generated).Contains("public RedisAppResourceOptions() => Name = \"redis\";");
 		await Assert

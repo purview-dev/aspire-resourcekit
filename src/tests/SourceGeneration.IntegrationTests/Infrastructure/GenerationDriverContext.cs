@@ -19,7 +19,7 @@ public sealed record GenerationDriverContext(
 	/// <summary>
 	/// Disables the source generator via the
 	/// <c>DisableAspireResourceKitSourceGenerator</c> analyzer-config option, matching the
-	/// opt-out behavior supported by <see cref="HostAppGenerator" />.
+	/// opt-out behavior supported by <see cref="HostKitGenerator" />.
 	/// </summary>
 	public static readonly GenerationDriverContext Disabled = new(DisableSourceGenerator: true);
 

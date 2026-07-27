@@ -1,4 +1,4 @@
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels;
 
-[HostApp]
+[HostKit]
 sealed partial class ExampleHostApp;
