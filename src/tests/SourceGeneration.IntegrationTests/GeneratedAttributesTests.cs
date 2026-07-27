@@ -57,7 +57,6 @@ namespace Testing
 		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("string? PropertyName");
-		await Assert.That(text).Contains("bool GenerateOptions");
 	}
 
 	[Test]
@@ -144,16 +143,12 @@ namespace Testing
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(type.GetProperty("GenerateOptions")!.PropertyType.FullName).IsEqualTo(typeof(bool).FullName);
 
 		var genericType = assembly.GetType(TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName)!;
 		await Assert.That(genericType.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert
 			.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName)
 			.IsEqualTo(typeof(string).FullName);
-		await Assert
-			.That(genericType.GetProperty("GenerateOptions")!.PropertyType.FullName)
-			.IsEqualTo(typeof(bool).FullName);
 	}
 
 	[Test]

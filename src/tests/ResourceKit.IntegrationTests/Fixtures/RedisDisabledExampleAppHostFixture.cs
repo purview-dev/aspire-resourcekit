@@ -1,17 +1,15 @@
 using Projects;
 using Purview.Aspire.ResourceKit.Example;
+using Purview.Aspire.ResourceKit.Example.AppHost.AppModels;
 using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit.Fixtures;
 
 public sealed class RedisDisabledExampleAppHostFixture : AspireFixture<Example_AppHost>
 {
-  const string HostAppSectionName = "ExampleHostApp";
-  const string DisabledResourcesSectionName = "DisabledResources";
-
-  protected override string[] Args =>
-  [
-    .. base.Args,
-    $"--{HostAppSectionName}:{DisabledResourcesSectionName}:0={Platform.ResourceKits.Redis}",
-  ];
+	protected override string[] Args =>
+		[
+			.. base.Args,
+			$"--{ExampleHostKit.ExampleHostKitOptions.SectionName}:{nameof(ExampleHostKit.ExampleHostKitOptions.DisabledResources)}:0={Platform.ResourceKits.Redis}",
+		];
 }

@@ -67,6 +67,13 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 
 		var syntaxTree = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken);
 		var references = BuildBclReferences();
+		// Always include the Aspire assembly.
+		references = references.Add(
+			MetadataReference.CreateFromFile(
+				typeof(global::Aspire.Hosting.ApplicationModel.IResource).Assembly.Location
+			)
+		);
+
 		if (driverContext.IncludeIServiceCollectionReference)
 		{
 			references = references.Add(
