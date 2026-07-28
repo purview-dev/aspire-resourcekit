@@ -17,7 +17,9 @@ readonly record struct TypeValueObject
 			throw new ArgumentNullException(nameof(typeSymbol));
 
 		TypeName = typeSymbol.Name;
-		Namespace = typeSymbol.ContainingNamespace?.ToDisplayString();
+		Namespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+			? null
+			: typeSymbol.ContainingNamespace.ToDisplayString();
 	}
 
 	public TypeValueObject(SpecialType specialType)
@@ -45,14 +47,11 @@ readonly record struct TypeValueObject
 		get
 		{
 			var result = IsGlobalNamespace ? TypeName : $"global::{Namespace}.{RenderTypeName}";
-			return TypeHelpers.IsAttribute(TypeName) ? $"[{result}]" : result;
+			return TypeHelpers.IsAttribute(TypeName) ? $"[{TypeHelpers.GetTypeName(result)}]" : result;
 		}
 	}
 
-	public string RenderTypeName =>
-		TypeHelpers.IsAttribute(TypeName)
-			? TypeName.Substring(0, TypeName.Length - TypeHelpers.AttributeSuffix.Length)
-			: TypeName;
+	public string RenderTypeName => TypeHelpers.IsAttribute(TypeName) ? TypeHelpers.GetTypeName(TypeName) : TypeName;
 
 	public bool IsGlobalNamespace => Namespace is null;
 

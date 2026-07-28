@@ -20,6 +20,8 @@ static class CodeGenHelpers
 	const string EmbeddedConstant = "Microsoft.CodeAnalysis.EmbeddedAttribute";
 	const string ExcludeFromCodeCoverageConstant = "System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
 
+	public const string DefaultExtensionMethodName = "AddAspireResourceKit";
+
 	static readonly Lazy<string> GeneratedCodeAttribute = new(() =>
 		string.Format(
 			CultureInfo.InvariantCulture,
@@ -98,10 +100,6 @@ static class CodeGenHelpers
 				hostKitOptionsNamespace
 			)
 			: TypeValueObject.Empty;
-		TypeValueObject hostKitResourceKitBaseType = new(
-			$"{hostKitType.TypeName}{TypeHelpers.ResourceKitBaseClassSuffix}",
-			hostKitType.Namespace
-		);
 		var resourceKits = resourceKitSymbols
 			.Select(r =>
 			{
@@ -144,9 +142,9 @@ static class CodeGenHelpers
 			hostKitSymbol,
 			hostKitType,
 			hostKitOptionsType,
-			hostKitResourceKitBaseType,
+			TypeHelpers.ResourceKitBase,
 			accessibilityModifier,
-			hostKitSymbol.ExtensionName ?? "AddAspireResourceKit",
+			hostKitSymbol.ExtensionName ?? DefaultExtensionMethodName,
 			resourceKits
 		);
 	}
@@ -166,8 +164,8 @@ static class CodeGenHelpers
 	}
 
 	public static string TrimSuffix(string typeName) =>
-		typeName.EndsWith("AppResource", StringComparison.Ordinal)
-			? typeName.Substring(0, typeName.Length - "AppResource".Length)
+		typeName.EndsWith("ResourceKit", StringComparison.Ordinal)
+			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("ResourceKit", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("Resource", StringComparison.Ordinal)

@@ -65,9 +65,9 @@ partial class HostKitGenerator
 			}
 		}
 
-		GenerateHostKitResourceKitBase(writer, hostKitInfo, cancellationToken);
-
 		hostKitNamespace?.Dispose();
+
+		GenerateHostKitResourceKitBase(writer, hostKitInfo, cancellationToken);
 	}
 
 	static void GenerateHostKitResourceKitBase(
@@ -78,39 +78,42 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		writer
-			.NewLine()
-			.WriteXmlSummary("Represents a typed base class for all generated Resource Kits for the Host Kit.")
-			.Write(hostKitInfo.AccessibilityModifier)
-			.Write("abstract partial class ")
-			.Write(hostKitInfo.HostKitResourceKitBaseType.TypeName)
-			.Write("<TResource>")
-			.NewLine()
-			.Indent()
-			.Write(": ")
-			.WriteLine(TypeHelpers.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, "TResource"))
-			.WriteLine($"where TResource : class, {TypeHelpers.IResource}")
-			.Unindent();
-
-		using (writer.Block())
+		writer.NewLine();
+		using (writer.Block($"namespace {hostKitInfo.HostKitResourceKitBaseType.Namespace}"))
 		{
-			// Write the constructor
 			writer
-				.WriteXmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
-				.Write("protected ")
+				.WriteXmlSummary("Represents a typed base class for all generated Resource Kits for the Host Kit.")
+				.Write(hostKitInfo.AccessibilityModifier)
+				.Write("abstract partial class ")
 				.Write(hostKitInfo.HostKitResourceKitBaseType.TypeName)
-				.Write('(')
-				.Write(hostKitInfo.HostKitType)
-				.Write(" hostKit, ")
-				.Write("string? name)")
+				.Write("<TResource>")
 				.NewLine()
 				.Indent()
-				.WriteLine(": base(hostKit, name)")
+				.Write(": ")
+				.WriteLine(TypeHelpers.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, "TResource"))
+				.WriteLine($"where TResource : class, {TypeHelpers.IResource}")
 				.Unindent();
 
 			using (writer.Block())
 			{
-				// Empty constructor body
+				// Write the constructor
+				writer
+					.WriteXmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
+					.Write("protected ")
+					.Write(hostKitInfo.HostKitResourceKitBaseType.TypeName)
+					.Write('(')
+					.Write(hostKitInfo.HostKitType)
+					.Write(" hostKit, ")
+					.Write("string? name)")
+					.NewLine()
+					.Indent()
+					.WriteLine(": base(hostKit, name)")
+					.Unindent();
+
+				using (writer.Block())
+				{
+					// Empty constructor body
+				}
 			}
 		}
 	}

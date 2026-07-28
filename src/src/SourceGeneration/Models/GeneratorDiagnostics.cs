@@ -19,7 +19,7 @@ static class GeneratorDiagnostics
 			+ "so that the generator can emit additional members into the same class."
 	);
 
-	public static readonly DiagnosticDescriptor NoAppResourcesDefined = new(
+	public static readonly DiagnosticDescriptor NoResourceKitsDefined = new(
 		id: "SG0002",
 		title: "No Host Kit resources defined",
 		messageFormat: "No Host Kit resources were defined for '{0}'",
@@ -57,8 +57,8 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor ResourceMustDeriveFromBase = new(
 		id: "SG0006",
-		title: "App resource must derive from generated base",
-		messageFormat: "'{0}' must derive from '{1}' to be a valid app resource",
+		title: $"Resource Kit must derive from {TypeHelpers.ResourceKitBase.TypeName}<TResource> or {TypeHelpers.ResourceKitBase.TypeName}<THostKit, TResource>",
+		messageFormat: "'{0}' must derive from a valid Resource Kit Base",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
@@ -148,7 +148,7 @@ static class GeneratorDiagnostics
 	public static readonly DiagnosticDescriptor NoAspireResourceFound = new(
 		id: "SG0016",
 		title: "No Aspire resource found",
-		messageFormat: "No Aspire resource, use the ResourceDefinition<TResource> or implement IResourceKit<TResource, or inherit from ResourceKitBase<THostKit, TResource>",
+		messageFormat: "No Aspire resource, use the ResourceDefinition<TResource> or implement IResourceKit<TResource>, or inherit from ResourceKitBase<THostKit, TResource> or the generated ResourceKitBase<TResource>",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

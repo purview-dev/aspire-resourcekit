@@ -4,7 +4,7 @@ using Aspire.Hosting.ApplicationModel;
 
 namespace Purview.Aspire.ResourceKit;
 
-public sealed class HostAppResourceTests
+public sealed class HostResourceKitTests
 {
 	[Test]
 	public async Task Build_WhenDisabledByServices_DoesNotCallBuild()

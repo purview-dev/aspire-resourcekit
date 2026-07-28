@@ -29,7 +29,7 @@ static class SourceGenHelpers
 			TypeHelpers.ResourceDefinitionAttribute,
 			logger
 		);
-		var genericAppResourceValueProvider = GetGenerationValueProviders(
+		var genericResourceKitValueProvider = GetGenerationValueProviders(
 			context,
 			TypeHelpers.GenericResourceDefinitionAttribute,
 			logger
@@ -38,12 +38,12 @@ static class SourceGenHelpers
 		return isDisabledValueProvider
 			.Combine(generationContextValueProvider)
 			.Combine(hostAppValueProvider.Collect())
-			.Combine(appResourceValueProvider.Collect().Combine(genericAppResourceValueProvider.Collect()))
+			.Combine(appResourceValueProvider.Collect().Combine(genericResourceKitValueProvider.Collect()))
 			.Select(
 				static (nested, _) =>
 				{
-					var (((isDisabled, generationContext), hostApps), (appResources, genericAppResources)) = nested;
-					var resourceKits = appResources.AddRange(genericAppResources);
+					var (((isDisabled, generationContext), hostApps), (appResources, genericResourceKits)) = nested;
+					var resourceKits = appResources.AddRange(genericResourceKits);
 
 					generationContext.Logger?.Debug("Combined all value providers:");
 					generationContext.Logger?.Debug($"Disabled: {isDisabled}", 1);
@@ -178,22 +178,34 @@ static class SourceGenHelpers
 
 				if (!isGenericResourceDefinition)
 				{
-					logger?.Debug("Checking for explicit base class for non-generic resource definition", 1);
+					logger?.Debug("Checking for explicit base class for attribute-based Aspire resource type", 1);
 					if (symbol.BaseType is not null && symbol.BaseType.TypeParameters.Length > 0)
 					{
-						foreach (var param in symbol.BaseType.TypeParameters)
+						logger?.Debug(
+							$"Found explicit base class '{symbol.BaseType.Name}' (Type Argument Count: {symbol.BaseType.TypeArguments.Length}), checking for base-class defined Aspire resource type",
+							2
+						);
+						foreach (var param in symbol.BaseType.TypeArguments)
 						{
+							logger?.Debug(
+								$"Checking type parameter '{param.ToDisplayString()}' for implemented interfaces",
+								3
+							);
 							foreach (var @interface in param.AllInterfaces)
 							{
 								TypeValueObject t = new(@interface);
 								if (t == TypeHelpers.IResource)
 								{
-									logger?.Debug($"Found Aspire Resource '{param.Name}' implements IResource", 2);
-									aspireResourceTypeSymbol = @interface;
+									logger?.Debug($"Found Aspire Resource '{param.Name}' implements IResource", 3);
+									aspireResourceTypeSymbol = (INamedTypeSymbol)param;
 									break;
 								}
 							}
 						}
+					}
+					else
+					{
+						logger?.Debug("No explicit base class found for non-generic resource definition", 2);
 					}
 				}
 			}

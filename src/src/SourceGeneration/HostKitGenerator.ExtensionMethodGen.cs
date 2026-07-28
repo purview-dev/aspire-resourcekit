@@ -69,7 +69,7 @@ partial class HostKitGenerator
 
 						writer
 							.WriteLine(
-								$"var hostKitOptions = builder.Configuration.Get<{hostKit.HostKitOptionsType}>() ?? new();"
+								$"var hostKitOptions = builder.Configuration.GetSection({hostKit.HostKitOptionsType}.SectionName).Get<{hostKit.HostKitOptionsType}>() ?? new();"
 							)
 							.NewLine();
 					}

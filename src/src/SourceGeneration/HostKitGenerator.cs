@@ -62,7 +62,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 				// Resolve the host app symbol (if any).
 				var hostKitSymbol = model.HostKit.IsSuccess ? model.HostKit.Value!.Symbol : null;
 
-				// Resolve the app resource descriptors. All [AppResource] classes
+				// Resolve the app resource descriptors. All [ResourceKit] classes
 				// attach to the single [HostApp]; the generated base class is not
 				// visible during source generation, so interface-based filtering
 				// is not possible.
@@ -116,8 +116,6 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 				if (hostKitSymbol is not null && resourceKitDescriptors.Count > 0)
 				{
 					var descriptor = model.HostKit.Value!;
-					var baseClassName =
-						$"{descriptor.Name ?? descriptor.Symbol.Name}{TypeHelpers.ResourceKitBaseClassSuffix}";
 					HashSet<string> seenPropertyNames = [with(StringComparer.Ordinal)];
 
 					foreach (var resourceKitDescriptor in resourceKitDescriptors)
@@ -144,7 +142,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 									GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
 									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
 									resourceKitSymbol.Name,
-									baseClassName
+									TypeHelpers.ResourceKitBase.SymbolFullName
 								)
 							);
 							continue;
@@ -195,7 +193,10 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 						// If no explicit base was declared, a generated partial will provide the host-specific base.
 						if (
 							hasExplicitBaseType
-							&& !TypeHelpers.IsDerivedFromExpectedBase(resourceKitDescriptor, baseClassName)
+							&& !TypeHelpers.IsDerivedFromExpectedBase(
+								resourceKitDescriptor,
+								TypeHelpers.ResourceKitBase
+							)
 						)
 						{
 							diagnostics.Add(
@@ -203,7 +204,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 									GeneratorDiagnostics.ResourceMustDeriveFromBase,
 									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
 									resourceKitSymbol.Name,
-									baseClassName
+									TypeHelpers.ResourceKitBase.SymbolFullName
 								)
 							);
 							continue;
@@ -215,8 +216,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 								DiagnosticInfo.Create(
 									GeneratorDiagnostics.NoAspireResourceFound,
 									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name,
-									baseClassName
+									resourceKitSymbol.Name
 								)
 							);
 							continue;
@@ -231,7 +231,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 					if (!model.HostKit.IsEmpty)
 					{
 						diagnostics.Add(
-							GeneratorDiagnostics.Create(GeneratorDiagnostics.NoAppResourcesDefined, hostKitSymbol)
+							GeneratorDiagnostics.Create(GeneratorDiagnostics.NoResourceKitsDefined, hostKitSymbol)
 						);
 					}
 				}

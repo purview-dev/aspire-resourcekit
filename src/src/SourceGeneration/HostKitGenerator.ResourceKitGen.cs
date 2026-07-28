@@ -32,6 +32,8 @@ partial class HostKitGenerator
 					? null
 					: $" : {hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType)}";
 
+				writer.NewLine();
+
 				// Generate the resource kit class
 				using (writer.Block($"partial class {resourceKit.ResourceKitType.TypeName}{suffix}"))
 				{

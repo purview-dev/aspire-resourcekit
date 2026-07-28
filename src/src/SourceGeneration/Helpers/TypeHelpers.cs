@@ -52,19 +52,38 @@ static class TypeHelpers
 
 	public static bool IsKeywordType(string keyword) => KeywordToSpecialType.ContainsKey(keyword);
 
-	public static bool IsAttribute(string typeName) =>
-		typeName.Length > AttributeSuffix.Length && typeName.EndsWith(AttributeSuffix, StringComparison.Ordinal);
+	public static bool IsAttribute(string typeName)
+	{
+		var idx = typeName.IndexOf('`');
+		if (idx >= 0)
+			typeName = typeName.Substring(0, idx);
+
+		return typeName.Length > AttributeSuffix.Length && typeName.EndsWith(AttributeSuffix, StringComparison.Ordinal);
+	}
+
+	public static string GetTypeName(string typeName)
+	{
+		var idx = typeName.IndexOf('`');
+		if (idx >= 0)
+			typeName = typeName.Substring(0, idx);
+
+		if (IsAttribute(typeName))
+			typeName = typeName.Substring(0, typeName.Length - AttributeSuffix.Length);
+
+		return typeName;
+	}
 
 	public static bool HasExplicitBaseType(TargetSymbolDescriptor descriptor) =>
 		descriptor.Declaration.BaseList is { Types.Count: > 0 };
 
-	public static bool IsDerivedFromExpectedBase(TargetSymbolDescriptor descriptor, string expectedBaseName)
+	public static bool IsDerivedFromExpectedBase(TargetSymbolDescriptor descriptor, TypeValueObject expectedBase)
 	{
-		if (
-			descriptor.Symbol.BaseType is not null
-			&& string.Equals(descriptor.Symbol.BaseType.Name, expectedBaseName, StringComparison.Ordinal)
-		)
-			return true;
+		if (descriptor.Symbol.BaseType is not null)
+		{
+			TypeValueObject baseType = new(descriptor.Symbol.BaseType);
+			if (baseType == expectedBase)
+				return true;
+		}
 
 		var declaredBaseTypes = descriptor.Declaration.BaseList?.Types;
 		if (declaredBaseTypes is null)
@@ -72,7 +91,13 @@ static class TypeHelpers
 
 		foreach (var baseType in declaredBaseTypes)
 		{
-			if (string.Equals(GetUnqualifiedTypeName(baseType.Type), expectedBaseName, StringComparison.Ordinal))
+			if (
+				string.Equals(
+					GetUnqualifiedTypeName(baseType.Type),
+					expectedBase.SymbolFullName,
+					StringComparison.Ordinal
+				)
+			)
 				return true;
 		}
 
@@ -109,8 +134,6 @@ static class TypeHelpers
 
 	// Generated type information...
 	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";
-
-	public const string ResourceKitBaseClassSuffix = "ResourceKitBase";
 
 	public const string OptionsBaseClassSuffix = "Options";
 

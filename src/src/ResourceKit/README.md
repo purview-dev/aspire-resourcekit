@@ -23,7 +23,7 @@ The package supports an AppModel style for composing Aspire AppHost resources:
 sealed partial class MyAppHost { }
 
 [ResourceDefinition<AzureStorageResource>("azure-storage", PropertyName = "Storage")]
-sealed partial class AzureStorageAppResource
+sealed partial class AzureStorageResourceKit
 ```
 
 - **`HostKitAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
