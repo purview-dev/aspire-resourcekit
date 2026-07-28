@@ -1,18 +1,73 @@
-﻿namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
+﻿using Microsoft.CodeAnalysis;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-readonly record struct TypeValueObject(string TypeName, string Namespace)
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
+
+readonly record struct TypeValueObject
 {
-	const string AttributeSuffix = nameof(Attribute);
+	public TypeValueObject(string typeName, string? @namespace)
+	{
+		TypeName = typeName ?? throw new ArgumentNullException(nameof(typeName));
+		Namespace = @namespace;
+	}
 
-	public string SymbolFullName => Namespace + '.' + TypeName;
+	public TypeValueObject(ITypeSymbol typeSymbol)
+	{
+		if (typeSymbol == null)
+			throw new ArgumentNullException(nameof(typeSymbol));
 
-	public string RenderFullName => "global::" + Namespace + "." + RenderTypeName;
+		TypeName = typeSymbol.Name;
+		Namespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+			? null
+			: typeSymbol.ContainingNamespace.ToDisplayString();
+	}
 
-	public string RenderTypeName =>
-		IsAttribute(TypeName) ? TypeName.Substring(0, TypeName.Length - AttributeSuffix.Length) : TypeName;
+	public TypeValueObject(SpecialType specialType)
+		: this(specialType.ToString(), null)
+	{
+		if (!TypeHelpers.TryGetKeyword(specialType, out var keyword))
+		{
+			throw new ArgumentException(
+				$"The provided special type '{specialType}' is not a recognized C# keyword type.",
+				nameof(specialType)
+			);
+		}
+
+		TypeName = keyword!;
+	}
+
+	public string TypeName { get; init; }
+
+	public string? Namespace { get; init; }
+
+	public string SymbolFullName => IsGlobalNamespace ? TypeName : $"{Namespace}.{TypeName}";
+
+	public string RenderFullName
+	{
+		get
+		{
+			var result = IsGlobalNamespace ? TypeName : $"global::{Namespace}.{RenderTypeName}";
+			return TypeHelpers.IsAttribute(TypeName) ? $"[{TypeHelpers.GetTypeName(result)}]" : result;
+		}
+	}
+
+	public string RenderTypeName => TypeHelpers.IsAttribute(TypeName) ? TypeHelpers.GetTypeName(TypeName) : TypeName;
+
+	public bool IsGlobalNamespace => Namespace is null;
 
 	public override string ToString() => RenderFullName;
 
-	static bool IsAttribute(string typeName) =>
-		typeName.Length > AttributeSuffix.Length && typeName.EndsWith(AttributeSuffix, StringComparison.Ordinal);
+	public static implicit operator string(TypeValueObject typeValueObject) => typeValueObject.RenderFullName;
+
+	public TypeValueObject MakeGeneric(params string[] typeArguments)
+	{
+		if (typeArguments.Length == 0)
+			throw new ArgumentException("At least one type argument must be provided.", nameof(typeArguments));
+
+		string typeArgs = string.Join(", ", typeArguments.Select(arg => arg));
+		string fullTypeName = $"{TypeName}<{typeArgs}>";
+		return new(fullTypeName, Namespace);
+	}
+
+	public static readonly TypeValueObject Empty;
 }

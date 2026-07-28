@@ -39,7 +39,7 @@ sealed partial class ApiResource
 }
 
 var builder = DistributedApplication.CreateBuilder(args);
-builder.AddExampleHostAppResourceKit();
+builder.AddExampleHostResourceKitKit();
 ```
 
 ## Generated artifacts

@@ -23,7 +23,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 
 	public const string GeneratedSourceFileSuffix = ".g.cs";
 
-	protected async Task<(GeneratorDriverRunResult Result, Compilation OutputCompilation)> GenerateAsync(
+	protected async Task<DriverRunResult> GenerateAsync(
 		string source,
 		GenerationDriverContext driverContext,
 		CancellationToken cancellationToken
@@ -55,7 +55,12 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		if (driverContext.IncludeOptionsReference)
 			namespacesToInclude.Add("Microsoft.Extensions.Options");
 		if (driverContext.IncludeOptionsConfigurationExtensionReference)
-			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace);
+			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace!);
+
+		namespacesToInclude.AddRange(
+			typeof(global::Aspire.Hosting.ApplicationModel.IResource).Namespace!,
+			typeof(global::Aspire.Hosting.IDistributedApplicationBuilder).Namespace!
+		);
 
 		if (namespacesToInclude.Count > 0)
 		{
@@ -65,8 +70,37 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 				+ source;
 		}
 
+		source +=
+			"\n\n"
+			+ @$"
+
+// Global namespace for ease of use.
+public sealed class {TestHelper.DefaultAspireResource} : global::Aspire.Hosting.ApplicationModel.IResource
+{{
+	public {TestHelper.DefaultAspireResource}()
+	{{
+		Annotations = new();
+	}}
+
+	public string Name => ""TestResource"";
+
+	public global::Aspire.Hosting.ApplicationModel.ResourceAnnotationCollection Annotations {{ get; private set; }}
+}}
+";
+
 		var syntaxTree = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken);
 		var references = BuildBclReferences();
+		// Always include the Aspire and ResourceKit assembly.
+		references = references.AddRange(
+			MetadataReference.CreateFromFile(
+				typeof(global::Aspire.Hosting.ApplicationModel.IResource).Assembly.Location
+			),
+			MetadataReference.CreateFromFile(
+				typeof(global::Aspire.Hosting.IDistributedApplicationBuilder).Assembly.Location
+			),
+			MetadataReference.CreateFromFile(typeof(IResourceKit<>).Assembly.Location)
+		);
+
 		if (driverContext.IncludeIServiceCollectionReference)
 		{
 			references = references.Add(
@@ -154,20 +188,25 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 			await Assert.That(generationExceptions).IsEmpty();
 		}
 
-		return (result, outputCompilation);
+		Assembly? assembly = null;
+		if (driverContext.CompileToAssembly)
+			assembly = await CompileToAssemblyAsync(result, outputCompilation, cancellationToken);
+
+		return new(result, outputCompilation, assembly, result.GeneratedTrees, ExcludeGeneratedAttributes(result));
 	}
 
 	static ImmutableArray<MetadataReference> BuildBclReferences() =>
 		[.. TrustedAssemblies.Select(p => MetadataReference.CreateFromFile(p))];
 
-	protected async Task<(GeneratorDriverRunResult Result, Compilation OutputCompilation)> GenerateAsync(
-		string source,
-		CancellationToken cancellationToken
-	) => await GenerateAsync(source, GenerationDriverContext.Default, cancellationToken);
+	protected async Task<DriverRunResult> GenerateAsync(string source, CancellationToken cancellationToken) =>
+		await GenerateAsync(source, GenerationDriverContext.Default, cancellationToken);
 
-	protected async Task<Assembly> CompileToAssemblyAsync(string source, CancellationToken cancellationToken)
+	protected async Task<Assembly> CompileToAssemblyAsync(
+		GeneratorDriverRunResult runResult,
+		Compilation compilation,
+		CancellationToken cancellationToken
+	)
 	{
-		var (_, compilation) = await GenerateAsync(source, cancellationToken);
 		await using MemoryStream assemblyStream = new();
 		var emitResult = compilation.Emit(assemblyStream, cancellationToken: cancellationToken);
 		if (!emitResult.Success)
@@ -177,14 +216,23 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 				emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.ToString())
 			);
 
-			throw new InvalidOperationException(diagnostics);
+			ExcludeGeneratedAttributes(runResult)
+				.ToList()
+				.ForEach(tree =>
+				{
+					diagnostics += Environment.NewLine + $"Generated source ({tree.FilePath}):" + Environment.NewLine;
+					diagnostics += tree.GetText().ToString();
+				});
+
+			await Assert.That(emitResult.Success).IsTrue().Because(diagnostics);
 		}
 
 		assemblyStream.Position = 0;
-		return System.Reflection.Assembly.Load(assemblyStream.ToArray());
+		var assembly = System.Reflection.Assembly.Load(assemblyStream.ToArray());
+		return assembly;
 	}
 
-	protected static IEnumerable<SyntaxTree> ExcludeGeneratedAttributes(GeneratorDriverRunResult result)
+	static IEnumerable<SyntaxTree> ExcludeGeneratedAttributes(GeneratorDriverRunResult result)
 	{
 		return result.GeneratedTrees.Where(tree =>
 			!TypeHelpers.GeneratedTypes.Any(attr =>
@@ -192,16 +240,6 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 				|| tree.FilePath.EndsWith(TypeHelpers.EmbeddedAttribute.TypeName + ".cs", StringComparison.Ordinal)
 			)
 		);
-	}
-
-	/// <summary>
-	/// Helper to get the generated source text for the generated content, excluding attributes.
-	/// </summary>
-	public string GetGeneratedSource(GeneratorDriverRunResult result)
-	{
-		var genTree = ExcludeGeneratedAttributes(result).FirstOrDefault();
-
-		return genTree?.GetText().ToString() ?? string.Empty;
 	}
 
 	public Diagnostic[] GetGeneratorDiagnostics(GeneratorDriverRunResult result) =>

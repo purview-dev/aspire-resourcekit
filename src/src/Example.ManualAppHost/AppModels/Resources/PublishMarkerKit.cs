@@ -1,11 +1,9 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
-sealed partial class PublishMarkerAppResource()
-	: ResourceKitBase<ExampleHostApp, ParameterResource>(Platform.ResourceKits.PublishMarker)
+sealed partial class PublishMarkerKit(ExampleHostKit hostKit)
+	: ResourceKitBase<ExampleHostKit, ParameterResource>(hostKit, Platform.ResourceKits.PublishMarker)
 {
-	protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) =>
+	protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 
 	protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder) =>

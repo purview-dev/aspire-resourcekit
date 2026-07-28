@@ -23,48 +23,40 @@ static class SourceGenHelpers
 	{
 		var isDisabledValueProvider = IsSourceGeneratorDisabledValueProvider(context, logger);
 		var generationContextValueProvider = GetGeneratorValueProvider(context, logger);
-		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.HostAppAttribute, logger);
+		var hostAppValueProvider = GetGenerationValueProviders(context, TypeHelpers.HostKitAttribute, logger);
 		var appResourceValueProvider = GetGenerationValueProviders(
 			context,
 			TypeHelpers.ResourceDefinitionAttribute,
 			logger
 		);
-		var genericAppResourceValueProvider = GetGenerationValueProviders(
+		var genericResourceKitValueProvider = GetGenerationValueProviders(
 			context,
 			TypeHelpers.GenericResourceDefinitionAttribute,
-			logger
-		);
-		var appResourceAliasValueProvider = GetGenerationValueProviders(
-			context,
-			new TypeValueObject("AppResourceAttribute", TypeHelpers.ResourceKitNamespace),
 			logger
 		);
 
 		return isDisabledValueProvider
 			.Combine(generationContextValueProvider)
 			.Combine(hostAppValueProvider.Collect())
-			.Combine(
-				appResourceValueProvider
-					.Collect()
-					.Combine(genericAppResourceValueProvider.Collect().Combine(appResourceAliasValueProvider.Collect()))
-			)
+			.Combine(appResourceValueProvider.Collect().Combine(genericResourceKitValueProvider.Collect()))
 			.Select(
 				static (nested, _) =>
 				{
-					var (((isDisabled, generationContext), hostApps), (appResources, (genericAppResources, appResourceAliases))) = nested;
-					var allAppResources = appResources.AddRange(genericAppResources).AddRange(appResourceAliases);
+					var (((isDisabled, generationContext), hostApps), (appResources, genericResourceKits)) = nested;
+					var resourceKits = appResources.AddRange(genericResourceKits);
 
 					generationContext.Logger?.Debug("Combined all value providers:");
 					generationContext.Logger?.Debug($"Disabled: {isDisabled}", 1);
-					generationContext.Logger?.Debug($"Host Apps: {hostApps.Length}", 1);
-					generationContext.Logger?.Debug($"App Resources: {allAppResources.Length}", 1);
+					generationContext.Logger?.Debug($"Host Kits: {hostApps.Length}", 1);
+					generationContext.Logger?.Debug($"Resource Kits: {resourceKits.Length}", 1);
 					generationContext.Logger?.Debug("Generation Context:", 1);
+
 					foreach (var info in generationContext.GetDebugInfo())
 						generationContext.Logger?.Debug(info, 2);
 
 					List<DiagnosticInfo> diagnostics = [];
 					if (hostApps.Length > 1)
-						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.MultipleHostAppsFoundnfo));
+						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.MultipleHostKitsFoundInfo));
 					if (generationContext.IServiceCollection is null)
 						diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.ServiceCollectionMissing));
 
@@ -74,8 +66,8 @@ static class SourceGenHelpers
 					return new GenerationModel(
 						IsSourceGeneratorEnabled: !isDisabled,
 						GenerationContext: generationContext,
-						HostApp: hostApps.FirstOrDefault(),
-						AppResources: allAppResources,
+						HostKit: hostApps.FirstOrDefault(),
+						ResourceKits: resourceKits,
 						Diagnostics: [.. diagnostics]
 					);
 				}
@@ -144,57 +136,90 @@ static class SourceGenHelpers
 				);
 			}
 
-			var isHostApp = attributeType == TypeHelpers.HostAppAttribute;
+			var isHostKit = attributeType == TypeHelpers.HostKitAttribute;
 
 			logger?.Debug($"Processing Attribute: {attributeType.SymbolFullName}");
-			if (isHostApp)
-				logger?.Debug($"for Host App {symbol.Name}", 1);
+			if (isHostKit)
+				logger?.Debug($"For HostKit {symbol.Name}, values:", 1);
 			else
-				logger?.Debug($"for App Resource {symbol.Name}", 1);
+				logger?.Debug($"For ResourceKit {symbol.Name}, values:", 1);
 
 			string? name;
-			string? propertyName;
-			bool generateOptions;
-			bool isGenericResourceDefinition;
-			string? genericResourceTypeName;
+			string? propertyName = null;
+			string? extensionMethodName = null;
+			var generateOptions = true;
+			var isGenericResourceDefinition = false;
+			INamedTypeSymbol? aspireResourceTypeSymbol = null;
 
-			if (isHostApp)
+			if (isHostKit)
 			{
-				var data = HostAppAttributeData.FromAttributeData(generationContext, context.Attributes);
+				var data = HostKitAttributeData.FromAttributeData(generationContext, context.Attributes);
 				name = data.Name;
-				propertyName = null;
 				generateOptions = data.GenerateOptions;
-				isGenericResourceDefinition = false;
-				genericResourceTypeName = null;
 
-				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
-				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
+				logger?.Debug($"Name: '{name ?? "<null>"}'", 2);
+				logger?.Debug($"ExtensionMethodName: '{data.ExtensionMethodName ?? "<null>"}'", 2);
+				logger?.Debug($"GenerateOptions: '{generateOptions}'", 2);
 			}
 			else
 			{
 				var data = ResourceDefinitionAttributeData.FromAttributeData(generationContext, context.Attributes);
 				name = data.Name;
 				propertyName = data.PropertyName;
-				generateOptions = data.GenerateOptions;
 				isGenericResourceDefinition = data.IsGeneric;
-				genericResourceTypeName = data.GenericResourceTypeName;
+				aspireResourceTypeSymbol = data.AspireResourceType;
 
-				logger?.Debug($"found Name: '{name ?? "<null>"}'", 1);
-				logger?.Debug($"found PropertyName: '{propertyName ?? "<null>"}'", 1);
-				logger?.Debug($"found GenerateOptions: '{generateOptions}'", 1);
-				logger?.Debug($"found GenericAttribute: '{isGenericResourceDefinition}'", 1);
-				logger?.Debug($"found GenericResourceTypeName: '{genericResourceTypeName ?? "<null>"}'", 1);
+				logger?.Debug($"Name: '{name ?? "<null>"}'", 2);
+				logger?.Debug($"PropertyName: '{propertyName ?? "<null>"}'", 2);
+				logger?.Debug($"GenericAttribute: '{isGenericResourceDefinition}'", 2);
+				logger?.Debug($"AspireResourceType: '{aspireResourceTypeSymbol?.ToDisplayString() ?? "<null>"}'", 2);
+
+				propertyName ??= CodeGenHelpers.TrimSuffix(symbol.Name);
+
+				if (!isGenericResourceDefinition)
+				{
+					logger?.Debug("Checking for explicit base class for attribute-based Aspire resource type", 1);
+					if (symbol.BaseType is not null && symbol.BaseType.TypeParameters.Length > 0)
+					{
+						logger?.Debug(
+							$"Found explicit base class '{symbol.BaseType.Name}' (Type Argument Count: {symbol.BaseType.TypeArguments.Length}), checking for base-class defined Aspire resource type",
+							2
+						);
+						foreach (var param in symbol.BaseType.TypeArguments)
+						{
+							logger?.Debug(
+								$"Checking type parameter '{param.ToDisplayString()}' for implemented interfaces",
+								3
+							);
+							foreach (var @interface in param.AllInterfaces)
+							{
+								TypeValueObject t = new(@interface);
+								if (t == TypeHelpers.IResource)
+								{
+									logger?.Debug($"Found Aspire Resource '{param.Name}' implements IResource", 3);
+									aspireResourceTypeSymbol = (INamedTypeSymbol)param;
+									break;
+								}
+							}
+						}
+					}
+					else
+					{
+						logger?.Debug("No explicit base class found for non-generic resource definition", 2);
+					}
+				}
 			}
 
 			TargetSymbolDescriptor result = new(
 				symbol,
 				declaration,
-				isHostApp,
+				isHostKit,
 				name,
 				propertyName,
+				extensionMethodName,
 				generateOptions,
 				isGenericResourceDefinition,
-				genericResourceTypeName
+				aspireResourceTypeSymbol
 			);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
@@ -272,5 +297,15 @@ static class SourceGenHelpers
 			.WithTrackingName("IsSourceGeneratorDisabled");
 
 		return isDisabledValueProvider;
+	}
+
+	public static string AddCodeGen(string source)
+	{
+		return source
+			.Replace(CodeGenHelpers.CodeGenReplacementToken, CodeGenHelpers.GetGeneratedCodeAttribute())
+			.Replace(
+				CodeGenHelpers.NonClassCodeGenReplacementToken,
+				CodeGenHelpers.GetNonClassGeneratedCodeAttribute()
+			);
 	}
 }

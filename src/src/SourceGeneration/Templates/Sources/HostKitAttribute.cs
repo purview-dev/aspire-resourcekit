@@ -9,31 +9,31 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class HostAppAttribute : global::System.Attribute
+public sealed class HostKitAttribute : global::System.Attribute
 {
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// Initializes a new instance of the <see cref="HostKitAttribute"/> class.
 	/// </summary>
-	public HostAppAttribute()
+	public HostKitAttribute()
 	{
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// Initializes a new instance of the <see cref="HostKitAttribute"/> class.
 	/// </summary>
 	/// <param name="name">Optional logical host app name used for generated type naming.</param>
 	/// <param name="generateOptions">Whether host app options types should be generated.</param>
-	public HostAppAttribute(string name, bool generateOptions = true)
+	public HostKitAttribute(string name, bool generateOptions = true)
 	{
 		Name = name;
 		GenerateOptions = generateOptions;
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HostAppAttribute"/> class.
+	/// Initializes a new instance of the <see cref="HostKitAttribute"/> class.
 	/// </summary>
 	/// <param name="generateOptions">Whether host app options types should be generated.</param>
-	public HostAppAttribute(bool generateOptions)
+	public HostKitAttribute(bool generateOptions)
 	{
 		GenerateOptions = generateOptions;
 	}
@@ -42,6 +42,11 @@ public sealed class HostAppAttribute : global::System.Attribute
 	/// Gets or sets an optional logical host app name used in generated type names.
 	/// </summary>
 	public string? Name { get; set; }
+
+	/// <summary>
+	/// Gets or sets an optional logical host app extension method name used in generated type names.
+	/// </summary>
+	public string? ExtensionMethodName { get; set; }
 
 	/// <summary>
 	/// Gets or sets a value indicating whether host app options types should be generated.

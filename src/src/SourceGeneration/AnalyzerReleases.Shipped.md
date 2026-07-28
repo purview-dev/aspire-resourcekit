@@ -19,3 +19,4 @@
  SG0013  | Purview.Aspire.ResourceKit.SourceGenerator | Error    | Mixed ResourceDefinition attribute usage is not supported 
  SG0014  | Purview.Aspire.ResourceKit.SourceGenerator | Error    | Non-generic ResourceDefinition requires explicit base     
  SG0015  | Purview.Aspire.ResourceKit.SourceGenerator | Error    | Generic ResourceDefinition cannot have explicit base      
+ SG0016  | Purview.Aspire.ResourceKit.SourceGenerator | Error    | No Aspire resource found                                    

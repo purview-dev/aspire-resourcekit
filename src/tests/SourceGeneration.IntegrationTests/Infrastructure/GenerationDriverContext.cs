@@ -7,11 +7,18 @@ public sealed record GenerationDriverContext(
 	bool IncludeOptionsReference = true,
 	bool IncludeOptionsConfigurationExtensionReference = true,
 	bool ThrowOnGenerationException = true,
-	bool? DisableSourceGenerator = null
+	bool? DisableSourceGenerator = null,
+	bool CompileToAssembly = true
 )
 {
+	/// <summary>
+	/// The default <see cref="GenerationDriverContext" /> with all options enabled.
+	/// </summary>
 	public static readonly GenerationDriverContext Default = new();
 
+	/// <summary>
+	/// Disables the <see cref="ThrowOnGenerationException" /> behavior, allowing the source generator to throw exceptions during generation without failing the test.
+	/// </summary>
 	public static readonly GenerationDriverContext DoNotThrowOnGenerationException = new(
 		ThrowOnGenerationException: false
 	);
@@ -19,7 +26,7 @@ public sealed record GenerationDriverContext(
 	/// <summary>
 	/// Disables the source generator via the
 	/// <c>DisableAspireResourceKitSourceGenerator</c> analyzer-config option, matching the
-	/// opt-out behavior supported by <see cref="HostAppGenerator" />.
+	/// opt-out behavior supported by <see cref="HostKitGenerator" />.
 	/// </summary>
 	public static readonly GenerationDriverContext Disabled = new(DisableSourceGenerator: true);
 
@@ -46,5 +53,15 @@ public sealed record GenerationDriverContext(
 	/// </summary>
 	public static readonly GenerationDriverContext WithoutOptionsConfigurationExtension = new(
 		IncludeOptionsConfigurationExtensionReference: false
+	);
+
+	/// <summary>
+	/// Omits the compilation step so the generated code is not compiled into an assembly, allowing inspection of the generated source code without requiring a valid compilation.
+	/// </summary>
+	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(CompileToAssembly: false);
+
+	public static readonly GenerationDriverContext NoCompileOrThrowOnException = new(
+		ThrowOnGenerationException: false,
+		CompileToAssembly: false
 	);
 }

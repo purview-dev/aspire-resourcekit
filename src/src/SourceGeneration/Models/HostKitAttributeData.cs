@@ -3,16 +3,21 @@ using Microsoft.CodeAnalysis;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-readonly record struct HostAppAttributeData(bool Exists, string? Name, bool GenerateOptions)
+readonly record struct HostKitAttributeData(
+	bool Exists,
+	string? Name,
+	string? ExtensionMethodName,
+	bool GenerateOptions
+)
 {
-	public static readonly HostAppAttributeData Empty = new(false, null, true);
+	public static readonly HostKitAttributeData Empty = new(false, null, null, true);
 
-	public static HostAppAttributeData FromAttributeData(
+	public static HostKitAttributeData FromAttributeData(
 		GenerationContext executionContext,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.HostAppAttribute is not null)
+		if (executionContext.HostKitAttribute is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
@@ -25,30 +30,33 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 		return Empty;
 	}
 
-	public static HostAppAttributeData FromAttributeData(
+	public static HostKitAttributeData FromAttributeData(
 		GenerationContext executionContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.HostAppAttribute;
+		var attributeSymbol = executionContext.HostKitAttribute;
 		var exists =
 			attributeSymbol is not null
 			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
 		var name = (string?)null;
+		var extensionMethodName = (string?)null;
 		var generateOptions = true;
 
 		if (exists)
-			(name, generateOptions) = ReadAttributeArguments(attributeData!, name, generateOptions);
+			(name, extensionMethodName, generateOptions) = ReadAttributeArguments(attributeData!);
 
-		return new(exists, name, generateOptions);
+		return new(exists, name, extensionMethodName, generateOptions);
 	}
 
-	static (string? Name, bool GenerateOptions) ReadAttributeArguments(
-		AttributeData attributeData,
-		string? name,
-		bool generateOptions
+	static (string? Name, string? ExtensionMethodName, bool GenerateOptions) ReadAttributeArguments(
+		AttributeData attributeData
 	)
 	{
+		string? name = null;
+		string? extensionMethodName = null;
+		bool generateOptions = true;
+
 		foreach (var ctorArg in attributeData.ConstructorArguments)
 		{
 			if (ctorArg.Value is string ctorName)
@@ -66,6 +74,11 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 						name = namedName;
 
 					break;
+				case nameof(ExtensionMethodName):
+					if (namedArg.Value.Value is string namedExtensionMethodName)
+						extensionMethodName = namedExtensionMethodName;
+
+					break;
 				case nameof(GenerateOptions):
 					if (namedArg.Value.Value is bool namedGenerateOptions)
 						generateOptions = namedGenerateOptions;
@@ -74,6 +87,6 @@ readonly record struct HostAppAttributeData(bool Exists, string? Name, bool Gene
 			}
 		}
 
-		return (name, generateOptions);
+		return (name, extensionMethodName, generateOptions);
 	}
 }

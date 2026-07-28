@@ -1,8 +1,9 @@
-﻿using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+﻿using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
-public class HostAppGeneratorTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
+public class HostKitGeneratorTests : IncrementalSourceGeneratorTestBase<HostKitGenerator>
 {
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(CancellationToken cancellationToken)
@@ -17,36 +18,36 @@ namespace Testing
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(result.GeneratedTrees).Count().IsEqualTo(ExpectedGeneratedFileCount);
+		await Assert.That(result.SyntaxTrees.Count()).IsEqualTo(ExpectedGeneratedFileCount);
 	}
 
 	[Test]
-	public async Task Generate_GivenBasicHostApp_GeneratesExpectedHostApp(CancellationToken cancellationToken)
+	public async Task Generate_GivenBasicHostKit_GeneratesExpectedHostKit(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
 			@"
 namespace Testing
 {
-	[HostApp]
-	partial class TestingHostApp
+	[HostKit]
+	partial class TestingHostKit
 	{
 	}
 }
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert — attribute files + 1 generated host app
-		await Assert.That(result.GeneratedTrees).Count().IsEqualTo(ExpectedFileCountPlusGen);
+		await Assert.That(result.SyntaxTrees.Count()).IsEqualTo(ExpectedFileCountPlusGen);
 	}
 
 	[Test]
-	public async Task Generate_GivenMultipleHostApps_GeneratesMultipleHostAppDiagnostic(
+	public async Task Generate_GivenMultipleHostKits_GeneratesMultipleHostKitDiagnostic(
 		CancellationToken cancellationToken
 	)
 	{
@@ -55,27 +56,27 @@ namespace Testing
 			@"
 namespace Testing
 {
-	[HostApp]
-	partial class TestingHostApp1
+	[HostKit]
+	partial class TestingHostKit1
 	{
 	}
 
-	[HostApp]
-	partial class TestingHostApp2
+	[HostKit]
+	partial class TestingHostKit2
 	{
 	}
 }
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MultipleHostAppsFoundnfo);
+		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MultipleHostKitsFoundInfo);
 	}
 
 	[Test]
-	public async Task Generate_GivenHostAppClassIsNotPartial_GeneratesClassMustBePartialDiagnostic(
+	public async Task Generate_GivenHostKitClassIsNotPartial_GeneratesClassMustBePartialDiagnostic(
 		CancellationToken cancellationToken
 	)
 	{
@@ -84,14 +85,14 @@ namespace Testing
 			@"
 namespace Testing;
 
-[HostApp]
-class TestingHostApp
+[HostKit]
+class TestingHostKit
 {
 }
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
 			GenerationDriverContext.DoNotThrowOnGenerationException,
 			cancellationToken
@@ -102,7 +103,7 @@ class TestingHostApp
 	}
 
 	[Test]
-	public async Task Generate_GivenHostAppWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
+	public async Task Generate_GivenHostKitWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
 		CancellationToken cancellationToken
 	)
 	{
@@ -111,17 +112,17 @@ class TestingHostApp
 			@"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp
+[HostKit]
+partial class TestingHostKit
 {
-	public TestingHostApp(string value)
+	public TestingHostKit(string value)
 	{
 	}
 }
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
 			GenerationDriverContext.DoNotThrowOnGenerationException,
 			cancellationToken
@@ -132,7 +133,7 @@ partial class TestingHostApp
 	}
 
 	[Test]
-	public async Task Generate_GivenAppResourceWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
+	public async Task Generate_GivenResourceKitWithNonEmptyConstructor_GeneratesNonEmptyConstructorsDiagnostic(
 		CancellationToken cancellationToken
 	)
 	{
@@ -141,13 +142,13 @@ partial class TestingHostApp
 			@"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp;
+[HostKit]
+partial class TestingHostKit;
 
 [ResourceDefinition]
-partial class RedisAppResource : TestingHostAppResourceBase<object>
+partial class RedisResourceKit : ResourceKitBase<TestResource>
 {
-	public RedisAppResource()
+	public RedisResourceKit()
 	{
 		var value = 42;
 	}
@@ -155,9 +156,9 @@ partial class RedisAppResource : TestingHostAppResourceBase<object>
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
-			GenerationDriverContext.DoNotThrowOnGenerationException,
+			new(ThrowOnGenerationException: false, CompileToAssembly: false),
 			cancellationToken
 		);
 
@@ -171,25 +172,24 @@ partial class RedisAppResource : TestingHostAppResourceBase<object>
 	)
 	{
 		// Arrange
-		const string source =
-			@"
+		var source =
+			@$"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp;
+[HostKit]
+partial class TestingHostKit;
 
 [ResourceDefinition]
-partial class RedisAppResource : global::Purview.Aspire.ResourceKit.ResourceKitBase<TestingHostApp, global::Aspire.Hosting.ApplicationModel.Resource>
-{
-	protected override global::Aspire.Hosting.ApplicationModel.IResourceBuilder<global::Aspire.Hosting.ApplicationModel.Resource> BuildResource(global::Aspire.Hosting.IDistributedApplicationBuilder builder)
-		=> throw new global::System.NotImplementedException();
-}
+partial class RedisResourceKit : {TypeHelpers.ResourceKitBase.TypeName}_INVALID<TestingHostKit, {TestHelper.DefaultAspireResource}>
+{{
+	{TestHelper.GenerateBuildResource()}
+}}
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
-			GenerationDriverContext.DoNotThrowOnGenerationException,
+			new GenerationDriverContext(ThrowOnGenerationException: false, CompileToAssembly: false),
 			cancellationToken
 		);
 
@@ -207,15 +207,15 @@ partial class RedisAppResource : global::Purview.Aspire.ResourceKit.ResourceKitB
 			@"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp;
+[HostKit]
+partial class TestingHostKit;
 
 [ResourceDefinition]
-partial class RedisAppResource;
+partial class RedisResourceKit;
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
 			GenerationDriverContext.DoNotThrowOnGenerationException,
 			cancellationToken
@@ -235,17 +235,17 @@ partial class RedisAppResource;
 			@"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp;
+[HostKit]
+partial class TestingHostKit;
 
-[ResourceDefinition<global::Aspire.Hosting.ApplicationModel.Resource>]
-partial class RedisAppResource : TestingHostAppResourceBase<global::Aspire.Hosting.ApplicationModel.Resource>;
+[ResourceDefinition<TestResource>]
+partial class RedisResourceKit : ResourceKitBase<TestResource>;
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
-			GenerationDriverContext.DoNotThrowOnGenerationException,
+			new GenerationDriverContext(ThrowOnGenerationException: false, CompileToAssembly: false),
 			cancellationToken
 		);
 
@@ -263,16 +263,16 @@ partial class RedisAppResource : TestingHostAppResourceBase<global::Aspire.Hosti
 			@"
 namespace Testing;
 
-[HostApp]
-partial class TestingHostApp;
+[HostKit]
+partial class TestingHostKit;
 
 [ResourceDefinition]
 [ResourceDefinition<global::Aspire.Hosting.ApplicationModel.Resource>]
-partial class RedisAppResource;
+partial class RedisResourceKit;
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(
+		var result = await GenerateAsync(
 			source,
 			GenerationDriverContext.DoNotThrowOnGenerationException,
 			cancellationToken

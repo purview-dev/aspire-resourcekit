@@ -1,14 +1,13 @@
 using System.Reflection;
-using Microsoft.CodeAnalysis;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
-/// Verifies the post-initialization attribute sources emitted by <see cref="HostAppGenerator"/>
+/// Verifies the post-initialization attribute sources emitted by <see cref="HostKitGenerator"/>
 /// and that a compilation containing only those attributes can be emitted and reflected over.
 /// </summary>
-public class GeneratedAttributesTests : IncrementalSourceGeneratorTestBase<HostAppGenerator>
+public class GeneratedAttributesTests : IncrementalSourceGeneratorTestBase<HostKitGenerator>
 {
 	const string EmptySource =
 		@"
@@ -18,21 +17,18 @@ namespace Testing
 }
 ";
 
-	static SyntaxTree? GetGeneratedTree(GeneratorDriverRunResult result, string filePathSuffix) =>
-		result.GeneratedTrees.FirstOrDefault(t => t.FilePath.EndsWith(filePathSuffix, StringComparison.Ordinal));
-
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesHostAppAttributeSource(CancellationToken cancellationToken)
+	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(CancellationToken cancellationToken)
 	{
-		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "HostAppAttribute.g.cs");
+		var tree = result.GetGeneratedTree("HostKitAttribute.g.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
 		var text = syntaxTree.ToString();
 
-		await Assert.That(text).Contains("class HostAppAttribute");
+		await Assert.That(text).Contains("class HostKitAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("AttributeTargets.Class");
 		await Assert.That(text).Contains("AllowMultiple = false");
@@ -44,9 +40,9 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "ResourceDefinitionAttribute.g.cs");
+		var tree = result.GetGeneratedTree("ResourceDefinitionAttribute.g.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
@@ -57,15 +53,14 @@ namespace Testing
 		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("string? PropertyName");
-		await Assert.That(text).Contains("bool GenerateOptions");
 	}
 
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesEmbeddedAttributeSource(CancellationToken cancellationToken)
 	{
-		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "EmbeddedAttribute.cs");
+		var tree = result.GetGeneratedTree("EmbeddedAttribute.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
@@ -80,9 +75,9 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = GetGeneratedTree(result, "EmbeddedAttribute.cs");
+		var tree = result.GetGeneratedTree("EmbeddedAttribute.cs");
 		tree = await Assert.That(tree).IsNotNull();
 
 		var syntaxTree = await tree.GetTextAsync(cancellationToken);
@@ -96,10 +91,10 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var (result, _) = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var hostAppTree = GetGeneratedTree(result, "HostAppAttribute.g.cs");
-		var appResourceTree = GetGeneratedTree(result, "ResourceDefinitionAttribute.g.cs");
+		var hostAppTree = result.GetGeneratedTree("HostKitAttribute.g.cs");
+		var appResourceTree = result.GetGeneratedTree("ResourceDefinitionAttribute.g.cs");
 
 		hostAppTree = await Assert.That(hostAppTree).IsNotNull();
 		appResourceTree = await Assert.That(appResourceTree).IsNotNull();
@@ -116,18 +111,20 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var assembly = await Assert.That(result.Assembly).IsNotNull();
 
-		await Assert.That(assembly.GetType(TypeHelpers.HostAppAttribute.SymbolFullName)).IsNotNull();
+		await Assert.That(assembly.GetType(TypeHelpers.HostKitAttribute.SymbolFullName)).IsNotNull();
 		await Assert.That(assembly.GetType(TypeHelpers.ResourceDefinitionAttribute.SymbolFullName)).IsNotNull();
 		await Assert.That(assembly.GetType(TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName)).IsNotNull();
 	}
 
 	[Test]
-	public async Task Compile_GivenEmptySource_HostAppAttributeHasExpectedMembers(CancellationToken cancellationToken)
+	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
-		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
-		var type = assembly.GetType(TypeHelpers.HostAppAttribute.SymbolFullName)!;
+		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var assembly = await Assert.That(result.Assembly).IsNotNull();
+		var type = assembly.GetType(TypeHelpers.HostKitAttribute.SymbolFullName)!;
 
 		var nameProp = type.GetProperty("Name");
 		await Assert.That(nameProp).IsNotNull();
@@ -139,28 +136,30 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var assembly = await Assert.That(result.Assembly).IsNotNull();
 		var type = assembly.GetType(TypeHelpers.ResourceDefinitionAttribute.SymbolFullName)!;
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(type.GetProperty("GenerateOptions")!.PropertyType.FullName).IsEqualTo(typeof(bool).FullName);
 
 		var genericType = assembly.GetType(TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName)!;
 		await Assert.That(genericType.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
-		await Assert.That(genericType.GetProperty("GenerateOptions")!.PropertyType.FullName).IsEqualTo(typeof(bool).FullName);
+		await Assert
+			.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName)
+			.IsEqualTo(typeof(string).FullName);
 	}
 
 	[Test]
 	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
-		var assembly = await CompileToAssemblyAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var assembly = await Assert.That(result.Assembly).IsNotNull();
 
 		foreach (
 			var fullName in new[]
 			{
-				TypeHelpers.HostAppAttribute.SymbolFullName,
+				TypeHelpers.HostKitAttribute.SymbolFullName,
 				TypeHelpers.ResourceDefinitionAttribute.SymbolFullName,
 				TypeHelpers.GenericResourceDefinitionAttribute.SymbolFullName,
 			}

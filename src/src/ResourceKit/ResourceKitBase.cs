@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 
@@ -8,28 +7,34 @@ namespace Purview.Aspire.ResourceKit;
 /// <summary>
 /// Provides a base implementation for a host-app resource with build and configure lifecycle hooks.
 /// </summary>
-/// <typeparam name="THostApp">The host application type.</typeparam>
-/// <typeparam name="TResource">The Aspire resource type this kit builds.</typeparam>
-public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THostApp>
-	where THostApp : class, IHostApp
+/// <typeparam name="THostKit">The host application type.</typeparam>
+/// <typeparam name="TResource">The Aspire <see cref="IResource"/> type this kit builds.</typeparam>
+public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostKit>, IResourceBuilder<TResource>
+	where THostKit : class, IHostKit
 	where TResource : class, IResource
 {
 	/// <summary>
-	/// Initializes a new instance of the <see cref="ResourceKitBase{THostApp, TResource}"/> class.
+	/// Initializes a new instance of the <see cref="ResourceKitBase{THostKit, TResource}"/> class.
 	/// </summary>
+	/// <param name="hostKit">The Host Kit application instance.</param>
 	/// <param name="name">
 	/// Optional logical resource name. When not provided, the runtime type name is used.
 	/// </param>
-	protected ResourceKitBase(string? name = null)
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="hostKit"/> is <see langword="null"/>.</exception>
+	protected ResourceKitBase(THostKit hostKit, string? name = null)
 	{
+		HostKit = hostKit ?? throw new ArgumentNullException(nameof(hostKit));
 		Name = string.IsNullOrWhiteSpace(name) ? GetType().Name : name;
 	}
+
+	/// <inheritdoc />
+	public THostKit HostKit { get; init; }
 
 	/// <inheritdoc/>
 	public string Name
 	{
 		get;
-		set
+		init
 		{
 			ArgumentException.ThrowIfNullOrWhiteSpace(value);
 			field = value;
@@ -67,7 +72,7 @@ public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THo
 	/// <remarks>
 	/// The default implementation returns <see cref="IsEnabled"/>.
 	/// </remarks>
-	protected virtual bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => IsEnabled;
+	protected virtual bool IsResourceEnabled(IDistributedApplicationBuilder builder) => IsEnabled;
 
 	/// <summary>
 	/// Builds and returns the resource builder for this resource.
@@ -79,11 +84,10 @@ public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THo
 	/// <summary>
 	/// Configures cross-resource behavior after all resources have been built.
 	/// </summary>
-	/// <param name="app">The host application instance.</param>
-	protected virtual void ConfigureResource(THostApp app) { }
+	protected virtual void ConfigureResource() { }
 
 	/// <inheritdoc/>
-	public void Build([NotNull] IDistributedApplicationBuilder builder)
+	public void Build(IDistributedApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
 		ArgumentException.ThrowIfNullOrWhiteSpace(Name, nameof(Name));
@@ -96,14 +100,12 @@ public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THo
 	}
 
 	/// <inheritdoc/>
-	public void Configure([NotNull] THostApp app)
+	public void Configure()
 	{
-		ArgumentNullException.ThrowIfNull(app);
-
 		if (!IsEnabled)
 			return;
 
-		ConfigureResource(app);
+		ConfigureResource();
 	}
 
 	[DebuggerHidden]
@@ -112,5 +114,21 @@ public abstract class ResourceKitBase<THostApp, TResource> : IAppResourceKit<THo
 	{
 		if (!IsEnabled)
 			throw new InvalidOperationException($"The '{Name}' resource is not enabled and cannot be accessed.");
+	}
+
+	/// <inheritdoc />
+	public IDistributedApplicationBuilder ApplicationBuilder => ResourceBuilder.ApplicationBuilder;
+
+	/// <inheritdoc />
+	public TResource Resource => ResourceBuilder.Resource;
+
+	/// <inheritdoc />
+	public IResourceBuilder<TResource> WithAnnotation<TAnnotation>(
+		TAnnotation annotation,
+		ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append
+	)
+		where TAnnotation : IResourceAnnotation
+	{
+		return ResourceBuilder.WithAnnotation(annotation, behavior);
 	}
 }

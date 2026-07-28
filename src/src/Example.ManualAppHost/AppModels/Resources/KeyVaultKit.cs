@@ -1,12 +1,11 @@
-using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting.Azure;
 
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
-sealed partial class KeyVaultAppResource()
-	: ResourceKitBase<ExampleHostApp, AzureKeyVaultResource>(Platform.ResourceKits.KeyVault)
+sealed partial class KeyVaultKit(ExampleHostKit hostKit)
+	: ResourceKitBase<ExampleHostKit, AzureKeyVaultResource>(hostKit, Platform.ResourceKits.KeyVault)
 {
-	protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) =>
+	protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 
 	protected override IResourceBuilder<AzureKeyVaultResource> BuildResource(IDistributedApplicationBuilder builder) =>

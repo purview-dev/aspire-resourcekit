@@ -6,10 +6,11 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 sealed record class TargetSymbolDescriptor(
 	INamedTypeSymbol Symbol,
 	TypeDeclarationSyntax Declaration,
-	bool IsHostApp,
+	bool IsHostKit,
 	string? Name,
 	string? PropertyName,
+	string? ExtensionName,
 	bool GenerateOptions,
 	bool IsGenericResourceDefinition,
-	string? GenericResourceTypeName
+	INamedTypeSymbol? AspireResourceTypeSymbol
 );

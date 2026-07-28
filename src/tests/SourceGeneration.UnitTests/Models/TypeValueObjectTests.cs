@@ -64,7 +64,7 @@ public class TypeValueObjectTests
 	public async Task RenderFullName_GivenTypeValueObjectIsAttribute_GeneratesCorrectRenderFullNameWithoutSuffix(
 		string typeName,
 		string @namespace,
-		string excepation
+		string exception
 	)
 	{
 		// Arrange
@@ -74,7 +74,7 @@ public class TypeValueObjectTests
 		var result = sut.RenderFullName;
 
 		// Assert
-		await Assert.That(result).IsEqualTo(excepation);
+		await Assert.That(result).IsEqualTo(exception);
 	}
 
 	public static IEnumerable<Func<(string Type, string Namespace, string Expectation)>> GetFullNameTestData()
@@ -102,7 +102,7 @@ public class TypeValueObjectTests
 	> GetAttributeRenderFullNameTestData()
 	{
 		foreach (var type in GetTestTypes(useAttributes: true))
-			yield return () => FromType(type, s => "global::" + s[..^nameof(Attribute).Length]);
+			yield return () => FromType(type, s => $"[global::{s[..^nameof(Attribute).Length]}]");
 	}
 
 	static IEnumerable<Type> GetTestTypes(bool useAttributes = false)

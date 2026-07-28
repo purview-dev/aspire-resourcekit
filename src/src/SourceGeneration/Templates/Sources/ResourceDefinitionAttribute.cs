@@ -23,23 +23,19 @@ public class ResourceDefinitionAttribute : global::System.Attribute
 	/// </summary>
 	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
 	/// <param name="propertyName">Generated host-app property name for this resource.</param>
-	/// <param name="generateOptions">Whether resource options types should be generated.</param>
-	public ResourceDefinitionAttribute(string name, string propertyName, bool generateOptions = true)
+	public ResourceDefinitionAttribute(string name, string propertyName)
 	{
 		Name = name;
 		PropertyName = propertyName;
-		GenerateOptions = generateOptions;
 	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute"/> class.
 	/// </summary>
 	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
-	/// <param name="generateOptions">Whether resource options types should be generated.</param>
-	public ResourceDefinitionAttribute(string name, bool generateOptions = true)
+	public ResourceDefinitionAttribute(string name)
 	{
 		Name = name;
-		GenerateOptions = generateOptions;
 	}
 
 	/// <summary>
@@ -51,21 +47,17 @@ public class ResourceDefinitionAttribute : global::System.Attribute
 	/// Gets or sets the generated host-app property name for this resource.
 	/// </summary>
 	public string? PropertyName { get; set; }
-
-	/// <summary>
-	/// Gets or sets a value indicating whether resource options types should be generated.
-	/// </summary>
-	public bool GenerateOptions { get; set; } = true;
 }
 
 /// <summary>
 /// Marks a resource definition class that uses source-generated host-app inheritance and explicitly
 /// provides the Aspire resource type.
 /// </summary>
-/// <typeparam name="TResource">The Aspire resource type.</typeparam>
+/// <typeparam name="TResource">The Aspire <see cref="Aspire.Hosting.ApplicationModel.IResource"/> type.</typeparam>
 {{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute
+public class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute
+	where TResource : class, global::Aspire.Hosting.ApplicationModel.IResource
 {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute{TResource}"/> class.
@@ -79,9 +71,8 @@ public sealed class ResourceDefinitionAttribute<TResource> : ResourceDefinitionA
 	/// </summary>
 	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
 	/// <param name="propertyName">Generated host-app property name for this resource.</param>
-	/// <param name="generateOptions">Whether resource options types should be generated.</param>
-	public ResourceDefinitionAttribute(string name, string propertyName, bool generateOptions = true)
-		: base(name, propertyName, generateOptions)
+	public ResourceDefinitionAttribute(string name, string propertyName)
+		: base(name, propertyName)
 	{
 	}
 
@@ -89,9 +80,8 @@ public sealed class ResourceDefinitionAttribute<TResource> : ResourceDefinitionA
 	/// Initializes a new instance of the <see cref="ResourceDefinitionAttribute{TResource}"/> class.
 	/// </summary>
 	/// <param name="name">Logical resource name used in Aspire resource registration.</param>
-	/// <param name="generateOptions">Whether resource options types should be generated.</param>
-	public ResourceDefinitionAttribute(string name, bool generateOptions = true)
-		: base(name, generateOptions)
+	public ResourceDefinitionAttribute(string name)
+		: base(name)
 	{
 	}
 }
