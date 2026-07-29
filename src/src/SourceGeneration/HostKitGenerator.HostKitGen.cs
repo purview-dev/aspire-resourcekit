@@ -196,37 +196,11 @@ partial class HostKitGenerator
 					resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 				if (hostKitInfo.ShouldGenerateOptions)
 				{
-					var optionsVarName = ToCamelCase(resourceKit.ResourceKitOptionsType.TypeName);
-					using (
-						writer.Indented(
-							$"var {optionsVarName} = builder.Configuration.GetSection({resourceKit.ResourceKitOptionsType}.SectionName)"
-						)
-					)
-					{
-						writer.WriteLine($".Get<{resourceKit.ResourceKitOptionsType}>() ?? new();");
-					}
-
-					writer.WriteLine($"{resourceKit.PropertyName} = new(this, {optionsVarName}, \"{resourceName}\");");
+					writer.WriteLine($"{resourceKit.PropertyName} = new(this, Options.{resourceKit.PropertyName});");
 				}
 				else
 				{
 					writer.WriteLine($"{resourceKit.PropertyName} = new(this, \"{resourceName}\");");
-				}
-
-				writer.NewLine();
-			}
-
-			if (hostKitInfo.ShouldGenerateOptions && hostKitInfo.HasResourceKits)
-			{
-				writer.Comment(
-					"Set the enabled/ disabled state for each resource kit based on",
-					"the owning Host Kit's Options property."
-				);
-				foreach (var resourceKit in hostKitInfo.ResourceKits)
-				{
-					writer.WriteLine(
-						$"{resourceKit.PropertyName}.IsEnabled = !Options.IsResourceDisabled({resourceKit.PropertyName}.Name);"
-					);
 				}
 
 				writer.NewLine();
@@ -273,39 +247,22 @@ partial class HostKitGenerator
 				.Write(";")
 				.NewLine();
 
-			writer
-				.NewLine()
-				.WriteXmlSummary(
-					"Gets the Resource Kit names that should be disabled.",
-					$"<para>This is based on the <see cref=\"{TypeHelpers.IResourceKit}{{THostKit}}.Name\" /></para>"
-				)
-				.WriteLine(
-					"public global::System.Collections.Generic.HashSet<string> DisabledResources { get; } = new(global::System.StringComparer.Ordinal);"
-				)
-				.NewLine();
-
-			writer
-				.WriteXmlSummary("Gets or sets an optional predicate used to decide whether resources are enabled.")
-				.WriteLine("public global::System.Func<string, bool>? IsResourceEnabledPredicate { get; set; }")
-				.NewLine();
-
-			writer
-				.WriteXmlSummary("Determines whether a resource should be considered disabled.")
-				.WriteXml(
-					"<param name=\"resourceName\">The logical resource name.</param>",
-					"<returns><see langword=\"true\"/> when disabled; otherwise <see langword=\"false\"/>.</returns>"
-				);
-
-			using (writer.Block("public bool IsResourceDisabled(string resourceName)"))
+			if (hostKitInfo.HasResourceKits)
 			{
-				using (writer.Block("if (DisabledResources.Contains(resourceName))", separator: null))
-					writer.WriteLine("return true;");
+				foreach (var resourceKit in hostKitInfo.ResourceKits)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
 
-				using (writer.Block("if (IsResourceEnabledPredicate is not null)", separator: null))
-					writer.WriteLine("return !IsResourceEnabledPredicate(resourceName);");
-
-				writer.WriteLine("return false;");
+					writer
+						.NewLine()
+						.WriteXmlSummary($"Gets or sets options for the {resourceKit.ResourceKitType.TypeName} resource kit.")
+						.WriteLine(
+							$"public {resourceKit.ResourceKitOptionsType} {resourceKit.PropertyName} {{ get; set; }} = new();"
+						);
+				}
 			}
+
+			writer.NewLine();
 		}
 	}
 }

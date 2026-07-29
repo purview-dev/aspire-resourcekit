@@ -3,8 +3,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[ResourceDefinition] //<AzureStorageResource>(Platform.ResourceKits.AzureStorage)]
-sealed partial class AzureStorageKit : ResourceKitBase<AzureStorageResource>
+[ResourceDefinition<AzureStorageResource>(Platform.ResourceKits.AzureStorage)]
+sealed partial class AzureStorageKit
 {
 	public IResourceBuilder<AzureBlobStorageResource> Blobs { get; private set; } = default!;
 

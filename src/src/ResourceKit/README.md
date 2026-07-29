@@ -1,125 +1,220 @@
-# Purview.Aspire.ResourceKit
+# Purview.Aspire.ResourceKit (NuGet package)
 
-`Purview.Aspire.ResourceKit` provides a source-generator-powered model for composing Aspire AppHost resources as strongly typed classes.
+This package contains the runtime abstractions and source-generator contracts for building Aspire AppHost resources using strongly typed classes.
 
-It is designed to make resource setup:
+Use this README when integrating the **`Purview.Aspire.ResourceKit` NuGet package** into your host project.
 
-- easier to test,
-- easier to navigate in IntelliSense,
-- and more maintainable as your AppHost grows.
+## Package goals
 
-## Generated App Resource model
+- Keep AppHost resource composition explicit and testable.
+- Generate repetitive registration/configuration code from attributes.
+- Provide strongly typed options for host and resource toggles.
 
-The package supports an AppModel style for composing Aspire AppHost resources:
+## Public attributes
 
-- Mark your host app with `[HostApp]` (exactly one per compilation).
-- Mark each resource with `[ResourceDefinition]`.
-- Register everything with `builder.Add{HostAppClassName}ResourceKit()`.
+### `HostKitAttribute` (`[HostKit]`)
 
-### Attributes
+Marks the single host kit class per compilation.
 
 ```csharp
-[HostApp(Name = "MyApp")]
-sealed partial class MyAppHost { }
-
-[ResourceDefinition<AzureStorageResource>("azure-storage", PropertyName = "Storage")]
-sealed partial class AzureStorageResourceKit
+[HostKit]
+sealed partial class ShopHostKit;
 ```
 
-- **`HostKitAttribute`** — marks the host app class. Optional `Name` overrides generated type naming. `GenerateOptions` controls whether host app options are generated.
-- **`ResourceDefinitionAttribute`** — marks a resource class. Optional `Name` sets the logical resource name. Optional `PropertyName` overrides the generated host-app property name. `GenerateOptions` controls per-resource options generation.
+Optional named arguments:
 
-### Generated base class
+- `Name` — controls generated naming.
+- `ExtensionMethodName` — overrides generated builder extension name.
+- `GenerateOptions` — enables/disables generated host options.
 
-The source generator emits an abstract base class in the host app namespace:
+### `ResourceDefinitionAttribute` (`[ResourceDefinition]`)
+
+Marks a resource kit class that participates in generation.
 
 ```csharp
- abstract class MyAppHostResourceBase<TResource>
-    : ResourceKitBase<MyAppHost, TResource>
-    where TResource : class, IResource
+[ResourceDefinition<ProjectResource>("api", PropertyName = "API")]
+partial class APIResourceKit;
+```
+
+Options:
+
+- `Name` — logical Aspire resource name.
+- `PropertyName` — generated host property name.
+
+### `ResourceDefinition` vs `ResourceDefinition<TResource>`
+
+ResourceKit supports two declaration styles, with different base-type behavior:
+
+#### Generic attribute (recommended)
+
+Use `[ResourceDefinition<TResource>]` when you want the resource type declared directly on the attribute.
+
+```csharp
+[ResourceDefinition<ProjectResource>("api")]
+partial class APIResourceKit
 {
-    // Your resource classes inherit this generated base type.
+    protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddProject<Projects.Example_Service>(Name);
 }
 ```
 
-### Generated host app members
+- Do **not** declare an explicit base type on the class.
+- The generator supplies the host-specific base in generated partial code.
 
-The source generator augments the host app partial class with:
+#### Non-generic attribute
 
-- **Resource properties** — one property per `[ResourceDefinition]` class.
-- **`Build(IDistributedApplicationBuilder)` override** — initializes resource instances, applies options-based enable/disable behavior, and builds resources.
-- **`Configure()`** — inherited flow that configures all enabled resources after build.
-
-### Generated options class
+Use `[ResourceDefinition]` when you prefer (or need) to specify the resource type through an explicit base type.
 
 ```csharp
-public sealed class MyAppHostOptions
+[ResourceDefinition("api")]
+partial class APIResourceKit : ShopHostKitResourceBase<ProjectResource>
 {
-    public HashSet<string> DisabledResources { get; } = new(StringComparer.Ordinal);
-    public Func<string, bool>? IsResourceEnabledPredicate { get; set; }
-    public bool IsResourceDisabled(string resourceName) { ... }
+    protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddProject<Projects.Example_Service>(Name);
 }
 ```
 
-Use this to programmatically enable/disable resources at startup when options generation is enabled.
+- You **must** declare an explicit valid base type.
+- Typically this is the generated host-specific base (`ResourceBase<TResource>`, unlike the `ResourceBase<THostKit, TResource>` that takes the explicit Host Kit as a construction parameter).
 
-### Builder extension
+Do not mix both attribute styles on the same class.
 
-```csharp
-public static IDistributedApplicationBuilder AddMyAppHostResourceKit(
-    this IDistributedApplicationBuilder builder)
-```
-
-The generated extension builds/configures the host app and registers it as a singleton in DI.
-
-### Execution order
-
-Inside `Add{HostApp}ResourceKit()`, before `DistributedApplication.Build()`:
-
-1. **Instantiate resource classes** (using generated options where enabled).
-2. **Apply enable/disable state** from host options.
-3. **Call `Build`** for each enabled resource.
-4. **Call `Configure`** for each enabled resource.
-
-### Diagnostics
-
-| ID | Severity | Description |
-| - | - | - |
-| SG0001 | Error | Class must be `partial` |
-| SG0002 | Info | No app resources defined for the host app |
-| SG0003 | Warning | No host app defined (but app resources exist) |
-| SG0004 | Error | Multiple `[HostApp]` classes defined |
-| SG0005 | Error | Duplicate resource property name |
-| SG0006 | Error | App resource must derive from `{HostApp}ResourceBase<T>` |
-| SG0007 | Error | Resource name could not be derived and no `Name` was specified |
-| SG0008 | Error | Explicit `PropertyName` is not a valid C# identifier |
-
-## Minimal end-to-end sample
+## Minimal package usage
 
 ```csharp
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Purview.Aspire.ResourceKit;
 
-[HostApp]
-sealed partial class ShopHost;
+[HostKit]
+partial class ShopHostKit;
 
 [ResourceDefinition<ProjectResource>("api")]
-sealed partial class ApiResource
+partial class APIResourceKit
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);
 }
 
 var builder = DistributedApplication.CreateBuilder(args);
-builder.AddShopHostResourceKit();
+builder.AddAspireResourceKit();
 ```
 
-## Configuration reference
+## Generated output (high level)
 
-When options are enabled:
+From your attributed partial classes, the generator emits:
 
-- Host options section: `{HostAppClassName}`
-- Resource options section: generated property name (or explicit `PropertyName`)
+- a host base type for resources (`{Host}ResourceBase<TResource>`),
+- host members for each resource definition,
+- generated options types (when enabled),
+- a builder extension method for registration and lifecycle execution.
 
-You can disable resource `api` via config by adding it to `DisabledResources`.
+## Runtime lifecycle
+
+When the generated extension is invoked, ResourceKit performs:
+
+1. Resource kit instantiation from options.
+2. `Build` for each enabled resource.
+3. `Configure` for each enabled resource.
+
+This happens before `DistributedApplication.Build()` completes.
+
+### `Build`/`BuildResource` vs `Configure`/`ConfigureResource`
+
+- `Build` calls your `BuildResource(IDistributedApplicationBuilder)` override to **construct** the resource.
+- `Configure` calls your `ConfigureResource()` override to **attach** resources to each other after construction.
+
+This separation keeps creation and cross-resource wiring explicit and deterministic.
+
+### How `IsEnabled` and `IsResourceEnabled(...)` interact
+
+- `IsEnabled` is the current enablement flag (usually sourced from generated options).
+- During `Build`, ResourceKit evaluates `IsResourceEnabled(builder)` and assigns that result to `IsEnabled`.
+- If disabled, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
+
+Override `IsResourceEnabled(builder)` when enablement should react to runtime state rather than only static options.
+
+## Options and configuration
+
+When options are generated:
+
+- Host options root section is the generated host options type name (or configured section).
+- Resource options are nested by generated resource property name.
+- `IsEnabled` can be used to skip a resource at runtime.
+
+See detailed patterns in [`../../../docs/configuration.md`](../../../docs/configuration.md).
+
+### Extending generated typed options
+
+Generated host and resource options are `sealed partial` nested classes. You can safely extend them by adding matching partial declarations in your own code.
+
+Host options extension example:
+
+```csharp
+[HostKit]
+partial class ExampleHostKit
+{
+    public sealed partial class ExampleHostKitOptions
+    {
+        public bool EnablePreviewResources { get; set; }
+    }
+}
+```
+
+Resource options extension example:
+
+```csharp
+[ResourceDefinition<ProjectResource>("api")]
+sealed partial class ExampleAPIKit
+{
+    partial class ExampleAPIKitOptions
+    {
+        public string PublishEnvironmentVariableName { get; set; } = "PUBLISH_MARKER";
+    }
+}
+```
+
+Use these values through generated properties:
+
+- `HostKit.Options` for host-level values.
+- `Options` for each resource kit instance.
+
+## `OptionsHelper` (tests and CLI args)
+
+`OptionsHelper` converts typed assignment expressions into command-line configuration args:
+
+```csharp
+var args = OptionsHelper.For<ExampleHostKit.ExampleHostKitOptions>(
+    c => c.Redis.IsEnabled = false,
+    c => c.Redis.Name = "dev-redis");
+```
+
+Produces values like:
+
+- `--ExampleHostKit:Redis:IsEnabled=false`
+- `--ExampleHostKit:Redis:Name=dev-redis`
+
+Useful for integration-test fixtures and scenario toggles.
+
+## Diagnostics
+
+| ID | Severity | Description |
+| - | - | - |
+| SG0001 | Error | Class must be `partial` |
+| SG0002 | Info | No resources defined for the host kit |
+| SG0003 | Warning | No host kit defined (but resources exist) |
+| SG0004 | Error | Multiple `[HostKit]` classes defined |
+| SG0005 | Error | Duplicate resource property name |
+| SG0006 | Error | Resource must derive from expected generated base |
+| SG0007 | Error | Resource name could not be derived and no `Name` was specified |
+| SG0008 | Error | Explicit `PropertyName` is not a valid C# identifier |
+| SG0009 | Error | Missing `IServiceCollection` type dependency |
+| SG0010 | Error | Missing configuration binder dependency |
+| SG0011 | Error | Missing options configuration extensions dependency |
+| SG0012 | Error | Non-empty constructors are not supported on attributed classes |
+| SG0013 | Error | Mixed `ResourceDefinition` and `ResourceDefinition<TResource>` on the same class is not supported |
+| SG0014 | Error | Non-generic `ResourceDefinition` requires an explicit compatible base type |
+| SG0015 | Error | Generic `ResourceDefinition<TResource>` must not declare an explicit base type |
+| SG0016 | Error | No Aspire resource type could be inferred/found |
+
+For troubleshooting guidance, see [`../../../docs/diagnostics.md`](../../../docs/diagnostics.md).

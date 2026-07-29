@@ -47,9 +47,20 @@ partial class HostKitGenerator
 						.Write(" hostKit, ");
 
 					if (hostKit.ShouldGenerateOptions)
-						writer.Write($"{resourceKit.ResourceKitOptionsType} options, ");
-
-					writer.Write("string? name)").NewLine().Indent().WriteLine(": base(hostKit, name)").Unindent();
+					{
+						writer
+							.Write($"{resourceKit.ResourceKitOptionsType} options)")
+							.NewLine()
+							.Indent()
+							.WriteLine(
+								": base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
+							)
+							.Unindent();
+					}
+					else
+					{
+						writer.Write("string? name)").NewLine().Indent().WriteLine(": base(hostKit, name)").Unindent();
+					}
 
 					using (writer.Block())
 					{
@@ -57,9 +68,8 @@ partial class HostKitGenerator
 						{
 							writer
 								.NewLine()
-								.WriteLine(
-									"Options = options ?? throw new global::System.ArgumentNullException(nameof(options));"
-								);
+								.WriteLine("Options = options;")
+								.WriteLine("IsEnabled = options.IsEnabled;");
 						}
 					}
 
@@ -97,9 +107,19 @@ partial class HostKitGenerator
 
 		using (writer.Block($"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"))
 		{
-			writer.Write("public const string SectionName = ").Quote(resourceKit.PropertyName).WriteLine(";").NewLine();
+			var defaultResourceName = resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 
-			writer.WriteLine("public string? Name { get; set; }");
+			writer
+				.WriteXmlSummary("Gets or sets the logical name used to register the resource.")
+				.WriteLine("[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]")
+				.Write("public string Name { get; set; } = ")
+				.Quote(defaultResourceName)
+				.WriteLine(";")
+				.NewLine();
+
+			writer
+				.WriteXmlSummary("Gets or sets whether the resource is enabled.")
+				.WriteLine("public bool IsEnabled { get; set; } = true;");
 		}
 	}
 }

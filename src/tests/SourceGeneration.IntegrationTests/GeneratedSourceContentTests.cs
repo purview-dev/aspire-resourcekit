@@ -45,11 +45,24 @@ namespace Testing
 		await Assert
 			.That(generated)
 			.Contains("public global::Testing.RedisResourceKit.RedisResourceKitOptions Options { get; }");
-		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
-		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
+		await Assert
+			.That(generated)
+			.Contains("public global::Testing.RedisResourceKit.RedisResourceKitOptions Redis { get; set; } = new();");
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"Redis\";", StringComparison.Ordinal))
+			.IsFalse();
 		await Assert
 			.That(generated)
 			.Contains("protected ResourceKitBase(global::Testing.TestingHostKit hostKit, string? name)");
+		await Assert
+			.That(generated)
+			.Contains(": base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)");
+		await Assert.That(generated).Contains("IsEnabled = options.IsEnabled;");
+		await Assert
+			.That(generated)
+			.Contains("[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]");
+		await Assert.That(generated).Contains("public string Name { get; set; } = \"redis\";");
+		await Assert.That(generated).Contains("public bool IsEnabled { get; set; } = true;");
 		await Assert
 			.That(generated)
 			.Contains(
@@ -61,12 +74,10 @@ namespace Testing
 		await Assert
 			.That(generated)
 			.Contains("public override void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder)");
-		await Assert.That(generated).Contains("Redis = new(this, redisResourceKitOptions, \"redis\");");
-		await Assert.That(generated).Contains("Redis.IsEnabled = !Options.IsResourceDisabled(Redis.Name);");
+		await Assert.That(generated).Contains("Redis = new(this, Options.Redis);");
 		await Assert.That(generated).Contains("Resources = [");
 		await Assert.That(generated).Contains("base.Build(builder);");
 		await Assert.That(generated).Contains("sealed partial class TestingHostKitOptions");
-		await Assert.That(generated).Contains("IsResourceDisabled");
 		await Assert.That(generated).Contains("static class TestingHostKitBuilderExtensions");
 		await Assert.That(generated).Contains("AddAspireResourceKit");
 		await Assert.That(generated).Contains("AddOptions<global::Testing.TestingHostKit.TestingHostKitOptions>()");
@@ -75,16 +86,11 @@ namespace Testing
 			.Contains(".BindConfiguration(global::Testing.TestingHostKit.TestingHostKitOptions.SectionName)");
 		await Assert.That(generated).Contains(".ValidateOnStart();");
 		await Assert
-			.That(generated)
-			.Contains("builder.Services.AddOptions<global::Testing.RedisResourceKit.RedisResourceKitOptions>()");
+			.That(generated.Contains("builder.Services.AddOptions<global::Testing.RedisResourceKit.RedisResourceKitOptions>()", StringComparison.Ordinal))
+			.IsFalse();
 		await Assert
-			.That(generated)
-			.Contains(".BindConfiguration(global::Testing.RedisResourceKit.RedisResourceKitOptions.SectionName)");
-		await Assert
-			.That(generated)
-			.Contains(
-				"var redisResourceKitOptions = builder.Configuration.GetSection(global::Testing.RedisResourceKit.RedisResourceKitOptions.SectionName)"
-			);
+			.That(generated.Contains("var redisResourceKitOptions = builder.Configuration.GetSection", StringComparison.Ordinal))
+			.IsFalse();
 		await Assert.That(generated.Contains("public RedisResourceKit()", StringComparison.Ordinal)).IsFalse();
 		await Assert
 			.That(generated)
@@ -262,8 +268,8 @@ namespace Testing
 		var generated = await result.GetSourceAsync(cancellationToken);
 		await Assert.That(generated).Contains("public global::Testing.RedisResourceKit Redis");
 		await Assert.That(generated).Contains("public global::Testing.SqlServerResourceKit SqlServer");
-		await Assert.That(generated).Contains("Redis = new(this, redisResourceKitOptions, \"redis\");");
-		await Assert.That(generated).Contains("SqlServer = new(this, sqlServerResourceKitOptions, \"sql\");");
+		await Assert.That(generated).Contains("Redis = new(this, Options.Redis);");
+		await Assert.That(generated).Contains("SqlServer = new(this, Options.SqlServer);");
 		await Assert.That(generated).Contains("Resources = [");
 		await Assert.That(generated).Contains("Redis,");
 		await Assert.That(generated).Contains("SqlServer");
@@ -294,7 +300,9 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = await result.GetSourceAsync(cancellationToken);
-		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"Redis\";", StringComparison.Ordinal))
+			.IsFalse();
 	}
 
 	[Test]
@@ -323,8 +331,10 @@ namespace Testing
 
 		var generated = await result.GetSourceAsync(cancellationToken);
 		await Assert.That(generated).Contains("public global::Testing.RedisResourceKit MyRedis");
-		await Assert.That(generated).Contains("public const string SectionName = \"MyRedis\";");
-		await Assert.That(generated).Contains("MyRedis.IsEnabled = !Options.IsResourceDisabled(MyRedis.Name);");
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"MyRedis\";", StringComparison.Ordinal))
+			.IsFalse();
+		await Assert.That(generated).Contains("MyRedis = new(this, Options.MyRedis);");
 	}
 
 	[Test]
@@ -358,8 +368,12 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = await result.GetSourceAsync(cancellationToken);
-		await Assert.That(generated).Contains("public const string SectionName = \"Redis\";");
-		await Assert.That(generated).Contains("public const string SectionName = \"SqlServer\";");
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"Redis\";", StringComparison.Ordinal))
+			.IsFalse();
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"SqlServer\";", StringComparison.Ordinal))
+			.IsFalse();
 	}
 
 	[Test]
@@ -390,7 +404,7 @@ namespace Testing
 		await Assert.That(generated).Contains("public global::Testing.AzureStorageResourceKit AzureStorage");
 		await Assert
 			.That(generated)
-			.Contains("AzureStorage = new(this, azureStorageResourceKitOptions, \"azure-storage\");");
+			.Contains("AzureStorage = new(this, Options.AzureStorage);");
 	}
 
 	[Test]
@@ -429,8 +443,12 @@ namespace Testing
 		var generated = await result.GetSourceAsync(cancellationToken);
 		await Assert.That(generated).Contains("public global::Testing.CacheResourceKit Cache");
 		await Assert.That(generated).Contains("public global::Testing.SecretsKit Secrets");
-		await Assert.That(generated).Contains("public const string SectionName = \"Cache\";");
-		await Assert.That(generated).Contains("public const string SectionName = \"Secrets\";");
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"Cache\";", StringComparison.Ordinal))
+			.IsFalse();
+		await Assert
+			.That(generated.Contains("public const string SectionName = \"Secrets\";", StringComparison.Ordinal))
+			.IsFalse();
 	}
 
 	[Test]
@@ -459,7 +477,7 @@ namespace Testing
 
 		var generated = await result.GetSourceAsync(cancellationToken);
 		await Assert.That(generated).Contains("public global::Testing.KeyVaultResourceKit KeyVault");
-		await Assert.That(generated).Contains("KeyVault = new(this, keyVaultResourceKitOptions, \"keyvault\");");
+		await Assert.That(generated).Contains("KeyVault = new(this, Options.KeyVault);");
 	}
 
 	[Test]
