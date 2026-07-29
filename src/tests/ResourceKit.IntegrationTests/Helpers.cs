@@ -1,4 +1,5 @@
-﻿using TUnit.Aspire;
+﻿using Purview.Aspire.ResourceKit.Example;
+using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit;
 
@@ -10,7 +11,7 @@ static class Helpers
 	)
 		where TAppHost : class
 	{
-		var client = fixture.CreateHttpClient("api");
+		var client = fixture.CreateHttpClient(Platform.ResourceKits.API);
 
 		var response = await client.GetAsync("/health", cancellationToken);
 

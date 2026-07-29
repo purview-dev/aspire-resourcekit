@@ -39,23 +39,6 @@ partial class HostKitGenerator
 					writer.NewLine();
 					if (hostKit.ShouldGenerateOptions)
 					{
-						if (hostKit.HasResourceKits)
-						{
-							writer.Comment(
-								"Bind the resource kit options from configuration, or create a new instance if not found."
-							);
-							foreach (var resourceKit in hostKit.ResourceKits)
-							{
-								writer
-									.WriteLine($"builder.Services.AddOptions<{resourceKit.ResourceKitOptionsType}>()")
-									.Indent()
-									.WriteLine($".BindConfiguration({resourceKit.ResourceKitOptionsType}.SectionName)")
-									.WriteLine(".ValidateOnStart();")
-									.Unindent()
-									.NewLine();
-							}
-						}
-
 						writer
 							.Comment(
 								"Bind the host kit options from configuration, or create a new instance if not found."

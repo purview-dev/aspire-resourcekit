@@ -23,6 +23,15 @@
 		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeResourceKitSourceGenerator</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
+	<ItemGroup Label="Includes the package specific AI Agent Skills to pack">
+		<None
+			Include="$(MSBuildThisFileDirectory)../../skills/**"
+			Pack="true"
+			PackagePath="skills/"
+			Visible="false"
+		/>
+	</ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference
 			Include="$(ResourceKitSourceGeneratorProject)"

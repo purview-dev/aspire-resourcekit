@@ -1,74 +1,81 @@
 # Purview.Aspire.ResourceKit
 
-`Purview.Aspire.ResourceKit` helps you structure Aspire AppHost resource composition as testable, discoverable classes, with source-generated glue code for host apps, resource options, and registration extensions.
+`Purview.Aspire.ResourceKit` is a source-generator-powered framework for structuring .NET Aspire AppHost resource composition as strongly typed, test-friendly classes.
 
-## What you get
+If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
 
-- Attribute-driven source generation for host app/resource wiring.
-- Strongly typed resource composition via reusable base classes.
-- Generated options support for host and per-resource configuration.
-- Predictable build/configure lifecycle for cross-resource dependencies.
+> [!TIP]
+> **Lifecycle quick links**
+>
+> - Build vs Configure guidance: [`docs/getting-started.md#5-understand-build-vs-configure-before-adding-dependencies`](docs/getting-started.md#5-understand-build-vs-configure-before-adding-dependencies)
+> - Runtime enablement (`IsEnabled` + `IsResourceEnabled(...)`): [`docs/configuration.md#isenabled-vs-isresourceenabled`](docs/configuration.md#isenabled-vs-isresourceenabled)
 
-## Install
+## Why teams use it
 
-Add the NuGet package to your AppHost project:
+- **Cleaner AppHost code** with resource logic split into dedicated classes.
+- **Strong typing + IntelliSense** instead of stringly-typed setup.
+- **Generated wiring** for host/resource options and registration.
+- **Predictable lifecycle** (`Build` then `Configure`) for inter-resource dependencies.
+- **Testability** with options overrides and isolated resource composition.
 
-- Package ID: `Purview.Aspire.ResourceKit`
-
-## Quick start
-
-1. Create a partial host app type and annotate it with `[HostApp]`.
-2. Create partial resource types and annotate each with `[ResourceDefinition]`.
-3. Register everything with `builder.Add{HostAppName}ResourceKit()`.
-
-### Example
+## Quick example
 
 ```csharp
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Purview.Aspire.ResourceKit;
 
-[HostApp(Name = "Example")]
-sealed partial class ExampleHostApp;
+[HostKit]
+partial class ShopHostKit;
 
 [ResourceDefinition<ProjectResource>("api")]
-sealed partial class ApiResource
+partial class ApiResourceKit
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);
 }
 
 var builder = DistributedApplication.CreateBuilder(args);
-builder.AddExampleHostResourceKitKit();
+builder.AddAspireResourceKit();
 ```
 
-## Generated artifacts
+> The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
 
-For each `[HostApp]`, the generator emits:
+## Lifecycle mental model (early cheat sheet)
 
-- a host-app resource base class (`{HostAppName}ResourceBase<TResource>`),
-- resource properties on your host app partial class,
-- host app options (`{HostAppName}Options`) when enabled,
-- per-resource options types (`{ResourceType}Options`) when enabled,
-- an extension method (`Add{HostAppName}ResourceKit`) to register and build the host app.
+ResourceKit has two layers of lifecycle methods:
 
-## Configuration
+- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject`, `AddRedis`, etc.).
+- `Configure` / `ConfigureResource()`: **attach resources to each other** (references, bindings, cross-resource wiring).
 
-When options generation is enabled (default):
+Enablement is evaluated *before* resource construction:
 
-- host app options bind from section `{HostAppClassName}`,
-- resource options bind from section `{GeneratedPropertyName}`.
+- `IsEnabled` is the persisted toggle (typically from generated options).
+- `IsResourceEnabled(builder)` is the runtime hook used by `Build` to decide whether this resource should run now.
+- If it evaluates to `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
 
-You can disable resources by name using `{HostAppClassName}Options.DisabledResources`, or dynamically using `IsResourceEnabledPredicate`.
+Use `IsResourceEnabled(builder)` when enablement depends on runtime state (environment, config, publish mode, etc.), not just static options.
+
+## What gets generated
+
+From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit generates:
+
+- a host resource base class,
+- resource properties on the host,
+- host + per-resource options (when enabled),
+- an AppHost extension method to build/configure/register your host kit.
+
+## Learn more
+
+- NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/README.md`](src/src/ResourceKit/README.md)
+- Getting started guide: [`docs/getting-started.md`](docs/getting-started.md)
+- Configuration and options patterns: [`docs/configuration.md`](docs/configuration.md)
+- Diagnostics and troubleshooting: [`docs/diagnostics.md`](docs/diagnostics.md)
+- Workspace notes for contributors: [`src/README.md`](src/README.md)
 
 ## Repository layout
 
 - `src/src/ResourceKit` — runtime package source.
 - `src/src/SourceGeneration` — Roslyn source generator.
+- `src/src/Example.*` — sample Aspire applications.
 - `src/tests/*` — unit and integration tests.
-- `src/src/Example.*` — sample host/service projects.
-
-## Additional docs
-
-- Package usage details: `src/src/ResourceKit/README.md`
-- Solution workspace notes: `src/README.md`
