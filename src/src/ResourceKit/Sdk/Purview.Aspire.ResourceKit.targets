@@ -1,0 +1,48 @@
+<Project>
+
+	<!--
+		Copies bundled SKILL.md files from this package to
+		.agents/skills/<skill-name>/ in the consuming repository root.
+		Uses InitializeSourceControlInformation (SourceLink) to locate the repository root.
+		Falls back to SolutionDir if the git root cannot be determined.
+		Falls back to the directory containing the nearest AGENTS.md file found above the project file.
+		Silently skips if the base directory cannot be determined.
+		Opt-out: set <EnableEmbeddedAgentSkills>false</EnableEmbeddedAgentSkills> in your project or Directory.Build.props.
+	-->
+	<Target Name="CopyEmbeddedAgentSkill"
+			BeforeTargets="PrepareForBuild"
+			DependsOnTargets="InitializeSourceControlInformation"
+			Condition="'$(EnableEmbeddedAgentSkills)' != 'false'">
+
+		<ItemGroup>
+			<_EmbeddedSkillSourceRoot Include="@(SourceRoot -> WithMetadataValue('SourceControl', 'git'))" />
+			<_EmbeddedSkillFile Include="$(MSBuildThisFileDirectory)..\skills\**\SKILL.md" />
+		</ItemGroup>
+
+		<PropertyGroup>
+			<_EmbeddedSkillRepoRoot>@(_EmbeddedSkillSourceRoot)</_EmbeddedSkillRepoRoot>
+			<_EmbeddedSkillRepoRoot Condition="'$(_EmbeddedSkillRepoRoot)' == '' and '$(SolutionDir)' != '' and '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</_EmbeddedSkillRepoRoot>
+			<_EmbeddedSkillAgentsMd Condition="'$(_EmbeddedSkillRepoRoot)' == ''">$([MSBuild]::GetPathOfFileAbove('AGENTS.md', '$(MSBuildProjectDirectory)'))</_EmbeddedSkillAgentsMd>
+			<_EmbeddedSkillRepoRoot Condition="'$(_EmbeddedSkillRepoRoot)' == '' and '$(_EmbeddedSkillAgentsMd)' != ''">$([System.IO.Path]::GetDirectoryName('$(_EmbeddedSkillAgentsMd)'))\</_EmbeddedSkillRepoRoot>
+			<_EmbeddedSkillDestinationRoot>$(_EmbeddedSkillRepoRoot).agents\skills\</_EmbeddedSkillDestinationRoot>
+		</PropertyGroup>
+
+		<MakeDir Directories="@(_EmbeddedSkillFile -> '$(_EmbeddedSkillDestinationRoot)%(RecursiveDir)')"
+				 Condition="'$(_EmbeddedSkillRepoRoot)' != '' and '@(_EmbeddedSkillFile)' != ''"
+				 ContinueOnError="true" />
+
+		<Copy SourceFiles="@(_EmbeddedSkillFile)"
+			  DestinationFiles="@(_EmbeddedSkillFile -> '$(_EmbeddedSkillDestinationRoot)%(RecursiveDir)%(Filename)%(Extension)')"
+			  SkipUnchangedFiles="true"
+			  Condition="'$(_EmbeddedSkillRepoRoot)' != '' and '@(_EmbeddedSkillFile)' != ''"
+			  ContinueOnError="true" />
+
+		<Copy SourceFiles="$(MSBuildThisFileDirectory)..\skills\.gitignore"
+			  DestinationFiles="@(_EmbeddedSkillFile -> '$(_EmbeddedSkillDestinationRoot)%(RecursiveDir).gitignore')"
+			  SkipUnchangedFiles="true"
+			  Condition="'$(_EmbeddedSkillRepoRoot)' != '' and '@(_EmbeddedSkillFile)' != '' and Exists('$(MSBuildThisFileDirectory)..\skills\.gitignore')"
+			  ContinueOnError="true" />
+
+	</Target>
+
+</Project>

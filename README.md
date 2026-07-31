@@ -39,7 +39,25 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.AddAspireResourceKit();
 ```
 
-> The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
+The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
+
+> [!TIP]
+> **Built-in AI agent skills (auto-installed via NuGet)**
+>
+> This package can ship one or more bundled [Agent Skills](https://agentskills.io/).
+> When a consuming project builds, any `skills/**/SKILL.md` files in the package are copied to:
+>
+> - `.agents/skills/**`
+>
+> Example:
+>
+> - `skills/aspire-apphost-to-resourcekit/SKILL.md` → `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`
+>
+> It also writes a local `.gitignore` into each generated skill folder to keep updates out of source control noise.
+>
+> To disable this behavior, set the shared opt-out property in your project (or `Directory.Build.props`):
+>
+> `<EnableEmbeddedAgentSkills>false</EnableEmbeddedAgentSkills>`
 
 ## Lifecycle mental model (early cheat sheet)
 

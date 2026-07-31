@@ -29,6 +29,21 @@
 			Pack="true"
 			PackagePath="skills/"
 			Visible="false"
+			CopyToOutputDirectory="Never"
+		/>
+		<None
+			Include="$(MSBuildThisFileDirectory)skill.gitignore"
+			Pack="true"
+			PackagePath="skills/.gitignore"
+			Visible="false"
+			CopyToOutputDirectory="Never"
+		/>
+		<None
+			Include="$(MSBuildThisFileDirectory)Sdk/Purview.Aspire.ResourceKit.targets"
+			Pack="true"
+			PackagePath="buildTransitive/Purview.Aspire.ResourceKit.targets"
+			Visible="false"
+			CopyToOutputDirectory="Never"
 		/>
 	</ItemGroup>
 
