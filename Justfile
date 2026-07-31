@@ -34,7 +34,7 @@ restore *args:
 # Create NuGet package for the project
 pack publish_folder=artifacts_folder *args:
     echo "Packing {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} to {{ GREEN }}{{ publish_folder }}{{ NORMAL }}"
-    echo "\tCurrent version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
+    echo "  Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
     dotnet pack {{ solution }} -c {{ build_configuration }} -o {{ publish_folder }} {{ args }}
 
 # Displays the current version from package.json

@@ -9,6 +9,14 @@ This guide walks through a minimal host + resource setup using source generation
 
 Install the `Purview.Aspire.ResourceKit` package in your AppHost project.
 
+> [!TIP]
+> This package can include one or more bundled [Agent Skills](https://agentskills.io/).
+> On build, `skills/**/SKILL.md` entries are copied to `.agents/skills/**` in the consuming repository
+> (for example: `skills/aspire-apphost-to-resourcekit/SKILL.md` → `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`),
+> along with a local `.gitignore` in each generated skill folder to keep updates out of source control noise.
+>
+> To opt out, set `<EnableEmbeddedAgentSkills>false</EnableEmbeddedAgentSkills>` in your project (or `Directory.Build.props`).
+
 ## 2) Define a host kit
 
 Create a partial class and annotate it with `[HostKit]`.
