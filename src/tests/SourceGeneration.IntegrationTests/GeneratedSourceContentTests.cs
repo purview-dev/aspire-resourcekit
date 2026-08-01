@@ -56,7 +56,9 @@ namespace Testing
 			.Contains("protected ResourceKitBase(global::Testing.TestingHostKit hostKit, string? name)");
 		await Assert
 			.That(generated)
-			.Contains(": base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)");
+			.Contains(
+				": base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
+			);
 		await Assert.That(generated).Contains("IsEnabled = options.IsEnabled;");
 		await Assert
 			.That(generated)
@@ -86,10 +88,20 @@ namespace Testing
 			.Contains(".BindConfiguration(global::Testing.TestingHostKit.TestingHostKitOptions.SectionName)");
 		await Assert.That(generated).Contains(".ValidateOnStart();");
 		await Assert
-			.That(generated.Contains("builder.Services.AddOptions<global::Testing.RedisResourceKit.RedisResourceKitOptions>()", StringComparison.Ordinal))
+			.That(
+				generated.Contains(
+					"builder.Services.AddOptions<global::Testing.RedisResourceKit.RedisResourceKitOptions>()",
+					StringComparison.Ordinal
+				)
+			)
 			.IsFalse();
 		await Assert
-			.That(generated.Contains("var redisResourceKitOptions = builder.Configuration.GetSection", StringComparison.Ordinal))
+			.That(
+				generated.Contains(
+					"var redisResourceKitOptions = builder.Configuration.GetSection",
+					StringComparison.Ordinal
+				)
+			)
 			.IsFalse();
 		await Assert.That(generated.Contains("public RedisResourceKit()", StringComparison.Ordinal)).IsFalse();
 		await Assert
@@ -402,9 +414,7 @@ namespace Testing
 
 		var generated = await result.GetSourceAsync(cancellationToken);
 		await Assert.That(generated).Contains("public global::Testing.AzureStorageResourceKit AzureStorage");
-		await Assert
-			.That(generated)
-			.Contains("AzureStorage = new(this, Options.AzureStorage);");
+		await Assert.That(generated).Contains("AzureStorage = new(this, Options.AzureStorage);");
 	}
 
 	[Test]
