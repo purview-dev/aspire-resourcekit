@@ -107,7 +107,8 @@ partial class HostKitGenerator
 
 		using (writer.Block($"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"))
 		{
-			var defaultResourceName = resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
+			var defaultResourceName =
+				resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 
 			writer
 				.WriteXmlSummary("Gets or sets the logical name used to register the resource.")

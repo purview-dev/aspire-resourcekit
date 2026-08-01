@@ -255,7 +255,9 @@ partial class HostKitGenerator
 
 					writer
 						.NewLine()
-						.WriteXmlSummary($"Gets or sets options for the {resourceKit.ResourceKitType.TypeName} resource kit.")
+						.WriteXmlSummary(
+							$"Gets or sets options for the {resourceKit.ResourceKitType.TypeName} resource kit."
+						)
 						.WriteLine(
 							$"public {resourceKit.ResourceKitOptionsType} {resourceKit.PropertyName} {{ get; set; }} = new();"
 						);

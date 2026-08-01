@@ -565,6 +565,11 @@ dist
 # general
 
 [Bb]uild/
+!build/
+!build/Pipeline/
+!build/Pipeline/**
+build/Pipeline/bin/
+build/Pipeline/obj/
 *.o
 [Dd]ebug*/
 [Rr]elease*/
@@ -658,3 +663,5 @@ sketch
 !scripts/*
 !src/src/ResourceKit/build/
 !src/src/ResourceKit/build/**
+
+build/Pipeline/.vs/

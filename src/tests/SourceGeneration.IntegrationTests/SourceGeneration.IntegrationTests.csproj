@@ -7,6 +7,6 @@
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\ResourceKit\ResourceKit.csproj" />
+		<ProjectReference Include="..\..\src\ResourceKit\ResourceKit.csproj" />
 	</ItemGroup>
 </Project>
