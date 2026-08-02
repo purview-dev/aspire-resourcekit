@@ -8,6 +8,9 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<AssemblyName>Purview.Aspire.ResourceKit</AssemblyName>
+		<!-- Enable our own agent skills to be packed with the NuGet package -->
+		<EnabledAgentFolderInPackage>true</EnabledAgentFolderInPackage>
+		<ProjectAgentFolder>src/ProjectAgent</ProjectAgentFolder>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -23,21 +26,7 @@
 		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeResourceKitSourceGenerator</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
-	<ItemGroup Label="Includes the package specific AI Agent Skills to pack">
-		<None
-			Include="$(MSBuildThisFileDirectory)../../skills/**"
-			Pack="true"
-			PackagePath="skills/"
-			Visible="false"
-			CopyToOutputDirectory="Never"
-		/>
-		<None
-			Include="$(MSBuildThisFileDirectory)skill.gitignore"
-			Pack="true"
-			PackagePath="skills/.gitignore"
-			Visible="false"
-			CopyToOutputDirectory="Never"
-		/>
+	<ItemGroup>
 		<None
 			Include="$(MSBuildThisFileDirectory)Sdk/Purview.Aspire.ResourceKit.targets"
 			Pack="true"
