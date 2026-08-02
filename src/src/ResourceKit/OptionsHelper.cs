@@ -30,10 +30,10 @@ public static class OptionsHelper
 	public static string[] For<TOptions>(params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
-		if (assignments.Length == 0)
-			throw new ArgumentException("At least one assignment action is required.", nameof(assignments));
 
-		return BuildFromActions(sectionNameOverride: null, assignments);
+		return assignments.Length == 0
+			? throw new ArgumentException("At least one assignment action is required.", nameof(assignments))
+			: BuildFromActions(sectionNameOverride: null, assignments);
 	}
 
 	/// <summary>
@@ -46,10 +46,10 @@ public static class OptionsHelper
 	public static string[] For<TOptions>(string sectionName, params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
-		if (assignments.Length == 0)
-			throw new ArgumentException("At least one assignment action is required.", nameof(assignments));
 
-		return BuildFromActions(sectionName, assignments);
+		return assignments.Length == 0
+			? throw new ArgumentException("At least one assignment action is required.", nameof(assignments))
+			: BuildFromActions(sectionName, assignments);
 	}
 
 	/// <summary>
@@ -242,21 +242,20 @@ public static class OptionsHelper
 		ArgumentNullException.ThrowIfNull(a);
 		ArgumentNullException.ThrowIfNull(b);
 
-		PopulateSentinels(a!, seed: 1, new HashSet<object>(ReferenceComparer.Instance));
-		PopulateSentinels(b!, seed: 2, new HashSet<object>(ReferenceComparer.Instance));
+		PopulateSentinels(a!, seed: 1, [with(ReferenceComparer.Instance)]);
+		PopulateSentinels(b!, seed: 2, [with(ReferenceComparer.Instance)]);
 
 		assignment(a);
 		assignment(b);
 
 		var candidates = new List<(string Path, object? Value)>();
-		CollectEqualLeafPaths(a!, b!, string.Empty, candidates, new HashSet<object>(ReferenceComparer.Instance));
+		CollectEqualLeafPaths(a!, b!, string.Empty, candidates, [with(ReferenceComparer.Instance)]);
 
-		if (candidates.Count != 1)
-			throw new InvalidOperationException(
+		return candidates.Count != 1
+			? throw new InvalidOperationException(
 				$"Each assignment action must set exactly one property path. Found {candidates.Count} candidate paths."
-			);
-
-		return candidates[0];
+			)
+			: candidates[0];
 	}
 
 	static void PopulateSentinels(object root, int seed, HashSet<object> visited)
@@ -526,6 +525,7 @@ public static class OptionsHelper
 		if (type == typeof(decimal) || type == typeof(DateTime) || type == typeof(Guid) || type == typeof(TimeSpan))
 			return false;
 
+		// Success!
 		return true;
 	}
 
@@ -579,10 +579,9 @@ public static class OptionsHelper
 			);
 		}
 
-		if (instance is null)
-			throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.");
-
-		return (TOptions)instance;
+		return instance is null
+			? throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.")
+			: (TOptions)instance;
 	}
 
 	static string GetMemberPath(string assignmentExpression)
@@ -624,13 +623,12 @@ public static class OptionsHelper
 			);
 
 		var path = left[(firstDot + 1)..].Replace("!", string.Empty, StringComparison.Ordinal).Trim();
-		if (string.IsNullOrWhiteSpace(path))
-			throw new ArgumentException(
+		return string.IsNullOrWhiteSpace(path)
+			? throw new ArgumentException(
 				$"Expression '{assignmentExpression}' does not contain a valid member path.",
 				nameof(assignmentExpression)
-			);
-
-		return path.Replace('.', ':');
+			)
+			: path.Replace('.', ':');
 	}
 
 	static void EnsurePathObjectsExist(object root, string keyPath)
@@ -642,12 +640,11 @@ public static class OptionsHelper
 		var current = root;
 		for (var i = 0; i < segments.Length - 1; i++)
 		{
-			var property = current
-				.GetType()
-				.GetProperty(segments[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-			if (property is null)
-				throw new InvalidOperationException(
+			var property =
+				current
+					.GetType()
+					.GetProperty(segments[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+				?? throw new InvalidOperationException(
 					$"Property '{segments[i]}' was not found on '{current.GetType().FullName}'."
 				);
 
@@ -678,12 +675,11 @@ public static class OptionsHelper
 			if (current is null)
 				return null;
 
-			var property = current
-				.GetType()
-				.GetProperty(segment, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-			if (property is null)
-				throw new InvalidOperationException(
+			var property =
+				current
+					.GetType()
+					.GetProperty(segment, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+				?? throw new InvalidOperationException(
 					$"Property '{segment}' was not found on '{current.GetType().FullName}'."
 				);
 
@@ -695,11 +691,10 @@ public static class OptionsHelper
 
 	static object CreateInstance(Type type)
 	{
-		if (type.IsValueType)
-			return Activator.CreateInstance(type)!;
-
-		return Activator.CreateInstance(type, nonPublic: true)
-			?? throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.");
+		return type.IsValueType
+			? Activator.CreateInstance(type)!
+			: Activator.CreateInstance(type, nonPublic: true)
+				?? throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.");
 	}
 
 	static string ToCommandLineValue(object? value)

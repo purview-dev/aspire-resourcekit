@@ -104,12 +104,12 @@ namespace Testing
 			)
 			.IsFalse();
 		await Assert.That(generated.Contains("public RedisResourceKit()", StringComparison.Ordinal)).IsFalse();
+		await Assert.That(generated).Contains("var hostKitOptions = builder.Configuration.GetSection");
+		await Assert.That(generated).Contains("(global::Testing.TestingHostKit.TestingHostKitOptions.SectionName)");
+		await Assert.That(generated).Contains(".Get<global::Testing.TestingHostKit.TestingHostKitOptions>()");
 		await Assert
 			.That(generated)
-			.Contains(
-				"var hostKitOptions = builder.Configuration.GetSection(global::Testing.TestingHostKit.TestingHostKitOptions.SectionName).Get<global::Testing.TestingHostKit.TestingHostKitOptions>() ?? new();"
-			);
-		await Assert.That(generated).Contains("this global::Aspire.Hosting.IDistributedApplicationBuilder builder");
+			.Contains("extension(global::Aspire.Hosting.IDistributedApplicationBuilder builder)");
 		await Assert.That(generated).Contains("global::Testing.TestingHostKit hostKit = new (hostKitOptions);");
 		await Assert.That(generated).Contains("hostKit.Build(builder);");
 		await Assert.That(generated).Contains("hostKit.Configure();");
