@@ -14,16 +14,25 @@ public static class DistributedApplicationBuilderExtensions
 		/// <summary>
 		/// Creates, builds, and configures a ResourceKit host app, then registers it as a singleton.
 		/// </summary>
-		/// <typeparam name="THostApp">The host app type to register.</typeparam>
+		/// <typeparam name="THostKit">The host app type to register.</typeparam>
+		/// <param name="onBuilt">An optional action to invoke after the host app is built (post <see cref="IHostKit.Build(IDistributedApplicationBuilder)"/>).</param>
+		/// <param name="onConfigured">An optional action to invoke after the host app is configured (post <see cref="IHostKit.Configure"/>).</param>
 		/// <returns>The same distributed application builder for chaining.</returns>
-		public IDistributedApplicationBuilder AddAspireResourceKit<THostApp>()
-			where THostApp : class, IHostKit, new()
+		public IDistributedApplicationBuilder AddAspireResourceKit<THostKit>(
+			Action<THostKit>? onBuilt = null,
+			Action<THostKit>? onConfigured = null
+		)
+			where THostKit : class, IHostKit, new()
 		{
 			ArgumentNullException.ThrowIfNull(builder);
 
-			THostApp hostApp = new();
+			THostKit hostApp = new();
+
 			hostApp.Build(builder);
+			onBuilt?.Invoke(hostApp);
+
 			hostApp.Configure();
+			onConfigured?.Invoke(hostApp);
 
 			builder.Services.AddSingleton(hostApp);
 

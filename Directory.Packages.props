@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-		<TUnitVersion>1.61.38</TUnitVersion>
+		<TUnitVersion>1.63.0</TUnitVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />

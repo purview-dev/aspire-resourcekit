@@ -142,7 +142,7 @@ When options are generated:
 - Resource options are nested by generated resource property name.
 - `IsEnabled` can be used to skip a resource at runtime.
 
-See detailed patterns in [`../../../docs/configuration.md`](../../../docs/configuration.md).
+See detailed patterns in [`/docs/configuration.md`](https://github.com/purview-dev/purview-aspire-resourcekit/blob/main/docs/configuration.md).
 
 ### Extending generated typed options
 
@@ -217,4 +217,4 @@ Useful for integration-test fixtures and scenario toggles.
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` must not declare an explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
 
-For troubleshooting guidance, see [`../../../docs/diagnostics.md`](../../../docs/diagnostics.md).
+For troubleshooting guidance, see [`/docs/diagnostics.md`](https://github.com/purview-dev/purview-aspire-resourcekit/blob/main/docs/diagnostics.md).
