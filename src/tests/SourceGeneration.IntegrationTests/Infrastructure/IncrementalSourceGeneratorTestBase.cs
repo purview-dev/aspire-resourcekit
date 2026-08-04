@@ -41,7 +41,10 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		}
 
 		if (driverContext.IncludeSourceGeneratorNamespaces)
-			namespacesToInclude.AddRange(["// Source generator namespaces", TypeHelpers.ResourceKitNamespace]);
+			namespacesToInclude.AddRange([
+				"// Source generator namespaces",
+				TypeHelpers.PurviewAspireResourceKitNamespace,
+			]);
 
 		if (
 			driverContext.IncludeIServiceCollectionReference
@@ -57,10 +60,10 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		if (driverContext.IncludeOptionsConfigurationExtensionReference)
 			namespacesToInclude.Add(TypeHelpers.ConfigurationBinder.Namespace!);
 
-		namespacesToInclude.AddRange(
+		namespacesToInclude.AddRange([
 			typeof(global::Aspire.Hosting.ApplicationModel.IResource).Namespace!,
-			typeof(global::Aspire.Hosting.IDistributedApplicationBuilder).Namespace!
-		);
+			typeof(global::Aspire.Hosting.IDistributedApplicationBuilder).Namespace!,
+		]);
 
 		if (namespacesToInclude.Count > 0)
 		{

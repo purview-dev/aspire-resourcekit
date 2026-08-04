@@ -10,6 +10,15 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 [Generator(LanguageNames.CSharp)]
 public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSupport
 {
+	const string EmbeddedAttributeSource =
+		@"namespace Microsoft.CodeAnalysis
+{
+	[global::System.AttributeUsage(global::System.AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+	sealed partial class EmbeddedAttribute : global::System.Attribute
+	{
+	}
+}";
+
 	GenerationLogger? _logger;
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -19,7 +28,10 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 			_logger?.Debug("Adding attributes:");
 			_logger?.Debug($"- {TypeHelpers.EmbeddedAttribute.TypeName}", 1);
 
-			postInitContext.AddEmbeddedAttributeDefinition();
+			postInitContext.AddSource(
+				TypeHelpers.EmbeddedAttribute.TypeName + ".cs",
+				SourceText.From(EmbeddedAttributeSource, Encoding.UTF8)
+			);
 
 			foreach (var resourceType in TypeHelpers.GeneratedTypes)
 			{

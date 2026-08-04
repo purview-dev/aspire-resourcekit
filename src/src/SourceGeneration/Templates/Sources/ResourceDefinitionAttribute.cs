@@ -7,7 +7,7 @@ namespace Purview.Aspire.ResourceKit;
 /// <summary>
 /// Marks a resource definition class that participates in generated host app composition.
 /// </summary>
-{{CodeGen}}
+//{{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public class ResourceDefinitionAttribute : global::System.Attribute
 {
@@ -53,8 +53,8 @@ public class ResourceDefinitionAttribute : global::System.Attribute
 /// Marks a resource definition class that uses source-generated host-app inheritance and explicitly
 /// provides the Aspire resource type.
 /// </summary>
-/// <typeparam name="TResource">The Aspire <see cref="Aspire.Hosting.ApplicationModel.IResource"/> type.</typeparam>
-{{CodeGen}}
+/// <typeparam name="TResource">The Aspire <see cref="global::Aspire.Hosting.ApplicationModel.IResource"/> type.</typeparam>
+//{{CodeGen}}
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute
 	where TResource : class, global::Aspire.Hosting.ApplicationModel.IResource
