@@ -5,6 +5,7 @@
 			without the source generator.
 		-->
 		<DisablePurviewAspireResourceKitSourceGenerator>true</DisablePurviewAspireResourceKitSourceGenerator>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />

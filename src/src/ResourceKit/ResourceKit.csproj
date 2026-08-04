@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<TargetFramework />
+		<TargetFrameworks>$(AllTargetFrameworks)</TargetFrameworks>
 		<IsPackable>true</IsPackable>
 		<Title>Purview Aspire ResourceKit</Title>
 		<Description>Composable and test-friendly Aspire resource isolation model for local, running, and publishing modes.</Description>
@@ -45,7 +47,11 @@
 		/>
 	</ItemGroup>
 
-	<Target Name="IncludeResourceKitSourceGenerator" DependsOnTargets="Build">
+	<Target
+		Name="IncludeResourceKitSourceGenerator"
+		DependsOnTargets="Build"
+		Condition="'$(TargetFramework)' == '$(DefaultTargetFramework)'"
+	>
 		<Error
 			Condition="!Exists('$(ResourceKitSourceGeneratorAssembly)')"
 			Text="The Purview Aspire ResourceKit Source Generator was not found at '$(ResourceKitSourceGeneratorAssembly)'."

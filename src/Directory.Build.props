@@ -1,5 +1,12 @@
 ﻿<Project>
+	<Import
+		Project="Versions.props"
+		Condition="Exists('$(MSBuildThisFileDirectory)Versions.props')"
+	/>
+
 	<PropertyGroup>
+		<TargetFramework Condition="'$(TargetFrameworks)' == ''"
+			>$(DefaultTargetFramework)</TargetFramework>
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<IsPackable>false</IsPackable>
 		<RepositoryUrl>https://github.com/purview-dev/purview-aspire-resourcekit</RepositoryUrl>
