@@ -133,28 +133,36 @@ static class TypeHelpers
 	}
 
 	// Generated type information...
-	public const string ResourceKitNamespace = "Purview.Aspire.ResourceKit";
+	public const string PurviewAspireResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
 	public const string OptionsBaseClassSuffix = "Options";
 
-	public static readonly TypeValueObject HostKitAttribute = new(nameof(HostKitAttribute), ResourceKitNamespace);
+	public static readonly TypeValueObject HostKitAttribute = new(
+		nameof(HostKitAttribute),
+		PurviewAspireResourceKitNamespace
+	);
 
 	public static readonly TypeValueObject ResourceDefinitionAttribute = new(
 		nameof(ResourceDefinitionAttribute),
-		ResourceKitNamespace
+		PurviewAspireResourceKitNamespace
 	);
 
 	public static readonly TypeValueObject GenericResourceDefinitionAttribute = new(
 		"ResourceDefinitionAttribute`1",
-		ResourceKitNamespace
+		PurviewAspireResourceKitNamespace
 	);
 
 	// Library types
-	public static readonly TypeValueObject HostKitBase = new(nameof(HostKitBase), ResourceKitNamespace);
+	public static readonly TypeValueObject IHostKit = new(nameof(IHostKit), PurviewAspireResourceKitNamespace);
 
-	public static readonly TypeValueObject ResourceKitBase = new(nameof(ResourceKitBase), ResourceKitNamespace);
+	public static readonly TypeValueObject HostKitBase = new(nameof(HostKitBase), PurviewAspireResourceKitNamespace);
 
-	public static readonly TypeValueObject IResourceKit = new(nameof(IResourceKit), ResourceKitNamespace);
+	public static readonly TypeValueObject ResourceKitBase = new(
+		nameof(ResourceKitBase),
+		PurviewAspireResourceKitNamespace
+	);
+
+	public static readonly TypeValueObject IResourceKit = new(nameof(IResourceKit), PurviewAspireResourceKitNamespace);
 
 	// Other required types
 	// Required for DI

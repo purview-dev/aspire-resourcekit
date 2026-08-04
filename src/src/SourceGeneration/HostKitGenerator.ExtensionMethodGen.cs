@@ -31,7 +31,7 @@ partial class HostKitGenerator
 						$"<param name=\"onBuilt\">An optional action to invoke after the host app is built (post <see cref=\"{hostKit.HostKitType}.Build({TypeHelpers.IDistributedApplicationBuilder})\"/>).</param>"
 					);
 					writer.WriteXml(
-						$"<param name=\"onConfigured\">An optional action to invoke after the host app is configured (post <see cref=\"{hostKit.HostKitType}.Configure\"/>).</param>"
+						$"<param name=\"onConfigured\">An optional action to invoke after the host app is configured (post <see cref=\"{TypeHelpers.IHostKit}.Configure\"/>).</param>"
 					);
 					writer.WriteXml("<returns>The same builder instance for chaining.</returns>");
 					using (

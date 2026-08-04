@@ -41,7 +41,10 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>
 		}
 
 		if (driverContext.IncludeSourceGeneratorNamespaces)
-			namespacesToInclude.AddRange(["// Source generator namespaces", TypeHelpers.ResourceKitNamespace]);
+			namespacesToInclude.AddRange([
+				"// Source generator namespaces",
+				TypeHelpers.PurviewAspireResourceKitNamespace,
+			]);
 
 		if (
 			driverContext.IncludeIServiceCollectionReference

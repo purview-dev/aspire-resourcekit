@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 static class GeneratorDiagnostics
 {
-	const string Category = TypeHelpers.ResourceKitNamespace + ".SourceGenerator";
+	const string Category = TypeHelpers.PurviewAspireResourceKitNamespace + ".SourceGenerator";
 
 	public static readonly DiagnosticDescriptor ClassMustBePartial = new(
 		id: "SG0001",
