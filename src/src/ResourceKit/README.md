@@ -186,19 +186,28 @@ Use these values through generated properties:
 ```csharp
 var args = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false,
-    c => c.Redis.Name = "dev-redis");
+    c => c.Redis.Name = "dev-redis"
+).Build();
 ```
 
-For a single value, use `ForOne` with a member selector:
+For a single value, use `ForOne` with a member selector and access the first element:
 
 ```csharp
-var arg = OptionsHelper.ForOne<ExampleHostKit.ExampleHostKitOptions>(f => f.Redis.Name);
+var arg = OptionsHelper.ForOne<ExampleHostKit.ExampleHostKitOptions>(f => f.Redis.Name).Build()[0];
 ```
 
 Produces values like:
 
 - `--ExampleHostKit:Redis:IsEnabled=false`
 - `--ExampleHostKit:Redis:Name=dev-redis`
+
+Switch to environment variables with `AsEnvironmentVariables()`:
+
+```csharp
+var envVars = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
+    c => c.Redis.IsEnabled = false
+).AsEnvironmentVariables().Build();
+```
 
 Useful for integration-test fixtures and scenario toggles.
 

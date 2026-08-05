@@ -92,7 +92,8 @@ If tests or bootstrap code currently pass args directly, convert to `OptionsHelp
 ```csharp
 var args = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false,
-    c => c.AzureStorage.Name = "custom-storage");
+    c => c.AzureStorage.Name = "custom-storage"
+).Build();
 ```
 
 ### 4.1) Extend generated typed options (host + resource)
@@ -253,7 +254,8 @@ Then wire tests/fixtures with:
 ```csharp
 OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Sql.IsEnabled = true,
-    c => c.Migrations.UseBundleInRunMode = true);
+    c => c.Migrations.UseBundleInRunMode = true
+).Build();
 ```
 
 ### F) End-state entrypoint shape
