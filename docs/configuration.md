@@ -99,9 +99,15 @@ Use this hook to react to runtime state, for example environment-specific availa
 Use `OptionsHelper` to generate command-line configuration arguments from strongly typed assignments.
 
 ```csharp
-var args = OptionsHelper.For<ShopHostKitOptions>(
+var args = OptionsHelper.ForSet<ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
     c => c.API.Name = "api-test");
+```
+
+For a single argument, use `ForOne` with a member selector:
+
+```csharp
+var arg = OptionsHelper.ForOne<ShopHostKit.ShopHostKitOptions>(f => f.API.Name);
 ```
 
 Resulting args are in this form:
@@ -116,7 +122,7 @@ Resulting args are in this form:
 > protected override string[] Args =>
 > [
 >    .. base.Args,
->    .. OptionsHelper.For<ShopHostKit.ShopHostKitOptions>(
+>    .. OptionsHelper.ForSet<ShopHostKit.ShopHostKitOptions>(
 >      c => c.API.IsEnabled = false,
 >      c => c.API.Name = "api-test"
 >    ),

@@ -29,16 +29,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None
-			Include="$(MSBuildThisFileDirectory)Sdk/Purview.Aspire.ResourceKit.targets"
-			Pack="true"
-			PackagePath="buildTransitive/Purview.Aspire.ResourceKit.targets"
-			Visible="false"
-			CopyToOutputDirectory="Never"
-		/>
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference
 			Include="$(ResourceKitSourceGeneratorProject)"
 			PrivateAssets="all"

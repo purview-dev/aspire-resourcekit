@@ -11,7 +11,7 @@ public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Example_A
 	protected override string[] Args =>
 		[
 			.. base.Args,
-			.. OptionsHelper.For<ExampleHostKit.ExampleHostKitOptions>(
+			.. OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
 				c => c.Redis.IsEnabled = false,
 				c => c.AzureStorage.Name = AzureStorageName
 			),

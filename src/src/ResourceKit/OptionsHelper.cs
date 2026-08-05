@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -27,7 +28,7 @@ public static class OptionsHelper
 	/// <typeparam name="TOptions">The root options type.</typeparam>
 	/// <param name="assignments">One or more property assignment actions.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(params Action<TOptions>[] assignments)
+	public static string[] ForSet<TOptions>(params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
 
@@ -43,7 +44,7 @@ public static class OptionsHelper
 	/// <param name="sectionName">The root section name override.</param>
 	/// <param name="assignments">One or more property assignment actions.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(string sectionName, params Action<TOptions>[] assignments)
+	public static string[] ForSet<TOptions>(string sectionName, params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
 
@@ -59,14 +60,14 @@ public static class OptionsHelper
 	/// <param name="assignment">A property assignment expression.</param>
 	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(
+	public static string[] ForSet<TOptions>(
 		Action<TOptions> assignment,
 		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
 	)
 	{
 		ArgumentNullException.ThrowIfNull(assignment);
 
-		return ForInternal(sectionNameOverride: null, [(assignment, assignmentExpression)]);
+		return ForSetInternal(sectionNameOverride: null, [(assignment, assignmentExpression)]);
 	}
 
 	/// <summary>
@@ -76,10 +77,10 @@ public static class OptionsHelper
 	/// <param name="assignment">A property assignment expression.</param>
 	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
 	/// <returns>The generated command-line argument.</returns>
-	public static string ForOne<TOptions>(
+	public static string ForSetOne<TOptions>(
 		Action<TOptions> assignment,
 		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-	) => For(assignment, assignmentExpression)[0];
+	) => ForSet(assignment, assignmentExpression)[0];
 
 	/// <summary>
 	/// Builds command-line argument for the specified options type with an explicit root section name.
@@ -89,11 +90,96 @@ public static class OptionsHelper
 	/// <param name="assignment">A property assignment expression.</param>
 	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
 	/// <returns>The generated command-line argument.</returns>
-	public static string ForOne<TOptions>(
+	public static string ForSetOne<TOptions>(
 		string sectionName,
 		Action<TOptions> assignment,
 		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-	) => For(sectionName, assignment, assignmentExpression)[0];
+	) => ForSet(sectionName, assignment, assignmentExpression)[0];
+
+	/// <summary>
+	/// Builds command-line argument for the specified options type using a member selector expression.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="selector">A member selector expression.</param>
+	/// <returns>The generated command-line argument.</returns>
+	public static string ForOne<TOptions>(Expression<Func<TOptions, object?>> selector)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+
+		return BuildArgumentFromSelector(selector, ResolveSectionName<TOptions>(sectionNameOverride: null));
+	}
+
+	/// <summary>
+	/// Builds command-line argument for the specified options type using a member selector expression with an explicit root section name.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="sectionName">The root section name override.</param>
+	/// <param name="selector">A member selector expression.</param>
+	/// <returns>The generated command-line argument.</returns>
+	public static string ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+
+		return BuildArgumentFromSelector(selector, ResolveSectionName<TOptions>(sectionName));
+	}
+
+	/// <summary>
+	/// Builds command-line arguments for the specified options type using member selector expressions.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="selector">The first member selector expression.</param>
+	/// <param name="selectors">Additional member selector expressions.</param>
+	/// <returns>The generated command-line arguments.</returns>
+	public static string[] For<TOptions>(
+		Expression<Func<TOptions, object?>> selector,
+		params Expression<Func<TOptions, object?>>[] selectors
+	)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+		ArgumentNullException.ThrowIfNull(selectors);
+
+		var sectionName = ResolveSectionName<TOptions>(sectionNameOverride: null);
+		var args = new string[selectors.Length + 1];
+
+		args[0] = BuildArgumentFromSelector(selector, sectionName);
+		for (var i = 0; i < selectors.Length; i++)
+		{
+			ArgumentNullException.ThrowIfNull(selectors[i]);
+			args[i + 1] = BuildArgumentFromSelector(selectors[i], sectionName);
+		}
+
+		return args;
+	}
+
+	/// <summary>
+	/// Builds command-line arguments for the specified options type using member selector expressions with an explicit root section name.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="sectionName">The root section name override.</param>
+	/// <param name="selector">The first member selector expression.</param>
+	/// <param name="selectors">Additional member selector expressions.</param>
+	/// <returns>The generated command-line arguments.</returns>
+	public static string[] For<TOptions>(
+		string sectionName,
+		Expression<Func<TOptions, object?>> selector,
+		params Expression<Func<TOptions, object?>>[] selectors
+	)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+		ArgumentNullException.ThrowIfNull(selectors);
+
+		var resolvedSectionName = ResolveSectionName<TOptions>(sectionName);
+		var args = new string[selectors.Length + 1];
+
+		args[0] = BuildArgumentFromSelector(selector, resolvedSectionName);
+		for (var i = 0; i < selectors.Length; i++)
+		{
+			ArgumentNullException.ThrowIfNull(selectors[i]);
+			args[i + 1] = BuildArgumentFromSelector(selectors[i], resolvedSectionName);
+		}
+
+		return args;
+	}
 
 	/// <summary>
 	/// Builds command-line arguments for the specified options type with an explicit root section name.
@@ -103,7 +189,7 @@ public static class OptionsHelper
 	/// <param name="assignment">A property assignment expression.</param>
 	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(
+	public static string[] ForSet<TOptions>(
 		string sectionName,
 		Action<TOptions> assignment,
 		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
@@ -111,7 +197,7 @@ public static class OptionsHelper
 	{
 		ArgumentNullException.ThrowIfNull(assignment);
 
-		return ForInternal(sectionNameOverride: sectionName, [(assignment, assignmentExpression)]);
+		return ForSetInternal(sectionNameOverride: sectionName, [(assignment, assignmentExpression)]);
 	}
 
 	/// <summary>
@@ -123,7 +209,7 @@ public static class OptionsHelper
 	/// <param name="assignmentExpression1">Captured source text for <paramref name="assignment1"/>.</param>
 	/// <param name="assignmentExpression2">Captured source text for <paramref name="assignment2"/>.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(
+	public static string[] ForSet<TOptions>(
 		Action<TOptions> assignment1,
 		Action<TOptions> assignment2,
 		[CallerArgumentExpression(nameof(assignment1))] string assignmentExpression1 = "",
@@ -133,7 +219,7 @@ public static class OptionsHelper
 		ArgumentNullException.ThrowIfNull(assignment1);
 		ArgumentNullException.ThrowIfNull(assignment2);
 
-		return ForInternal(
+		return ForSetInternal(
 			sectionNameOverride: null,
 			[(assignment1, assignmentExpression1), (assignment2, assignmentExpression2)]
 		);
@@ -149,7 +235,7 @@ public static class OptionsHelper
 	/// <param name="assignmentExpression1">Captured source text for <paramref name="assignment1"/>.</param>
 	/// <param name="assignmentExpression2">Captured source text for <paramref name="assignment2"/>.</param>
 	/// <returns>The generated command-line arguments.</returns>
-	public static string[] For<TOptions>(
+	public static string[] ForSet<TOptions>(
 		string sectionName,
 		Action<TOptions> assignment1,
 		Action<TOptions> assignment2,
@@ -160,13 +246,13 @@ public static class OptionsHelper
 		ArgumentNullException.ThrowIfNull(assignment1);
 		ArgumentNullException.ThrowIfNull(assignment2);
 
-		return ForInternal(
+		return ForSetInternal(
 			sectionNameOverride: sectionName,
 			[(assignment1, assignmentExpression1), (assignment2, assignmentExpression2)]
 		);
 	}
 
-	static string[] ForInternal<TOptions>(
+	static string[] ForSetInternal<TOptions>(
 		string? sectionNameOverride,
 		(IReadOnlyList<Action<TOptions>> Actions, IReadOnlyList<string> Expressions) assignments
 	)
@@ -189,7 +275,7 @@ public static class OptionsHelper
 		return args;
 	}
 
-	static string[] ForInternal<TOptions>(
+	static string[] ForSetInternal<TOptions>(
 		string? sectionNameOverride,
 		params (Action<TOptions> Action, string Expression)[] assignments
 	)
@@ -199,7 +285,7 @@ public static class OptionsHelper
 		var actions = assignments.Select(x => x.Action).ToArray();
 		var expressions = assignments.Select(x => x.Expression).ToArray();
 
-		return ForInternal(sectionNameOverride, (actions, expressions));
+		return ForSetInternal(sectionNameOverride, (actions, expressions));
 	}
 
 	static string BuildArgument<TOptions>(Action<TOptions> assignment, string assignmentExpression, string sectionName)
@@ -214,6 +300,20 @@ public static class OptionsHelper
 		assignment(root);
 
 		var value = GetPathValue(root, keyPath);
+		var valueText = ToCommandLineValue(value);
+
+		return $"--{sectionName}:{keyPath}={valueText}";
+	}
+
+	static string BuildArgumentFromSelector<TOptions>(Expression<Func<TOptions, object?>> selector, string sectionName)
+	{
+		var keyPath = GetMemberPath(selector);
+		var root = CreateRootOptionsInstance<TOptions>();
+		ArgumentNullException.ThrowIfNull(root);
+
+		EnsurePathObjectsExist(root, keyPath);
+
+		var value = selector.Compile()(root);
 		var valueText = ToCommandLineValue(value);
 
 		return $"--{sectionName}:{keyPath}={valueText}";
@@ -629,6 +729,43 @@ public static class OptionsHelper
 				nameof(assignmentExpression)
 			)
 			: path.Replace('.', ':');
+	}
+
+	static string GetMemberPath<TOptions>(Expression<Func<TOptions, object?>> selector)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+
+		var body = selector.Body;
+
+		while (body is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unary)
+			body = unary.Operand;
+
+		var segments = new List<string>();
+		while (body is MemberExpression member)
+		{
+			segments.Add(member.Member.Name);
+			body = member.Expression;
+
+			if (body is ParameterExpression parameter)
+			{
+				if (parameter != selector.Parameters[0])
+					throw new ArgumentException(
+						"Selector must be a simple member access expression on the options parameter.",
+						nameof(selector)
+					);
+
+				break;
+			}
+		}
+
+		if (segments.Count == 0 || body is not ParameterExpression)
+			throw new ArgumentException(
+				"Selector must be a simple member access expression on the options parameter.",
+				nameof(selector)
+			);
+
+		segments.Reverse();
+		return string.Join(':', segments);
 	}
 
 	static void EnsurePathObjectsExist(object root, string keyPath)

@@ -9,7 +9,7 @@ public sealed class OptionsHelperTests
 		const string sectionName = "SectionNameGoesHere";
 
 		// Act
-		var args = OptionsHelper.For<HostKitOptions>(
+		var args = OptionsHelper.ForSet<HostKitOptions>(
 			sectionName,
 			c => c.Redis.IsEnabled = false,
 			c => c.Redis.Name = "PIES"
@@ -27,7 +27,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var args = OptionsHelper.For<PrivateSectionOptions>(c => c.Redis.Name = "PIES");
+		var args = OptionsHelper.ForSet<PrivateSectionOptions>(c => c.Redis.Name = "PIES");
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(1);
@@ -40,10 +40,10 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var fromOptions = OptionsHelper.For<ServiceOptions>(c => c.Redis.Name = "PIES");
-		var fromSettings = OptionsHelper.For<ServiceSettings>(c => c.Redis.Name = "PIES");
-		var fromConfiguration = OptionsHelper.For<ServiceConfiguration>(c => c.Redis.Name = "PIES");
-		var fromConfig = OptionsHelper.For<ServiceConfig>(c => c.Redis.Name = "PIES");
+		var fromOptions = OptionsHelper.ForSet<ServiceOptions>(c => c.Redis.Name = "PIES");
+		var fromSettings = OptionsHelper.ForSet<ServiceSettings>(c => c.Redis.Name = "PIES");
+		var fromConfiguration = OptionsHelper.ForSet<ServiceConfiguration>(c => c.Redis.Name = "PIES");
+		var fromConfig = OptionsHelper.ForSet<ServiceConfig>(c => c.Redis.Name = "PIES");
 
 		// Assert
 		await Assert.That(fromOptions[0]).IsEqualTo("--Service:Redis:Name=PIES");
@@ -58,7 +58,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var args = OptionsHelper.For<Options>(c => c.Redis.Name = "PIES");
+		var args = OptionsHelper.ForSet<Options>(c => c.Redis.Name = "PIES");
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(1);
@@ -71,7 +71,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var args = OptionsHelper.For<DeepOptions>(c => c.Level1.Level2.Level3.Level4.Name = "PIES");
+		var args = OptionsHelper.ForSet<DeepOptions>(c => c.Level1.Level2.Level3.Level4.Name = "PIES");
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(1);
@@ -84,7 +84,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var args = OptionsHelper.For<HostKitOptions>(
+		var args = OptionsHelper.ForSet<HostKitOptions>(
 			c => c.Redis.IsEnabled = false,
 			c => c.Redis.Name = "PIES",
 			c => c.Api.Name = "my-api"
@@ -109,13 +109,104 @@ public sealed class OptionsHelperTests
 		];
 
 		// Act
-		var args = OptionsHelper.For("CustomSection", assignments);
+		var args = OptionsHelper.ForSet("CustomSection", assignments);
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(3);
 		await Assert.That(args[0]).IsEqualTo("--CustomSection:Redis:IsEnabled=false");
 		await Assert.That(args[1]).IsEqualTo("--CustomSection:Redis:Name=PIES");
 		await Assert.That(args[2]).IsEqualTo("--CustomSection:Api:Name=my-api");
+	}
+
+	[Test]
+	public async Task ForOne_GivenSelectorExpression_ReturnsArgumentWithDefaultValue()
+	{
+		// Arrange
+
+		// Act
+		var arg = OptionsHelper.ForOne<SampleStoreOptions>(f => f.CurrentKey);
+
+		// Assert
+		await Assert.That(arg).IsEqualTo("--SampleStore:CurrentKey=default-key");
+	}
+
+	[Test]
+	public async Task ForOne_GivenSelectorExpressionWithValueType_ReturnsArgumentWithDefaultValue()
+	{
+		// Arrange
+
+		// Act
+		var arg = OptionsHelper.ForOne<SampleStoreOptions>(f => f.Count);
+
+		// Assert
+		await Assert.That(arg).IsEqualTo("--SampleStore:Count=42");
+	}
+
+	[Test]
+	public async Task ForOne_GivenSectionNameAndSelectorExpression_ReturnsArgumentWithOverride()
+	{
+		// Arrange
+		const string sectionName = "MySection";
+
+		// Act
+		var arg = OptionsHelper.ForOne<SampleStoreOptions>(sectionName, f => f.CurrentKey);
+
+		// Assert
+		await Assert.That(arg).IsEqualTo("--MySection:CurrentKey=default-key");
+	}
+
+	[Test]
+	public async Task ForOne_GivenNestedSelectorExpression_ReturnsArgumentWithNestedDefaultValue()
+	{
+		// Arrange
+
+		// Act
+		var arg = OptionsHelper.ForOne<SampleStoreOptions>(f => f.Nested!.Value);
+
+		// Assert
+		await Assert.That(arg).IsEqualTo("--SampleStore:Nested:Value=nested-default");
+	}
+
+	[Test]
+	public async Task For_GivenSelectorExpressions_ReturnsArgumentsWithDefaultValues()
+	{
+		// Arrange
+
+		// Act
+		var args = OptionsHelper.For<SampleStoreOptions>(f => f.CurrentKey, f => f.Count);
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(2);
+		await Assert.That(args[0]).IsEqualTo("--SampleStore:CurrentKey=default-key");
+		await Assert.That(args[1]).IsEqualTo("--SampleStore:Count=42");
+	}
+
+	[Test]
+	public async Task For_GivenSectionNameAndSelectorExpressions_ReturnsArgumentsWithOverride()
+	{
+		// Arrange
+		const string sectionName = "MySection";
+
+		// Act
+		var args = OptionsHelper.For<SampleStoreOptions>(sectionName, f => f.CurrentKey, f => f.Count);
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(2);
+		await Assert.That(args[0]).IsEqualTo("--MySection:CurrentKey=default-key");
+		await Assert.That(args[1]).IsEqualTo("--MySection:Count=42");
+	}
+
+	[Test]
+	public async Task For_GivenNestedSelectorExpression_ReturnsArgumentWithNestedDefaultValue()
+	{
+		// Arrange
+
+		// Act
+		var args = OptionsHelper.For<SampleStoreOptions>(f => f.Nested!.Value);
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(1);
+		await Assert.That(args[0]).IsEqualTo("--SampleStore:Nested:Value=nested-default");
 	}
 
 	sealed class HostKitOptions
@@ -196,5 +287,19 @@ public sealed class OptionsHelperTests
 		public string Name { get; set; } = string.Empty;
 
 		public bool IsEnabled { get; set; }
+	}
+
+	sealed class SampleStoreOptions
+	{
+		public string CurrentKey { get; set; } = "default-key";
+
+		public int Count { get; set; } = 42;
+
+		public NestedSampleOptions Nested { get; set; } = new();
+	}
+
+	sealed class NestedSampleOptions
+	{
+		public string Value { get; set; } = "nested-default";
 	}
 }

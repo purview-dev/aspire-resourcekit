@@ -87,10 +87,10 @@ Map old configuration into generated options conventions:
 - Resource naming → `{HostKitOptionsSection}:{ResourceProperty}:Name`
 - Enable/disable flags → `{HostKitOptionsSection}:{ResourceProperty}:IsEnabled`
 
-If tests or bootstrap code currently pass args directly, convert to `OptionsHelper.For<THostOptions>(...)`:
+If tests or bootstrap code currently pass args directly, convert to `OptionsHelper.ForSet<THostOptions>(...)`:
 
 ```csharp
-var args = OptionsHelper.For<ExampleHostKit.ExampleHostKitOptions>(
+var args = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false,
     c => c.AzureStorage.Name = "custom-storage");
 ```
@@ -172,7 +172,7 @@ Then keep the standard build/run flow.
 
 When tests/config exist, migrate them to ResourceKit semantics:
 
-- Replace direct key/value arg strings with `OptionsHelper.For<THostOptions>(...)` where practical.
+- Replace direct key/value arg strings with `OptionsHelper.ForSet<THostOptions>(...)` where practical.
 - Update assertions to verify:
   - resources disabled via options are absent/inaccessible,
   - custom names flow through to produced resources,
@@ -251,7 +251,7 @@ Promote hard-coded values to typed options incrementally:
 Then wire tests/fixtures with:
 
 ```csharp
-OptionsHelper.For<ExampleHostKit.ExampleHostKitOptions>(
+OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Sql.IsEnabled = true,
     c => c.Migrations.UseBundleInRunMode = true);
 ```

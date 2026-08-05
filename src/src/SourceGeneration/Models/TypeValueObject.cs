@@ -59,13 +59,17 @@ readonly record struct TypeValueObject
 
 	public static implicit operator string(TypeValueObject typeValueObject) => typeValueObject.RenderFullName;
 
-	public TypeValueObject MakeGeneric(params string[] typeArguments)
+	public TypeValueObject MakeGeneric(params string[] typeArguments) => MakeGeneric('<', '>', typeArguments);
+
+	public TypeValueObject MakeGenericXml(params string[] typeArguments) => MakeGeneric('{', '}', typeArguments);
+
+	TypeValueObject MakeGeneric(char start, char end, string[] typeArguments)
 	{
 		if (typeArguments.Length == 0)
 			throw new ArgumentException("At least one type argument must be provided.", nameof(typeArguments));
 
 		string typeArgs = string.Join(", ", typeArguments.Select(arg => arg));
-		string fullTypeName = $"{TypeName}<{typeArgs}>";
+		string fullTypeName = $"{TypeName}{start}{typeArgs}{end}";
 		return new(fullTypeName, Namespace);
 	}
 

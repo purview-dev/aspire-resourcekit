@@ -10,14 +10,47 @@ namespace Purview.Aspire.ResourceKit;
 public abstract class HostKitBase<THostKit> : IHostKit
 	where THostKit : class, IHostKit
 {
+	readonly List<IResourceKit<THostKit>> _resources = [];
+	bool _resourcesSealed;
+
 	/// <summary>
-	/// Gets or sets the resources managed by this host kit.
+	/// Gets the resources managed by this host kit.
 	/// </summary>
-	protected ImmutableArray<IResourceKit<THostKit>> Resources { get; set; }
+	/// <remarks>The resources will be empty until <see cref="SealResources"/> is called.</remarks>
+	protected ImmutableArray<IResourceKit<THostKit>> Resources { get; private set; } = [];
+
+	/// <summary>
+	/// Adds a resource to the host kit.
+	/// </summary>
+	/// <param name="resource">The resource to add.</param>
+	/// <exception cref="InvalidOperationException">Thrown when resources have been sealed.</exception>
+	public void AddResource(IResourceKit<THostKit> resource)
+	{
+		if (_resourcesSealed)
+			throw new InvalidOperationException("Resources cannot be added after the host kit has been sealed.");
+
+		ArgumentNullException.ThrowIfNull(resource);
+
+		_resources.Add(resource);
+	}
+
+	bool SealResources()
+	{
+		if (_resourcesSealed)
+			return false;
+
+		_resourcesSealed = true;
+		Resources = [.. _resources];
+
+		return true;
+	}
 
 	/// <inheritdoc/>
 	public virtual void Build(IDistributedApplicationBuilder builder)
 	{
+		if (!SealResources())
+			return;
+
 		foreach (var resource in Resources)
 			resource.Build(builder);
 	}

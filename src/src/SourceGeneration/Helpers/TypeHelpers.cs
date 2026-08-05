@@ -176,6 +176,9 @@ static class TypeHelpers
 		"Microsoft.Extensions.Configuration"
 	);
 
+	// Required for Options
+	public static readonly TypeValueObject OptionsBuilder = new(nameof(OptionsBuilder), "Microsoft.Extensions.Options");
+
 	// Aspire types.
 	public static readonly TypeValueObject IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
 
@@ -189,6 +192,9 @@ static class TypeHelpers
 		nameof(NotNullAttribute),
 		"System.Diagnostics.CodeAnalysis"
 	);
+
+	public static readonly TypeValueObject Action = new(nameof(Action), "System");
+
 	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
 
 	// Generated attributes (make sure this is after they're all initialized!)
