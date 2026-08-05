@@ -101,19 +101,31 @@ Use `OptionsHelper` to generate command-line configuration arguments from strong
 ```csharp
 var args = OptionsHelper.ForSet<ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
-    c => c.API.Name = "api-test");
+    c => c.API.Name = "api-test"
+).Build();
 ```
 
-For a single argument, use `ForOne` with a member selector:
+For a single argument, use `ForOne` with a member selector and access the first element:
 
 ```csharp
-var arg = OptionsHelper.ForOne<ShopHostKit.ShopHostKitOptions>(f => f.API.Name);
+var arg = OptionsHelper.ForOne<ShopHostKit.ShopHostKitOptions>(f => f.API.Name).Build()[0];
 ```
 
 Resulting args are in this form:
 
 - `--ShopHostKit:API:IsEnabled=false`
 - `--ShopHostKit:API:Name=api-test`
+
+To produce environment variables instead, call `AsEnvironmentVariables()` before `Build()`:
+
+```csharp
+var envVars = OptionsHelper.ForSet<ShopHostKitOptions>(
+    c => c.API.IsEnabled = false,
+    c => c.API.Name = "api-test"
+).AsEnvironmentVariables().Build();
+```
+
+This returns a dictionary such as `{"ShopHostKit__API__IsEnabled": "false", "ShopHostKit__API__Name": "api-test"}`.
 
 >[!NOTE]
 > This can be useful when using [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/), and passing in Args, e.g.
@@ -125,7 +137,7 @@ Resulting args are in this form:
 >    .. OptionsHelper.ForSet<ShopHostKit.ShopHostKitOptions>(
 >      c => c.API.IsEnabled = false,
 >      c => c.API.Name = "api-test"
->    ),
+>    ).Build(),
 >];
 > ```
 
