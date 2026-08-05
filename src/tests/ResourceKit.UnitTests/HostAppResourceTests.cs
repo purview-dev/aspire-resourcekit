@@ -58,6 +58,36 @@ public sealed class HostResourceKitTests
 		await Assert.That(resource.IsEnabled).IsFalse();
 	}
 
+	[Test]
+	public async Task Configure_WhenResourceAddedAfterBuild_CallsConfigureOnAddedResource()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		var hostApp = new TestHostKit();
+		var resource = new TestResourceKit(hostApp, enabled: true);
+
+		hostApp.AddResource(resource);
+		hostApp.Build(builder);
+
+		// Act
+		hostApp.Configure();
+
+		// Assert
+		await Assert.That(resource.ConfigureCalled).IsTrue();
+	}
+
+	[Test]
+	public async Task AddResource_WhenSealed_ThrowsInvalidOperationException()
+	{
+		// Arrange
+		var hostApp = new TestHostKit();
+		var resource = new TestResourceKit(hostApp);
+		hostApp.Build(IDistributedApplicationBuilder.Mock());
+
+		// Act/Assert
+		await Assert.That(() => hostApp.AddResource(resource)).ThrowsExactly<InvalidOperationException>();
+	}
+
 	sealed class TestHostKit : HostKitBase<TestHostKit>;
 
 	sealed class TestResourceKit(TestHostKit hostKit, bool enabled = true)

@@ -184,9 +184,15 @@ Use these values through generated properties:
 `OptionsHelper` converts typed assignment expressions into command-line configuration args:
 
 ```csharp
-var args = OptionsHelper.For<ExampleHostKit.ExampleHostKitOptions>(
+var args = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false,
     c => c.Redis.Name = "dev-redis");
+```
+
+For a single value, use `ForOne` with a member selector:
+
+```csharp
+var arg = OptionsHelper.ForOne<ExampleHostKit.ExampleHostKitOptions>(f => f.Redis.Name);
 ```
 
 Produces values like:

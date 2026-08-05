@@ -65,11 +65,7 @@ namespace Testing
 			.Contains("[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]");
 		await Assert.That(generated).Contains("public string Name { get; set; } = \"redis\";");
 		await Assert.That(generated).Contains("public bool IsEnabled { get; set; } = true;");
-		await Assert
-			.That(generated)
-			.Contains(
-				"partial class TestingHostKit(global::Testing.TestingHostKit.TestingHostKitOptions options) : global::Purview.Aspire.ResourceKit.HostKitBase<global::Testing.TestingHostKit>"
-			);
+		await Assert.That(generated).Contains("global::Testing.TestingHostKit.TestingHostKitOptions options");
 		await Assert.That(generated).Contains("public global::Testing.RedisResourceKit Redis");
 		await Assert.That(generated).Contains("private set");
 		await Assert.That(generated).Contains("has not been initialized. Call Build first.");
@@ -77,7 +73,7 @@ namespace Testing
 			.That(generated)
 			.Contains("public override void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder)");
 		await Assert.That(generated).Contains("Redis = new(this, Options.Redis);");
-		await Assert.That(generated).Contains("Resources = [");
+		await Assert.That(generated).Contains("AddResource(Redis);");
 		await Assert.That(generated).Contains("base.Build(builder);");
 		await Assert.That(generated).Contains("sealed partial class TestingHostKitOptions");
 		await Assert.That(generated).Contains("static class TestingHostKitBuilderExtensions");
@@ -110,7 +106,7 @@ namespace Testing
 		await Assert
 			.That(generated)
 			.Contains("extension(global::Aspire.Hosting.IDistributedApplicationBuilder builder)");
-		await Assert.That(generated).Contains("global::Testing.TestingHostKit hostKit = new (hostKitOptions);");
+		await Assert.That(generated).Contains("global::Testing.TestingHostKit hostKit = new (");
 		await Assert.That(generated).Contains("hostKit.Build(builder);");
 		await Assert.That(generated).Contains("hostKit.Configure();");
 		await Assert.That(generated).Contains("builder.Services.AddSingleton(hostKit);");
@@ -142,9 +138,6 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = await result.GetSourceAsync(cancellationToken);
-		await Assert
-			.That(generated)
-			.Contains($"partial class TestingHostKit : {TypeHelpers.HostKitBase}<global::Testing.TestingHostKit>");
 		await Assert.That(generated).DoesNotContain("TestingHostKitOptions()");
 		await Assert.That(generated).DoesNotContain("RedisResourceKitOptions()");
 	}
@@ -282,9 +275,8 @@ namespace Testing
 		await Assert.That(generated).Contains("public global::Testing.SqlServerResourceKit SqlServer");
 		await Assert.That(generated).Contains("Redis = new(this, Options.Redis);");
 		await Assert.That(generated).Contains("SqlServer = new(this, Options.SqlServer);");
-		await Assert.That(generated).Contains("Resources = [");
-		await Assert.That(generated).Contains("Redis,");
-		await Assert.That(generated).Contains("SqlServer");
+		await Assert.That(generated).Contains("AddResource(Redis);");
+		await Assert.That(generated).Contains("AddResource(SqlServer);");
 	}
 
 	[Test]

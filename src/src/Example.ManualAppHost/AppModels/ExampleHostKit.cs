@@ -25,6 +25,11 @@ sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 		Redis = new(this);
 		Postgres = new(this);
 
-		Resources = [AzureStorage, ExampleAPI, KeyVault, PublishMarker, Redis, Postgres];
+		AddResource(AzureStorage);
+		AddResource(ExampleAPI);
+		AddResource(KeyVault);
+		AddResource(PublishMarker);
+		AddResource(Redis);
+		AddResource(Postgres);
 	}
 }

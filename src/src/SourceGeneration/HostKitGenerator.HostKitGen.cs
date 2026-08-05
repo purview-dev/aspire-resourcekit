@@ -25,11 +25,21 @@ partial class HostKitGenerator
 		writer
 			.WriteXmlSummary("Represents the generated Host Kit and composes all discovered Resources Kits")
 			.Write("partial class ")
-			.Write(hostKitInfo.HostKitType.TypeName);
+			.Write(hostKitInfo.HostKitType.TypeName)
+			.Write('(')
+			.NewLine()
+			.Indent();
+
+		writer
+			.Write(TypeHelpers.Action.MakeGeneric(hostKitInfo.HostKitType, TypeHelpers.IDistributedApplicationBuilder))
+			.WriteLine("? onBuilt, ");
+
+		writer.Write(TypeHelpers.Action.MakeGeneric(hostKitInfo.HostKitType)).Write("? onConfigured");
 
 		if (hostKitInfo.ShouldGenerateOptions)
-			writer.Write('(').Write(hostKitInfo.HostKitOptionsType).Write(" options)");
+			writer.WriteLine(", ").Write(hostKitInfo.HostKitOptionsType).WriteLine(" options");
 
+		writer.Unindent().Write(')');
 		writer.Write(" : ").WriteLine(TypeHelpers.HostKitBase.MakeGeneric(hostKitInfo.HostKitType));
 
 		using (writer.Block())
@@ -46,7 +56,7 @@ partial class HostKitGenerator
 			// Write the Resource Kit properties
 			if (hostKitInfo.HasResourceKits)
 			{
-				GenerateHostKitResourceKitProperties(writer, hostKitInfo, context, cancellationToken);
+				GenerateResourceKitProperties(writer, hostKitInfo, context, cancellationToken);
 			}
 			else
 			{
@@ -56,7 +66,10 @@ partial class HostKitGenerator
 			}
 
 			// Write the Build method
-			GenerateHostAppBuildMethod(writer, hostKitInfo, notNull, cancellationToken);
+			GenerateBuildMethod(writer, hostKitInfo, notNull, cancellationToken);
+
+			// Write the Configure method
+			GenerateConfigureMethod(writer, cancellationToken);
 
 			if (hostKitInfo.ShouldGenerateOptions)
 			{
@@ -67,14 +80,10 @@ partial class HostKitGenerator
 
 		hostKitNamespace?.Dispose();
 
-		GenerateHostKitResourceKitBase(writer, hostKitInfo, cancellationToken);
+		GenerateResourceKitBase(writer, hostKitInfo, cancellationToken);
 	}
 
-	static void GenerateHostKitResourceKitBase(
-		CodeWriter writer,
-		HostKitInfo hostKitInfo,
-		CancellationToken cancellationToken
-	)
+	static void GenerateResourceKitBase(CodeWriter writer, HostKitInfo hostKitInfo, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
@@ -118,7 +127,7 @@ partial class HostKitGenerator
 		}
 	}
 
-	static void GenerateHostKitResourceKitProperties(
+	static void GenerateResourceKitProperties(
 		CodeWriter writer,
 		HostKitInfo hostKitInfo,
 		GenerationContext context,
@@ -171,7 +180,7 @@ partial class HostKitGenerator
 		}
 	}
 
-	static void GenerateHostAppBuildMethod(
+	static void GenerateBuildMethod(
 		CodeWriter writer,
 		HostKitInfo hostKitInfo,
 		string? notNull,
@@ -210,22 +219,42 @@ partial class HostKitGenerator
 				writer.Comment("No app resources were discovered for this host app.");
 			else
 			{
-				writer
-					.Comment("Provide the list of app resources to the base class.")
-					.WriteLine("Resources = [")
-					.Indent()
-					.MultiLineItems([.. hostKitInfo.ResourceKits.Select(r => r.PropertyName)])
-					.Unindent()
-					.WriteLine("];");
+				writer.Comment("Register the discovered app resources with the base class.");
+				foreach (var resourceKit in hostKitInfo.ResourceKits)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					writer.WriteLine($"AddResource({resourceKit.PropertyName});");
+				}
 			}
 
 			writer
 				.NewLine()
+				.Comment("Now the additional post-build func builder")
+				.WriteLine("onBuilt?.Invoke(this, builder);");
+
+			writer
+				.NewLine()
 				.Comment(
-					"Now that we've populated the resources, call the base classes",
+					"Now that we've populated all of the resources, call the base classes",
 					"Build method to register the app resources with the builder."
 				)
 				.WriteLine("base.Build(builder);");
+		}
+	}
+
+	static void GenerateConfigureMethod(CodeWriter writer, CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		writer.WriteXml("<inheritdoc />");
+		using (writer.Block($"public override void Configure()"))
+		{
+			writer.NewLine().Comment("Call the base classes Configure method first...").WriteLine("base.Configure();");
+
+			writer
+				.NewLine()
+				.Comment("Now the additional post-configure func builder")
+				.WriteLine("onConfigured?.Invoke(this);");
 		}
 	}
 

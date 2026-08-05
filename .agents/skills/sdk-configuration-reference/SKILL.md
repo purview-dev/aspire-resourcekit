@@ -28,8 +28,7 @@ These properties control package/app version resolution from `package.json`:
 - `RootPackageJson` — explicit path to the `package.json` to read
 - `EnableVersionDetectionCache` — default `true`; enables local caching of resolved version data
 - `VersionDetectionCacheFile` — optional explicit cache file path
-- `VersionDetectionLogSessionId` — optional session identifier for trace/log correlation
-- `VersionDetectionLogStampFile` — optional explicit stamp/log marker path
+- `VersionDetectionLogEnabled` — default `false`; set to `true` to log the detected package version
 
 Behavior rules:
 
@@ -88,10 +87,25 @@ These settings control the SDK’s repo-level helper file bootstrapping:
 - `BootstrapGlobalJsonToRepoRoot` — default `true`
 - `RepositoryGlobalJsonFilePath` — optional override for the destination `global.json`
 - `PurviewDotNetProjectSdkVersionForGlobalJson` — defaults to detected SDK package version, fallback `1.0.0`
-- `EnableEmbeddedAgentSkills` — default `true`; copies bundled skills from `skills/**` into the consuming repo’s `.agents/skills/`
-- `EnabledAgentFolderInPackage` — default `false`; when `true`, packs `$(ProjectAgentFolder)/skills/**` into the NuGet package as `skills/**`
-- `ProjectAgentFolder` — default `ProjectAgent`; repo-relative root folder that contains a `skills/` subfolder
-- `ProjectAgentDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied skills as `$(ProjectAgentDestinationFolder)/skills/**`
+- `EnableAgentFolderInPackage` — default `true`; copies the bundled `agents/**` folder from the SDK NuGet package into the consuming repo’s `.agents/`
+- `EnabledAgentFolderInPackage` — default `false`; when `true`, packs `$(ProjectAgentFolder)` into the NuGet package under `agents/**`
+- `ProjectAgentFolder` — default `ProjectAgent`; repo-relative root folder that contains the agent content to pack
+- `ProjectAgentDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied agent content as `$(ProjectAgentDestinationFolder)/**`
+
+When `EnabledAgentFolderInPackage` is `true`, the SDK injects a `.gitignore` file into each second-level packed agent folder during packaging with the following content:
+
+```text[.gitignore]
+# Ignore all files
+*
+
+# Don't ignore directories, so Git can traverse them
+!*/
+
+# Keep this file
+!.gitignore
+```
+
+This lets consuming repos keep the agent folder structure discoverable while ignoring the copied content in Git.
 
 ## Important derived properties you can inspect
 
