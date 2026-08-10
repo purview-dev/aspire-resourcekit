@@ -1,6 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 if (Environment.UserInteractive)
-	Console.Title = $"[{builder.Environment.EnvironmentName}] Example.AppHost v{AssemblyInfo.Version}";
+	Console.Title =
+		$"[{builder.Environment.EnvironmentName}] Example.AppHost v{AssemblyInfo.Version}";
 
 builder.AddAspireResourceKit();
 

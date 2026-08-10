@@ -1,6 +1,6 @@
 <Project>
 	<ItemGroup Label="Compiler Visible SDK Properties">
-		<CompilerVisibleProperty Include="DisableAspireResourceKitSourceGenerator">
+		<CompilerVisibleProperty Include="DisablePurviewAspireResourceKitSourceGenerator">
 			<Description>Specifies whether to disable Purview Aspire ResourceKit source generators.</Description>
 		</CompilerVisibleProperty>
 	</ItemGroup>

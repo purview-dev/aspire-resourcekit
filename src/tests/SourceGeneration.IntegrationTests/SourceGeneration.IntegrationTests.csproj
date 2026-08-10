@@ -5,13 +5,22 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Aspire.Hosting" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+		<PackageReference Include="Aspire.Hosting" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.Options" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+		<PackageReference Include="Purview.SourceGeneratorFramework" />
+		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\ResourceKit\ResourceKit.csproj" />
+		<!-- Reference the analyzer output as a normal reference so the test code can use HostKitGenerator. -->
+		<ProjectReference
+			Include="..\..\src\SourceGeneration\SourceGeneration.csproj"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+		<Reference Include="..\..\src\SourceGeneration\bin\$(Configuration)\netstandard2.0\Purview.Aspire.ResourceKit.SourceGeneration.dll" />
 	</ItemGroup>
 </Project>

@@ -4,7 +4,7 @@ using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Templates;
 
-static class EmbeddedResources
+static class EmbeddedResources1
 {
 	static readonly Assembly OwnerAssembly = typeof(EmbeddedResources).Assembly;
 
@@ -25,6 +25,6 @@ static class EmbeddedResources
 		using (StreamReader reader = new(resourceStream, Encoding.UTF8))
 			template = reader.ReadToEnd();
 
-		return SourceGenHelpers.AddCodeGen(template);
+		return SourceGenLibrary.AddCodeGen(template);
 	}
 }

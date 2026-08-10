@@ -1,62 +1,51 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
-using Purview.Aspire.ResourceKit.SourceGeneration.Templates;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 [Generator(LanguageNames.CSharp)]
-public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSupport
+public sealed partial class HostKitGenerator : IIncrementalGenerator
 {
-	const string EmbeddedAttributeSource =
-		@"namespace Microsoft.CodeAnalysis
-{
-	[global::System.AttributeUsage(global::System.AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-	sealed partial class EmbeddedAttribute : global::System.Attribute
-	{
-	}
-}";
-
-	GenerationLogger? _logger;
-
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		context.RegisterPostInitializationOutput(postInitContext =>
 		{
 			_logger?.Debug("Adding attributes:");
-			_logger?.Debug($"- {TypeHelpers.EmbeddedAttribute.TypeName}", 1);
+			_logger?.Debug($"- {TypeLibrary.EmbeddedAttribute.TypeName}", 1);
 
 			postInitContext.AddSource(
-				TypeHelpers.EmbeddedAttribute.TypeName + ".cs",
-				SourceText.From(EmbeddedAttributeSource, Encoding.UTF8)
+				TypeLibrary.EmbeddedAttribute.TypeName + ".cs",
+				SourceText.From(TypeLibrary.EmbeddedAttributeSource, Encoding.UTF8)
 			);
 
-			foreach (var resourceType in TypeHelpers.GeneratedTypes)
+			foreach (var resourceType in TypeLibrary.GeneratedTypes)
 			{
 				_logger?.Debug($"- {resourceType.TypeName}", 1);
 				postInitContext.AddSource(
 					resourceType.SymbolFullName + ".g.cs",
-					EmbeddedResources.LoadTemplate(resourceType.TypeName)
+					EmbeddedResources.Load(resourceType.TypeName)
 				);
 			}
 		});
 
 		// Collect all of the host app types and host resource types.
-		var valueProviders = SourceGenHelpers.GetGeneratorValueProviders(context, _logger);
+		var valueProviders = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
 
 		context.RegisterSourceOutput(
 			valueProviders,
-			static (sourceProductionContext, model) =>
+			(sourceProductionContext, model) =>
 			{
 				if (!model.IsSourceGeneratorEnabled)
 				{
-					model.GenerationContext.Logger?.Debug("Source generator disabled.");
+					_logger?.Debug("Source generator disabled.");
 					return;
 				}
 
-				model.GenerationContext.Logger?.Debug("Source generator enabled, processing...");
+				_logger?.Debug("Source generator enabled, processing...");
 
 				List<DiagnosticInfo> diagnostics = [];
 				if (model.HostKit.HasDiagnostics)
@@ -72,187 +61,25 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 				}
 
 				// Resolve the host app symbol (if any).
-				var hostKitSymbol = model.HostKit.IsSuccess ? model.HostKit.Value!.Symbol : null;
+				var hostKitSymbol = model.HostKit.IsSuccess
+					? model.HostKit.Value!.Target.Symbol
+					: null;
 
-				// Resolve the app resource descriptors. All [ResourceKit] classes
-				// attach to the single [HostApp]; the generated base class is not
-				// visible during source generation, so interface-based filtering
-				// is not possible.
-				List<TargetSymbolDescriptor> resourceKitDescriptors;
-				if (hostKitSymbol is not null)
-				{
-					resourceKitDescriptors = [];
-					foreach (var resourceResult in model.ResourceKits)
-					{
-						if (!resourceResult.IsSuccess)
-							continue;
+				var resourceKitDescriptors = GatherResourceKits(
+					model,
+					diagnostics,
+					hostKitSymbol,
+					_logger
+				);
 
-						resourceKitDescriptors.Add(resourceResult.Value!);
-					}
-				}
-				else
-				{
-					model.GenerationContext.Logger?.Debug("No host app found");
-					resourceKitDescriptors = [];
-				}
-
-				var mixedUsageResourceSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-				foreach (var group in resourceKitDescriptors.GroupBy(r => r.Symbol, SymbolEqualityComparer.Default))
-				{
-					if (group.Key is null)
-						continue;
-
-					var hasGeneric = group.Any(r => r.IsGenericResourceDefinition);
-					var hasNonGeneric = group.Any(r => !r.IsGenericResourceDefinition);
-					if (!hasGeneric || !hasNonGeneric)
-						continue;
-
-					mixedUsageResourceSymbols.Add(group.Key);
-					diagnostics.Add(
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported,
-							group.First().Declaration.Identifier.GetLocation(),
-							group.Key.Name
-						)
-					);
-				}
-
-				resourceKitDescriptors =
-				[
-					.. resourceKitDescriptors.Where(resource => !mixedUsageResourceSymbols.Contains(resource.Symbol)),
-				];
-
-				List<TargetSymbolDescriptor> validResourceDescriptors = [];
-
-				// Validate app resources: derive names, check uniqueness and base type.
-				if (hostKitSymbol is not null && resourceKitDescriptors.Count > 0)
-				{
-					var descriptor = model.HostKit.Value!;
-					HashSet<string> seenPropertyNames = [with(StringComparer.Ordinal)];
-
-					foreach (var resourceKitDescriptor in resourceKitDescriptors)
-					{
-						var resourceKitSymbol = resourceKitDescriptor.Symbol;
-						var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(resourceKitDescriptor);
-
-						if (resourceKitDescriptor.IsGenericResourceDefinition && hasExplicitBaseType)
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name
-								)
-							);
-							continue;
-						}
-
-						if (!resourceKitDescriptor.IsGenericResourceDefinition && !hasExplicitBaseType)
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name,
-									TypeHelpers.ResourceKitBase.SymbolFullName
-								)
-							);
-							continue;
-						}
-
-						// Derive the resource name (from attribute or type name).
-						var resourceName =
-							resourceKitDescriptor.Name ?? TypeHelpers.DeriveResourceName(resourceKitSymbol.Name);
-						if (string.IsNullOrWhiteSpace(resourceName))
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.ResourceNameNotDerivable,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name
-								)
-							);
-							continue;
-						}
-
-						var propertyName = resourceKitDescriptor.PropertyName!;
-						if (!TypeHelpers.IsValidIdentifier(propertyName))
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.InvalidPropertyName,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									propertyName
-								)
-							);
-							continue;
-						}
-
-						// Check for duplicate property names (SG0005).
-						if (!seenPropertyNames.Add(propertyName))
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.DuplicateResourcePropertyName,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									propertyName
-								)
-							);
-							continue;
-						}
-
-						// Check that resources with an explicit base derive from the expected generated base (SG0006).
-						// If no explicit base was declared, a generated partial will provide the host-specific base.
-						if (
-							hasExplicitBaseType
-							&& !TypeHelpers.IsDerivedFromExpectedBase(
-								resourceKitDescriptor,
-								TypeHelpers.ResourceKitBase
-							)
-						)
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.ResourceMustDeriveFromBase,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name,
-									TypeHelpers.ResourceKitBase.SymbolFullName
-								)
-							);
-							continue;
-						}
-
-						if (resourceKitDescriptor.AspireResourceTypeSymbol is null)
-						{
-							diagnostics.Add(
-								DiagnosticInfo.Create(
-									GeneratorDiagnostics.NoAspireResourceFound,
-									resourceKitDescriptor.Declaration.Identifier.GetLocation(),
-									resourceKitSymbol.Name
-								)
-							);
-							continue;
-						}
-
-						validResourceDescriptors.Add(resourceKitDescriptor);
-					}
-				}
-
-				if (validResourceDescriptors.Count == 0)
-				{
-					if (!model.HostKit.IsEmpty)
-					{
-						diagnostics.Add(
-							GeneratorDiagnostics.Create(GeneratorDiagnostics.NoResourceKitsDefined, hostKitSymbol)
-						);
-					}
-				}
-				else if (model.HostKit.IsEmpty)
-					diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
-
-				// Report any diagnostics that were collected during the generation process.
-				if (diagnostics.Count > 0)
-					ReportDiagnostics(sourceProductionContext, diagnostics, model.GenerationContext.Logger);
+				var validResourceDescriptors = ReportDiagnostics(
+					sourceProductionContext,
+					model,
+					diagnostics,
+					hostKitSymbol,
+					resourceKitDescriptors,
+					_logger
+				);
 
 				// If any fatal diagnostics were reported, do not generate any source code.
 				if (model.HostKit.IsFatal || model.ResourceKits.Any(s => s.IsFatal))
@@ -262,25 +89,243 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator, ILogSuppor
 				if (hostKitSymbol is null)
 					return;
 
-				var hostKitInfo = CodeGenHelpers.BuildHostKit(model.HostKit.Value!, [.. validResourceDescriptors]);
+				var hostKitInfo = CodeGenHelpers.BuildHostKit(
+					model.HostKit.Value!,
+					[.. validResourceDescriptors]
+				);
 				var source = BuildSource(
 					hostKitInfo,
 					model.GenerationContext,
+					_logger,
 					sourceProductionContext.CancellationToken
 				);
+
 				var fileName = $"{hostKitSymbol.Name}.AspireResourceKit.g.cs";
 
-				model.GenerationContext.Logger?.Debug($"Adding source file: {fileName}");
+				_logger?.Debug($"Adding source file: {fileName}");
 
 				sourceProductionContext.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
 			}
 		);
 	}
 
-	static string ToCamelCase(string value)
+	[SuppressMessage(
+		"Style",
+		"CA1502:Avoid excessive complexity",
+		Justification = "This method is complex due to the number of validation checks."
+	)]
+	static List<KitTargetDescriptor> ReportDiagnostics(
+		SourceProductionContext sourceProductionContext,
+		KitGenerationModel model,
+		List<DiagnosticInfo> diagnostics,
+		INamedTypeSymbol? hostKitSymbol,
+		List<KitTargetDescriptor> resourceKitDescriptors,
+		GenerationLogger? logger
+	)
 	{
-		return string.IsNullOrEmpty(value) ? value
-			: value.Length == 1 ? char.ToLowerInvariant(value[0]).ToString()
-			: char.ToLowerInvariant(value[0]) + value.Substring(1);
+		List<KitTargetDescriptor> validResourceDescriptors = [];
+
+		// Validate app resources: derive names, check uniqueness and base type.
+		if (hostKitSymbol is not null && resourceKitDescriptors.Count > 0)
+		{
+			//var descriptor = model.HostKit.Value!;
+			HashSet<string> seenPropertyNames = [with(StringComparer.Ordinal)];
+
+			foreach (var resourceKitDescriptor in resourceKitDescriptors)
+			{
+				var resourceKitSymbol = resourceKitDescriptor.Target.Symbol;
+				var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(
+					resourceKitDescriptor.Target
+				);
+
+				if (resourceKitDescriptor.IsGenericResourceDefinition && hasExplicitBaseType)
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							resourceKitSymbol.Name
+						)
+					);
+					continue;
+				}
+
+				if (!resourceKitDescriptor.IsGenericResourceDefinition && !hasExplicitBaseType)
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							resourceKitSymbol.Name,
+							TypeLibrary.ResourceKitBase.SymbolFullName
+						)
+					);
+					continue;
+				}
+
+				// Derive the resource name (from attribute or type name).
+				var resourceName =
+					resourceKitDescriptor.Name ?? CodeGenHelpers.TrimSuffix(resourceKitSymbol.Name);
+				if (string.IsNullOrWhiteSpace(resourceName))
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.ResourceNameNotDerivable,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							resourceKitSymbol.Name
+						)
+					);
+					continue;
+				}
+
+				var propertyName = resourceKitDescriptor.PropertyName!;
+				if (!TypeHelpers.IsValidIdentifier(propertyName))
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.InvalidPropertyName,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							propertyName
+						)
+					);
+					continue;
+				}
+
+				// Check for duplicate property names (SG0005).
+				if (!seenPropertyNames.Add(propertyName))
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.DuplicateResourcePropertyName,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							propertyName
+						)
+					);
+					continue;
+				}
+
+				// Check that resources with an explicit base derive from the expected generated base (SG0006).
+				// If no explicit base was declared, a generated partial will provide the host-specific base.
+				if (
+					hasExplicitBaseType
+					&& !TypeHelpers.IsDerivedFromExpectedBase(
+						resourceKitDescriptor.Target,
+						TypeLibrary.ResourceKitBase
+					)
+				)
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.ResourceMustDeriveFromBase,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							resourceKitSymbol.Name,
+							TypeLibrary.ResourceKitBase.SymbolFullName
+						)
+					);
+					continue;
+				}
+
+				if (resourceKitDescriptor.AspireResourceTypeSymbol is null)
+				{
+					diagnostics.Add(
+						DiagnosticInfo.Create(
+							GeneratorDiagnostics.NoAspireResourceFound,
+							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
+							resourceKitSymbol.Name
+						)
+					);
+					continue;
+				}
+
+				validResourceDescriptors.Add(resourceKitDescriptor);
+			}
+		}
+
+		if (validResourceDescriptors.Count == 0)
+		{
+			if (!model.HostKit.IsEmpty)
+			{
+				diagnostics.Add(
+					GeneratorDiagnostics.Create(
+						GeneratorDiagnostics.NoResourceKitsDefined,
+						hostKitSymbol
+					)
+				);
+			}
+		}
+		else if (model.HostKit.IsEmpty)
+			diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
+
+		// Report any diagnostics that were collected during the generation process.
+		if (diagnostics.Count > 0)
+		{
+			ReportDiagnostics(sourceProductionContext, diagnostics, logger);
+		}
+
+		return validResourceDescriptors;
+	}
+
+	static List<KitTargetDescriptor> GatherResourceKits(
+		KitGenerationModel model,
+		List<DiagnosticInfo> diagnostics,
+		INamedTypeSymbol? hostKitSymbol,
+		GenerationLogger? logger
+	)
+	{
+		// Resolve the app resource descriptors. All [ResourceKit] classes
+		// attach to the single [HostApp]; the generated base class is not
+		// visible during source generation, so interface-based filtering
+		// is not possible.
+		List<KitTargetDescriptor> resourceKitDescriptors;
+		if (hostKitSymbol is not null)
+		{
+			resourceKitDescriptors = [];
+			foreach (var resourceResult in model.ResourceKits)
+			{
+				if (!resourceResult.IsSuccess)
+					continue;
+
+				resourceKitDescriptors.Add(resourceResult.Value!);
+			}
+		}
+		else
+		{
+			logger?.Debug("No host app found");
+			resourceKitDescriptors = [];
+		}
+
+		var mixedUsageResourceSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+		foreach (
+			var group in resourceKitDescriptors.GroupBy(
+				r => r.Target.Symbol,
+				SymbolEqualityComparer.Default
+			)
+		)
+		{
+			if (group.Key is null)
+				continue;
+
+			var hasGeneric = group.Any(r => r.IsGenericResourceDefinition);
+			var hasNonGeneric = group.Any(r => !r.IsGenericResourceDefinition);
+			if (!hasGeneric || !hasNonGeneric)
+				continue;
+
+			mixedUsageResourceSymbols.Add(group.Key);
+			diagnostics.Add(
+				DiagnosticInfo.Create(
+					GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported,
+					group.First().Target.Declaration?.Identifier.GetLocation(),
+					group.Key.Name
+				)
+			);
+		}
+
+		resourceKitDescriptors =
+		[
+			.. resourceKitDescriptors.Where(resource =>
+				!mixedUsageResourceSymbols.Contains(resource.Target.Symbol)
+			),
+		];
+		return resourceKitDescriptors;
 	}
 }

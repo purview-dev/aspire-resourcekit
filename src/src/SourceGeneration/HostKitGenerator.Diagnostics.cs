@@ -1,29 +1,27 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.CodeAnalysis;
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
-using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 partial class HostKitGenerator
 {
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		DiagnosticInfo diagnostic,
-		GenerationContext generationContext
-	) => ReportDiagnostics(context, [diagnostic], generationContext.Logger);
+	//static void ReportDiagnostics(
+	//	SourceProductionContext context,
+	//	DiagnosticInfo diagnostic,
+	//	GenerationContext generationContext
+	//) => ReportDiagnostics(context, [diagnostic], generationContext.Logger);
 
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		IEnumerable<DiagnosticInfo> diagnostics,
-		GenerationContext generationContext
-	) => ReportDiagnostics(context, diagnostics, generationContext.Logger);
+	//static void ReportDiagnostics(
+	//	SourceProductionContext context,
+	//	IEnumerable<DiagnosticInfo> diagnostics,
+	//	GenerationContext generationContext
+	//) => ReportDiagnostics(context, diagnostics, generationContext.Logger);
 
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		DiagnosticInfo diagnostic,
-		GenerationLogger? logger
-	) => ReportDiagnostics(context, [diagnostic], logger);
+	//static void ReportDiagnostics(
+	//	SourceProductionContext context,
+	//	DiagnosticInfo diagnostic,
+	//	GenerationLogger? logger
+	//) => ReportDiagnostics(context, [diagnostic], logger);
 
 	static void ReportDiagnostics(
 		SourceProductionContext context,
@@ -39,6 +37,4 @@ partial class HostKitGenerator
 			logger?.Diagnostic(diagnostic.GetMessage(CultureInfo.InvariantCulture));
 		}
 	}
-
-	void ILogSupport.SetLogOutput(Action<string, OutputType> action) => _logger = new GenerationLogger(action);
 }

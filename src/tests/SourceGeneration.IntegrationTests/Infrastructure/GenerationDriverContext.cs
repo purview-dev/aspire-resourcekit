@@ -8,7 +8,9 @@ public sealed record GenerationDriverContext(
 	bool IncludeOptionsConfigurationExtensionReference = true,
 	bool ThrowOnGenerationException = true,
 	bool? DisableSourceGenerator = null,
-	bool CompileToAssembly = true
+	bool CompileToAssembly = true,
+	bool ValidateNoErrorDiagnostics = true,
+	bool EnsureValid = true
 )
 {
 	/// <summary>
@@ -44,7 +46,9 @@ public sealed record GenerationDriverContext(
 	/// configuration-related extension dependencies are unavailable to the generator, exercising the
 	/// <see cref="GeneratorDiagnostics.OptionDependencyMissing" /> diagnostic.
 	/// </summary>
-	public static readonly GenerationDriverContext WithoutOptions = new(IncludeOptionsReference: false);
+	public static readonly GenerationDriverContext WithoutOptions = new(
+		IncludeOptionsReference: false
+	);
 
 	/// <summary>
 	/// Omits the options/configuration extension metadata reference so
@@ -58,10 +62,20 @@ public sealed record GenerationDriverContext(
 	/// <summary>
 	/// Omits the compilation step so the generated code is not compiled into an assembly, allowing inspection of the generated source code without requiring a valid compilation.
 	/// </summary>
-	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(CompileToAssembly: false);
+	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(
+		CompileToAssembly: false
+	);
 
 	public static readonly GenerationDriverContext NoCompileOrThrowOnException = new(
 		ThrowOnGenerationException: false,
-		CompileToAssembly: false
+		CompileToAssembly: false,
+		EnsureValid: false
+	);
+
+	public static readonly GenerationDriverContext DoNotValidate = new(
+		ThrowOnGenerationException: false,
+		CompileToAssembly: false,
+		ValidateNoErrorDiagnostics: false,
+		EnsureValid: false
 	);
 }

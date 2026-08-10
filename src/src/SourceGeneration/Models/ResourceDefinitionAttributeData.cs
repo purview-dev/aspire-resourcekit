@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using Purview.SourceGeneratorFramework.Extensions;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
@@ -11,21 +13,38 @@ readonly record struct ResourceDefinitionAttributeData(
 	INamedTypeSymbol? AspireResourceType
 )
 {
-	public static readonly ResourceDefinitionAttributeData Empty = new(false, null, null, false, null);
+	public static readonly ResourceDefinitionAttributeData Empty = new(
+		false,
+		null,
+		null,
+		false,
+		null
+	);
 
 	public static ResourceDefinitionAttributeData FromAttributeData(
-		GenerationContext executionContext,
+		Compilation compilation,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
+		var resourceDefinitionAttribute = compilation.GetTypeByMetadataName(
+			TypeLibrary.ResourceDefinitionAttribute.SymbolFullName
+		);
+		var genericResourceDefinitionAttribute = compilation.GetTypeByMetadataName(
+			TypeLibrary.GenericResourceDefinitionAttribute.SymbolFullName
+		);
+
 		if (
-			executionContext.ResourceDefinitionAttribute is not null
-			|| executionContext.GenericResourceDefinitionAttribute is not null
+			resourceDefinitionAttribute is not null
+			|| genericResourceDefinitionAttribute is not null
 		)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
+				var result = FromAttributeData(
+					resourceDefinitionAttribute,
+					genericResourceDefinitionAttribute,
+					attributeData[i]
+				);
 				if (result.Exists)
 					return result;
 			}
@@ -35,19 +54,24 @@ readonly record struct ResourceDefinitionAttributeData(
 	}
 
 	public static ResourceDefinitionAttributeData FromAttributeData(
-		GenerationContext executionContext,
+		INamedTypeSymbol? resourceDefinitionAttribute,
+		INamedTypeSymbol? genericResourceDefinitionAttribute,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.ResourceDefinitionAttribute;
 		var exists =
-			attributeSymbol is not null
-			&& SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
-		var genericAttributeSymbol = executionContext.GenericResourceDefinitionAttribute;
+			resourceDefinitionAttribute is not null
+			&& SymbolEqualityComparer.Default.Equals(
+				attributeData.AttributeClass,
+				resourceDefinitionAttribute
+			);
 		var isGeneric =
-			genericAttributeSymbol is not null
+			genericResourceDefinitionAttribute is not null
 			&& attributeData.AttributeClass is INamedTypeSymbol namedAttribute
-			&& SymbolEqualityComparer.Default.Equals(namedAttribute.ConstructedFrom, genericAttributeSymbol);
+			&& SymbolEqualityComparer.Default.Equals(
+				namedAttribute.ConstructedFrom,
+				genericResourceDefinitionAttribute
+			);
 
 		exists = exists || isGeneric;
 
@@ -57,7 +81,7 @@ readonly record struct ResourceDefinitionAttributeData(
 
 		if (exists)
 		{
-			ReadAttributeArguments(attributeData, ref name, ref propertyName);
+			(name, propertyName) = ReadAttributeArguments(attributeData);
 			if (
 				isGeneric
 				&& attributeData.AttributeClass is INamedTypeSymbol attrClass
@@ -69,35 +93,16 @@ readonly record struct ResourceDefinitionAttributeData(
 		return new(exists, name, propertyName, isGeneric, aspireResourceType);
 	}
 
-	static void ReadAttributeArguments(AttributeData attributeData, ref string? name, ref string? propertyName)
+	static (string? Name, string? PropertyName) ReadAttributeArguments(AttributeData attributeData)
 	{
-		if (
-			attributeData.ConstructorArguments.Length > 0
-			&& attributeData.ConstructorArguments[0].Value is string ctorName
-		)
-			name = ctorName;
+		string? name;
+		string? propertyName;
 
-		if (
-			attributeData.ConstructorArguments.Length > 1
-			&& attributeData.ConstructorArguments[1].Value is string ctorPropertyName
-		)
-			propertyName = ctorPropertyName;
+		if (!attributeData.TryGetConstructorArgument(nameof(name), out name))
+			name = attributeData.GetNamedArgument<string>(nameof(Name));
+		if (!attributeData.TryGetConstructorArgument(nameof(propertyName), out propertyName))
+			propertyName = attributeData.GetNamedArgument<string>(nameof(PropertyName));
 
-		foreach (var namedArg in attributeData.NamedArguments)
-		{
-			switch (namedArg.Key)
-			{
-				case nameof(Name):
-					if (namedArg.Value.Value is string namedName)
-						name = namedName;
-
-					break;
-				case nameof(PropertyName):
-					if (namedArg.Value.Value is string namedPropertyName)
-						propertyName = namedPropertyName;
-
-					break;
-			}
-		}
+		return (name, propertyName);
 	}
 }

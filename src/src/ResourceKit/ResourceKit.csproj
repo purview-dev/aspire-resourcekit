@@ -35,22 +35,32 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+
+		<None
+			Include="buildTransitive\Purview.Aspire.ResourceKit.props"
+			Pack="true"
+			PackagePath="buildTransitive\Purview.Aspire.ResourceKit.props"
+			Visible="true"
+		/>
 	</ItemGroup>
 
 	<Target
 		Name="IncludeResourceKitSourceGenerator"
-		DependsOnTargets="Build"
 		Condition="'$(TargetFramework)' == '$(DefaultTargetFramework)'"
 	>
-		<Error
-			Condition="!Exists('$(ResourceKitSourceGeneratorAssembly)')"
-			Text="The Purview Aspire ResourceKit Source Generator was not found at '$(ResourceKitSourceGeneratorAssembly)'."
-		/>
+		<MSBuild
+			Projects="$(ResourceKitSourceGeneratorProject)"
+			Targets="GetSourceGeneratorAnalyzerFiles"
+			Properties="Configuration=$(Configuration);TargetFramework=$(ResourceKitSourceGeneratorTargetFramework)"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_ResourceKitSourceGeneratorFiles" />
+		</MSBuild>
 
 		<ItemGroup>
-			<TfmSpecificPackageFile Include="$(ResourceKitSourceGeneratorAssembly)">
-				<PackagePath>analyzers/dotnet/cs/</PackagePath>
-			</TfmSpecificPackageFile>
+			<TfmSpecificPackageFile
+				Include="@(_ResourceKitSourceGeneratorFiles)"
+				PackagePath="analyzers/dotnet/cs/"
+			/>
 		</ItemGroup>
 	</Target>
 </Project>

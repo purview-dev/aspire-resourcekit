@@ -11,7 +11,13 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 public static class OptionsHelper
 {
-	static readonly string[] SectionNameSuffixes = ["Options", "Settings", "Configuration", "Config"];
+	static readonly string[] SectionNameSuffixes =
+	[
+		"Options",
+		"Settings",
+		"Configuration",
+		"Config",
+	];
 
 	sealed class ReferenceComparer : IEqualityComparer<object>
 	{
@@ -42,7 +48,10 @@ public static class OptionsHelper
 	/// <param name="sectionName">The root section name override.</param>
 	/// <param name="assignments">One or more property assignment actions.</param>
 	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForSet<TOptions>(string sectionName, params Action<TOptions>[] assignments)
+	public static IOptionsBuilder ForSet<TOptions>(
+		string sectionName,
+		params Action<TOptions>[] assignments
+	)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
 
@@ -105,7 +114,10 @@ public static class OptionsHelper
 	/// <param name="sectionName">The root section name override.</param>
 	/// <param name="selector">A member selector expression.</param>
 	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector)
+	public static IOptionsBuilder ForOne<TOptions>(
+		string sectionName,
+		Expression<Func<TOptions, object?>> selector
+	)
 	{
 		ArgumentNullException.ThrowIfNull(selector);
 
@@ -153,11 +165,14 @@ public static class OptionsHelper
 	static string ResolveSectionName<TOptions>(string? sectionNameOverride)
 	{
 		if (!string.IsNullOrWhiteSpace(sectionNameOverride))
-			return sectionNameOverride!;
+			return sectionNameOverride;
 
 		var sectionNameField = typeof(TOptions).GetField(
 			"SectionName",
-			BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy
+			BindingFlags.Public
+				| BindingFlags.NonPublic
+				| BindingFlags.Static
+				| BindingFlags.FlattenHierarchy
 		);
 
 		if (
@@ -201,7 +216,9 @@ public static class OptionsHelper
 		}
 
 		return instance is null
-			? throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.")
+			? throw new InvalidOperationException(
+				$"Unable to create an instance of '{type.FullName}'."
+			)
 			: (TOptions)instance;
 	}
 
@@ -243,7 +260,9 @@ public static class OptionsHelper
 				nameof(assignmentExpression)
 			);
 
-		var path = left[(firstDot + 1)..].Replace("!", string.Empty, StringComparison.Ordinal).Trim();
+		var path = left[(firstDot + 1)..]
+			.Replace("!", string.Empty, StringComparison.Ordinal)
+			.Trim();
 		return string.IsNullOrWhiteSpace(path)
 			? throw new ArgumentException(
 				$"Expression '{assignmentExpression}' does not contain a valid member path.",
@@ -258,8 +277,16 @@ public static class OptionsHelper
 
 		var body = selector.Body;
 
-		while (body is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unary)
+#pragma warning disable format
+		while (
+			body
+				is UnaryExpression
+				{
+					NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked
+				} unary
+		)
 			body = unary.Operand;
+#pragma warning restore format
 
 		var segments = new List<string>();
 		while (body is MemberExpression member)
@@ -301,7 +328,10 @@ public static class OptionsHelper
 			var property =
 				current
 					.GetType()
-					.GetProperty(segments[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+					.GetProperty(
+						segments[i],
+						BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+					)
 				?? throw new InvalidOperationException(
 					$"Property '{segments[i]}' was not found on '{current.GetType().FullName}'."
 				);
@@ -326,7 +356,7 @@ public static class OptionsHelper
 	static object? GetPathValue(object root, string keyPath)
 	{
 		var segments = keyPath.Split(':', StringSplitOptions.RemoveEmptyEntries);
-		object? current = root;
+		var current = root;
 
 		foreach (var segment in segments)
 		{
@@ -336,7 +366,10 @@ public static class OptionsHelper
 			var property =
 				current
 					.GetType()
-					.GetProperty(segment, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+					.GetProperty(
+						segment,
+						BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+					)
 				?? throw new InvalidOperationException(
 					$"Property '{segment}' was not found on '{current.GetType().FullName}'."
 				);
@@ -352,7 +385,9 @@ public static class OptionsHelper
 		return type.IsValueType
 			? Activator.CreateInstance(type)!
 			: Activator.CreateInstance(type, nonPublic: true)
-				?? throw new InvalidOperationException($"Unable to create an instance of '{type.FullName}'.");
+				?? throw new InvalidOperationException(
+					$"Unable to create an instance of '{type.FullName}'."
+				);
 	}
 
 	static string ToCommandLineValue(object? value)
@@ -373,8 +408,7 @@ public static class OptionsHelper
 		var underlying = Nullable.GetUnderlyingType(type);
 		if (underlying is not null)
 		{
-			var hasValue = seed % 2 == 0;
-			if (!hasValue)
+			if (seed % 2 != 0)
 			{
 				value = null;
 				return true;
@@ -408,6 +442,28 @@ public static class OptionsHelper
 			return true;
 		}
 
+		if (type.IsEnum)
+		{
+			var values = Enum.GetValues(type);
+			value =
+				values.Length == 0
+					? Activator.CreateInstance(type)
+					: values.GetValue(seed % values.Length);
+			return true;
+		}
+
+		if (TryGetNumericSentinel(type, seed, out value))
+			return true;
+
+		if (TryGetDateTimeSentinel(type, seed, out value))
+			return true;
+
+		value = null;
+		return false;
+	}
+
+	static bool TryGetNumericSentinel(Type type, int seed, out object? value)
+	{
 		if (type == typeof(byte))
 		{
 			value = (byte)(seed % 255);
@@ -474,6 +530,12 @@ public static class OptionsHelper
 			return true;
 		}
 
+		value = null;
+		return false;
+	}
+
+	static bool TryGetDateTimeSentinel(Type type, int seed, out object? value)
+	{
 		if (type == typeof(Guid))
 		{
 			Span<byte> bytes = stackalloc byte[16];
@@ -496,7 +558,7 @@ public static class OptionsHelper
 
 		if (type == typeof(TimeOnly))
 		{
-			value = new TimeOnly((seed * 3) % 23, (seed * 7) % 59, (seed * 11) % 59);
+			value = new TimeOnly(seed * 3 % 23, seed * 7 % 59, seed * 11 % 59);
 			return true;
 		}
 
@@ -509,19 +571,6 @@ public static class OptionsHelper
 		if (type == typeof(DateTimeOffset))
 		{
 			value = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero).AddDays(seed);
-			return true;
-		}
-
-		if (type.IsEnum)
-		{
-			var values = Enum.GetValues(type);
-			if (values.Length == 0)
-			{
-				value = Activator.CreateInstance(type);
-				return true;
-			}
-
-			value = values.GetValue(seed % values.Length);
 			return true;
 		}
 
@@ -543,9 +592,15 @@ public static class OptionsHelper
 		if (type.IsPrimitive || type.IsEnum)
 			return false;
 
-		if (type == typeof(decimal) || type == typeof(DateTime) || type == typeof(Guid) || type == typeof(TimeSpan))
+		if (
+			type == typeof(decimal)
+			|| type == typeof(DateTime)
+			|| type == typeof(Guid)
+			|| type == typeof(TimeSpan)
+		)
 			return false;
 
+		// If we get to here then we can assume it's a class or struct that we can instantiate (or at least try to).
 		return true;
 	}
 
@@ -613,7 +668,9 @@ public static class OptionsHelper
 			if (!property.CanRead)
 				continue;
 
-			var segment = string.IsNullOrEmpty(prefix) ? property.Name : $"{prefix}:{property.Name}";
+			var segment = string.IsNullOrEmpty(prefix)
+				? property.Name
+				: $"{prefix}:{property.Name}";
 			var av = property.GetValue(a);
 			var bv = property.GetValue(b);
 
@@ -646,14 +703,14 @@ public static class OptionsHelper
 		ArgumentNullException.ThrowIfNull(a);
 		ArgumentNullException.ThrowIfNull(b);
 
-		PopulateSentinels(a!, seed: 1, [with(ReferenceComparer.Instance)]);
-		PopulateSentinels(b!, seed: 2, [with(ReferenceComparer.Instance)]);
+		PopulateSentinels(a, seed: 1, [with(ReferenceComparer.Instance)]);
+		PopulateSentinels(b, seed: 2, [with(ReferenceComparer.Instance)]);
 
 		assignment(a);
 		assignment(b);
 
 		var candidates = new List<(string Path, object? Value)>();
-		CollectEqualLeafPaths(a!, b!, string.Empty, candidates, [with(ReferenceComparer.Instance)]);
+		CollectEqualLeafPaths(a, b, string.Empty, candidates, [with(ReferenceComparer.Instance)]);
 
 		return candidates.Count != 1
 			? throw new InvalidOperationException(
@@ -700,7 +757,10 @@ public static class OptionsHelper
 		return new OptionsEntry(sectionName, keyPath, valueText);
 	}
 
-	static OptionsEntry[] BuildEntriesFromActions<TOptions>(string? sectionNameOverride, Action<TOptions>[] assignments)
+	static OptionsEntry[] BuildEntriesFromActions<TOptions>(
+		string? sectionNameOverride,
+		Action<TOptions>[] assignments
+	)
 	{
 		var resolvedSectionName = ResolveSectionName<TOptions>(sectionNameOverride);
 		var entries = new OptionsEntry[assignments.Length];
@@ -726,20 +786,29 @@ public static class OptionsHelper
 			ArgumentNullException.ThrowIfNull(assignments);
 
 			if (assignments.Length == 0)
-				throw new ArgumentException("At least one assignment action is required.", nameof(assignments));
+				throw new ArgumentException(
+					"At least one assignment action is required.",
+					nameof(assignments)
+				);
 
-			_entries.AddRange(BuildEntriesFromActions<TOptions>(sectionNameOverride: null, assignments));
+			_entries.AddRange(BuildEntriesFromActions(sectionNameOverride: null, assignments));
 			return this;
 		}
 
-		public IOptionsBuilder ForSet<TOptions>(string sectionName, params Action<TOptions>[] assignments)
+		public IOptionsBuilder ForSet<TOptions>(
+			string sectionName,
+			params Action<TOptions>[] assignments
+		)
 		{
 			ArgumentNullException.ThrowIfNull(assignments);
 
 			if (assignments.Length == 0)
-				throw new ArgumentException("At least one assignment action is required.", nameof(assignments));
+				throw new ArgumentException(
+					"At least one assignment action is required.",
+					nameof(assignments)
+				);
 
-			_entries.AddRange(BuildEntriesFromActions<TOptions>(sectionName, assignments));
+			_entries.AddRange(BuildEntriesFromActions(sectionName, assignments));
 			return this;
 		}
 
@@ -769,7 +838,11 @@ public static class OptionsHelper
 			ArgumentNullException.ThrowIfNull(assignment);
 
 			_entries.Add(
-				BuildEntryFromAssignment(assignment, assignmentExpression, ResolveSectionName<TOptions>(sectionName))
+				BuildEntryFromAssignment(
+					assignment,
+					assignmentExpression,
+					ResolveSectionName<TOptions>(sectionName)
+				)
 			);
 			return this;
 		}
@@ -778,15 +851,25 @@ public static class OptionsHelper
 		{
 			ArgumentNullException.ThrowIfNull(selector);
 
-			_entries.Add(BuildEntryFromSelector(selector, ResolveSectionName<TOptions>(sectionNameOverride: null)));
+			_entries.Add(
+				BuildEntryFromSelector(
+					selector,
+					ResolveSectionName<TOptions>(sectionNameOverride: null)
+				)
+			);
 			return this;
 		}
 
-		public IOptionsBuilder ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector)
+		public IOptionsBuilder ForOne<TOptions>(
+			string sectionName,
+			Expression<Func<TOptions, object?>> selector
+		)
 		{
 			ArgumentNullException.ThrowIfNull(selector);
 
-			_entries.Add(BuildEntryFromSelector(selector, ResolveSectionName<TOptions>(sectionName)));
+			_entries.Add(
+				BuildEntryFromSelector(selector, ResolveSectionName<TOptions>(sectionName))
+			);
 			return this;
 		}
 
@@ -843,17 +926,23 @@ public static class OptionsHelper
 			return args;
 		}
 
-		public IEnvironmentVariablesBuilder AsEnvironmentVariables() => new EnvironmentVariablesBuilder([.. _entries]);
+		public IEnvironmentVariablesBuilder AsEnvironmentVariables() =>
+			new EnvironmentVariablesBuilder([.. _entries]);
 	}
 
-	sealed class EnvironmentVariablesBuilder(List<OptionsEntry> entries) : IEnvironmentVariablesBuilder
+	sealed class EnvironmentVariablesBuilder(List<OptionsEntry> entries)
+		: IEnvironmentVariablesBuilder
 	{
 		public IReadOnlyDictionary<string, string> Build()
 		{
 			var result = new Dictionary<string, string>();
 			foreach (var entry in entries)
 			{
-				var key = $"{entry.SectionName}__{entry.KeyPath}".Replace(":", "__", StringComparison.Ordinal);
+				var key = $"{entry.SectionName}__{entry.KeyPath}".Replace(
+					":",
+					"__",
+					StringComparison.Ordinal
+				);
 				result[key] = entry.Value ?? string.Empty;
 			}
 

@@ -1,5 +1,3 @@
-﻿using System.Globalization;
-using System.Text;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
@@ -14,107 +12,100 @@ static class TestHelper
 
 	public const string DefaultResourceKitNamespace = "Testing.ResourceKitNamespace";
 
-	public const string DefaultAspireResource = "TestingAspireResource";
+	public static TypeValueObject DefaultAspireResource = new(
+		nameof(DefaultAspireResource),
+		"Testing.AspireResourceNamespace"
+	);
 
-	public static string GenerateBuildResource(string aspireResource = DefaultAspireResource) =>
-		$"protected override IResourceBuilder<{aspireResource}> BuildResource(IDistributedApplicationBuilder builder) => throw new NotImplementedException();";
+	public static string GenerateBuildResource(TypeValueObject? aspireResource = null) =>
+		$"protected override IResourceBuilder<{aspireResource ?? DefaultAspireResource}> BuildResource({TypeLibrary.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
 
-	public static string GenerateSource(HostKitInfo? hostKit, params ResourceKitInfo[] resourceKits)
+	public static IEnumerable<string> GenerateSources(
+		string hostKitName = DefaultHostKitType,
+		string? hostKitNamespace = DefaultHostKitNamespace,
+		string? hostKitBaseClass = null,
+		bool generateOptions = true,
+		string resourceKitName = DefaultResourceKitType,
+		string? resourceKitNamespace = DefaultResourceKitNamespace,
+		string? resourceKitBaseClass = null,
+		TypeValueObject? aspireResource = null
+	)
 	{
-		StringBuilder builder = new();
-
-		if (hostKit is not null)
-		{
-			if (hostKit.HostKitNamespace is not null)
-			{
-				builder
-					.AppendLine(CultureInfo.InvariantCulture, $"namespace {hostKit.HostKitNamespace}")
-					.Append('{')
-					.AppendLine();
-			}
-
-			builder.AppendLine(
-				CultureInfo.InvariantCulture,
-				$"{hostKit.Accessibility} class {hostKit.HostKitType} {{ }}"
-			);
-
-			if (hostKit.HostKitNamespace is not null)
-			{
-				builder.Append('}').AppendLine();
-			}
-		}
-
-		foreach (var resourceKit in resourceKits)
-		{
-			if (resourceKit.ResourceKitNamespace is not null)
-			{
-				builder
-					.AppendLine(CultureInfo.InvariantCulture, $"namespace {resourceKit.ResourceKitNamespace}")
-					.Append('{')
-					.AppendLine();
-			}
-
-			var baseClass = "";
-			if (resourceKit.BaseClass is not null)
-			{
-				baseClass = $" : {resourceKit.BaseClass}<";
-				if (hostKit is not null)
-					baseClass += hostKit.HostKitType;
-
-				baseClass += ">";
-			}
-
-			builder.AppendLine(
-				CultureInfo.InvariantCulture,
-				$"{resourceKit.Accessibility} class {resourceKit.ResourceKitType}{baseClass}"
-			);
-			builder.Append('{').AppendLine();
-
-			builder
-				.Append("protected override IResourceBuilder<")
-				.Append(resourceKit.AspireResource)
-				.AppendLine("> BuildResource(IDistributedResourceBuilder app) => throw new NotImplementedException();");
-
-			builder.Append('}').AppendLine();
-
-			if (resourceKit.ResourceKitNamespace is not null)
-			{
-				builder.Append('}').AppendLine();
-			}
-		}
-
-		return builder.ToString();
+		yield return GenerateHostKit(
+			hostKitName,
+			baseClass: hostKitBaseClass,
+			namespaceName: hostKitNamespace,
+			generateOptions: generateOptions
+		);
+		yield return GenerateResourceKit(
+			resourceKitName,
+			aspireResource: aspireResource,
+			baseClass: resourceKitBaseClass,
+			namespaceName: resourceKitNamespace
+		);
 	}
-}
 
-sealed record HostKitInfo(
-	string HostKitType = TestHelper.DefaultHostKitType,
-	string? HostKitNamespace = TestHelper.DefaultHostKitNamespace,
-	string? BaseClass = null,
-	string Accessibility = "public"
-)
-{
-	public static HostKitInfo Default = new(
-		HostKitType: TestHelper.DefaultHostKitType,
-		HostKitNamespace: TestHelper.DefaultHostKitNamespace,
-		BaseClass: null,
-		Accessibility: "public"
-	);
-}
+	public static string GenerateHostKit(
+		string hostKitName = DefaultHostKitType,
+		string? baseClass = null,
+		string? namespaceName = DefaultHostKitNamespace,
+		bool generateOptions = true
+	)
+	{
+		CodeWriter writer = new();
 
-sealed record ResourceKitInfo(
-	string ResourceKitType = TestHelper.DefaultResourceKitType,
-	string AspireResource = TestHelper.DefaultAspireResource,
-	string? BaseClass = null,
-	string? ResourceKitNamespace = TestHelper.DefaultResourceKitNamespace,
-	string Accessibility = "public"
-)
-{
-	public static ResourceKitInfo Default = new(
-		ResourceKitType: TestHelper.DefaultResourceKitType,
-		AspireResource: TestHelper.DefaultAspireResource,
-		BaseClass: TypeHelpers.ResourceKitBase.SymbolFullName,
-		ResourceKitNamespace: TestHelper.DefaultResourceKitNamespace,
-		Accessibility: "public"
-	);
+		var hostKitAttribute =
+			"[global::"
+			+ TypeLibrary.HostKitAttribute.SymbolFullName
+			+ "(GenerateOptions = "
+			+ (generateOptions ? "true" : "false")
+			+ ")]";
+
+		writer
+			.WriteFileScopedNamespace(namespaceName)
+			.WriteClass(
+				new TypeDeclarationOptions(hostKitName)
+				{
+					BaseType = baseClass,
+					Accessibility = TypeDeclarationAccessibility.Public,
+					IsPartial = true,
+					TypeAttributes = [hostKitAttribute],
+				},
+				bodyWriter => bodyWriter.Comment("Empty")
+			);
+
+		return writer.ToString();
+	}
+
+	public static string GenerateResourceKit(
+		string resourceKitName = DefaultResourceKitType,
+		TypeValueObject? aspireResource = null,
+		string? baseClass = null,
+		string? namespaceName = DefaultHostKitNamespace
+	)
+	{
+		aspireResource ??= DefaultAspireResource;
+
+		CodeWriter writer = new();
+
+		var baseType = baseClass is null ? null : $"{baseClass}<{aspireResource}>";
+		var resourceDefinitionAttribute = baseClass is null
+			? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource)
+			: TypeLibrary.ResourceDefinitionAttribute;
+
+		writer
+			.WriteFileScopedNamespace(namespaceName)
+			.WriteClass(
+				new TypeDeclarationOptions(resourceKitName)
+				{
+					BaseType = baseType,
+					Accessibility = TypeDeclarationAccessibility.Public,
+					IsPartial = true,
+					TypeAttributes = [resourceDefinitionAttribute],
+				},
+				bodyWriter => bodyWriter.WriteLine(GenerateBuildResource(aspireResource))
+			);
+
+		return writer.ToString();
+	}
 }

@@ -1,4 +1,4 @@
-﻿using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
@@ -6,40 +6,63 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 partial class HostKitGenerator
 {
 	static void BuildResourceKits(
-		CodeWriter writer,
 		HostKitInfo hostKit,
-		GenerationContext context,
+		KitGenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		context.Logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
+		logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
 
-		foreach (var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace))
+		if (!hostKit.ResourceKits.IsDefaultOrEmpty)
+			context.CodeWriter.NewLine();
+
+		var isFirst = true;
+		foreach (
+			var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace)
+		)
 		{
-			var resourceNs = resourceKitGroup.Key is null ? null : writer.Block($"namespace {resourceKitGroup.Key}");
+			var resourceNs = resourceKitGroup.Key is null
+				? default
+				: context.CodeWriter.Block($"namespace {resourceKitGroup.Key}");
 
-			context.Logger?.Debug($"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}", 1);
+			logger?.Debug(
+				$"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}",
+				1
+			);
 
 			foreach (var resourceKit in resourceKitGroup)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				context.Logger?.Debug($"Processing resource kit: {resourceKit.ResourceKitType.TypeName}", 2);
+				logger?.Debug(
+					$"Processing resource kit: {resourceKit.ResourceKitType.TypeName}",
+					2
+				);
 
 				var suffix = resourceKit.HasExplicitBaseType
 					? null
 					: $" : {hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType)}";
 
-				writer.NewLine();
+				if (isFirst)
+					isFirst = false;
+				else
+					context.CodeWriter.NewLine();
 
 				// Generate the resource kit class
-				using (writer.Block($"partial class {resourceKit.ResourceKitType.TypeName}{suffix}"))
+				using (
+					context.CodeWriter.Block(
+						$"partial class {resourceKit.ResourceKitType.TypeName}{suffix}"
+					)
+				)
 				{
 					// Write the constructor
-					writer
-						.WriteXmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
+					context
+						.CodeWriter.WriteXmlSummary(
+							"Initializes a new instance of the Host Kit Resource Kit base class."
+						)
 						.Write("public ")
 						.Write(resourceKit.ResourceKitType.TypeName)
 						.Write('(')
@@ -48,8 +71,8 @@ partial class HostKitGenerator
 
 					if (hostKit.ShouldGenerateOptions)
 					{
-						writer
-							.Write($"{resourceKit.ResourceKitOptionsType} options)")
+						context
+							.CodeWriter.Write($"{resourceKit.ResourceKitOptionsType} options)")
 							.NewLine()
 							.Indent()
 							.WriteLine(
@@ -59,15 +82,20 @@ partial class HostKitGenerator
 					}
 					else
 					{
-						writer.Write("string? name)").NewLine().Indent().WriteLine(": base(hostKit, name)").Unindent();
+						context
+							.CodeWriter.Write("string? name)")
+							.NewLine()
+							.Indent()
+							.WriteLine(": base(hostKit, name)")
+							.Unindent();
 					}
 
-					using (writer.Block())
+					using (context.CodeWriter.Block())
 					{
 						if (hostKit.ShouldGenerateOptions)
 						{
-							writer
-								.NewLine()
+							context
+								.CodeWriter.NewLine()
 								.WriteLine("Options = options;")
 								.WriteLine("IsEnabled = options.IsEnabled;");
 						}
@@ -76,43 +104,64 @@ partial class HostKitGenerator
 					// Write the Options property if the host kit has options
 					if (hostKit.ShouldGenerateOptions)
 					{
-						writer
-							.NewLine()
+						context
+							.CodeWriter.NewLine()
 							.WriteXmlSummary("Gets the Resource Kit options.")
-							.WriteLine($"public {resourceKit.ResourceKitOptionsType} Options {{ get; }}");
+							.WriteLine(
+								$"public {resourceKit.ResourceKitOptionsType} Options {{ get; }}"
+							);
 					}
 
 					if (hostKit.ShouldGenerateOptions)
-						GenerateResourceKitOptionsClass(writer.NewLine(), resourceKit, context, cancellationToken);
+						GenerateResourceKitOptionsClass(
+							context.CodeWriter.NewLine(),
+							hostKit,
+							resourceKit,
+							logger,
+							cancellationToken
+						);
 				}
 			}
 
-			resourceNs?.Dispose();
+			resourceNs.Dispose();
 		}
 	}
 
 	static void GenerateResourceKitOptionsClass(
 		CodeWriter writer,
+		HostKitInfo hostKit,
 		ResourceKitInfo resourceKit,
-		GenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		context.Logger?.Debug(
+		logger?.Debug(
 			$"Generating Resource Kit Options class: {resourceKit.ResourceKitOptionsType.TypeName}",
 			3
 		);
 
-		using (writer.Block($"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"))
+		writer.WriteXmlSummary(
+			$"Typed settings for <see cref=\"{resourceKit.ResourceKitOptionsType}\" />.",
+			$"Can be accessed by resolving <see cref=\"{hostKit.HostKitOptionsType}.{resourceKit.PropertyName}\" />."
+		);
+
+		using (
+			writer.Block(
+				$"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"
+			)
+		)
 		{
 			var defaultResourceName =
-				resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
+				resourceKit.ResourceName
+				?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 
 			writer
 				.WriteXmlSummary("Gets or sets the logical name used to register the resource.")
-				.WriteLine("[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]")
+				.WriteLine(
+					"[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]"
+				)
 				.Write("public string Name { get; set; } = ")
 				.Quote(defaultResourceName)
 				.WriteLine(";")

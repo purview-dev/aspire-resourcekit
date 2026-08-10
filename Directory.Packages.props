@@ -2,6 +2,8 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>1.63.0</TUnitVersion>
+		<ModularPipelinesVersion>3.2.8</ModularPipelinesVersion>
+		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.8</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />
@@ -26,7 +28,10 @@
 			Version="10.0.10"
 		/>
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
-		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
+		<PackageVersion
+			Include="Microsoft.Extensions.Configuration.Abstractions"
+			Version="10.0.10"
+		/>
 		<!-- Keep Roslyn pinned only for netstandard2.0 because the generator must not pull System.Collections.Immutable 10.x into net8+ consumer and test builds. -->
 		<PackageVersion
 			Include="Microsoft.CodeAnalysis.Analyzers"
@@ -51,11 +56,19 @@
 		<PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.0" />
 		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="10.8.0" />
 		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="4.4.0" />
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework"
+			Version="$(PurviewSourceGeneratorFrameworkVersion)"
+		/>
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
+			Version="$(PurviewSourceGeneratorFrameworkVersion)"
+		/>
 		<PackageVersion Include="Microsoft.Testing.Platform.MSBuild" Version="2.3.2" />
-		<PackageVersion Include="ModularPipelines" Version="3.2.8" />
-		<PackageVersion Include="ModularPipelines.DotNet" Version="3.2.8" />
-		<PackageVersion Include="ModularPipelines.Git" Version="3.2.8" />
-		<PackageVersion Include="ModularPipelines.GitHub" Version="3.2.8" />
+		<PackageVersion Include="ModularPipelines" Version="$(ModularPipelinesVersion)" />
+		<PackageVersion Include="ModularPipelines.DotNet" Version="$(ModularPipelinesVersion)" />
+		<PackageVersion Include="ModularPipelines.Git" Version="$(ModularPipelinesVersion)" />
+		<PackageVersion Include="ModularPipelines.GitHub" Version="$(ModularPipelinesVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />

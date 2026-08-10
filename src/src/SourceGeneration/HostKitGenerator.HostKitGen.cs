@@ -1,4 +1,5 @@
-﻿using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using System.Collections.Immutable;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
@@ -6,92 +7,113 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 partial class HostKitGenerator
 {
 	static void BuildHostKit(
-		CodeWriter writer,
 		HostKitInfo hostKitInfo,
-		GenerationContext context,
+		KitGenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var notNull = (string?)null; //context.SystemCANotNull is null ? null : $"{TypeHelpers.NotNullAttribute} ";
+		logger?.Info($"Generating {hostKitInfo.HostKitType.SymbolFullName}...");
 
-		context.Logger?.Info($"Generating {hostKitInfo.HostKitType.SymbolFullName}...");
+		using var nsScope = context.CodeWriter.WriteBlockNamespace(
+			hostKitInfo.HostKitType.Namespace
+		);
 
-		var hostKitNamespace = hostKitInfo.HostKitType.IsGlobalNamespace
-			? null
-			: writer.Block($"namespace {hostKitInfo.HostKitType.Namespace}");
-
-		writer
-			.WriteXmlSummary("Represents the generated Host Kit and composes all discovered Resources Kits")
-			.Write("partial class ")
-			.Write(hostKitInfo.HostKitType.TypeName)
-			.Write('(')
-			.NewLine()
-			.Indent();
-
-		writer
-			.Write(TypeHelpers.Action.MakeGeneric(hostKitInfo.HostKitType, TypeHelpers.IDistributedApplicationBuilder))
-			.WriteLine("? onBuilt, ");
-
-		writer.Write(TypeHelpers.Action.MakeGeneric(hostKitInfo.HostKitType)).Write("? onConfigured");
+		var primaryConstructorParameters = ImmutableArray.CreateBuilder<string>();
+		primaryConstructorParameters.Add(
+			$"{TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType, TypeLibrary.IDistributedApplicationBuilder)}? onBuilt"
+		);
+		primaryConstructorParameters.Add(
+			$"{TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType)}? onConfigured"
+		);
 
 		if (hostKitInfo.ShouldGenerateOptions)
-			writer.WriteLine(", ").Write(hostKitInfo.HostKitOptionsType).WriteLine(" options");
+			primaryConstructorParameters.Add($"{hostKitInfo.HostKitOptionsType}? options");
 
-		writer.Unindent().Write(')');
-		writer.Write(" : ").WriteLine(TypeHelpers.HostKitBase.MakeGeneric(hostKitInfo.HostKitType));
-
-		using (writer.Block())
+		using (
+			context
+				.CodeWriter.WriteXmlSummary(
+					"Represents the generated Host Kit and composes all discovered Resources Kits"
+				)
+				.WriteClass(
+					new TypeDeclarationOptions(hostKitInfo.HostKitType.TypeName)
+					{
+						IsPartial = true,
+						BaseType = TypeLibrary.HostKitBase.MakeGeneric(hostKitInfo.HostKitType),
+						PrimaryConstructorParameters = primaryConstructorParameters.ToImmutable(),
+						ConstructorParametersOnSeparateLines = true,
+					}
+				)
+		)
 		{
 			// Write the Options property if the host kit has options
 			if (hostKitInfo.ShouldGenerateOptions)
 			{
-				writer
-					.WriteXmlSummary("Gets the Host Kit options.")
-					.WriteLine($"public {hostKitInfo.HostKitOptionsType} Options {{ get; }} = options;")
+				context
+					.CodeWriter.WriteXmlSummary("Gets the Host Kit options.")
+					.WriteLine(
+						$"public {hostKitInfo.HostKitOptionsType} Options {{ get; }} = options;"
+					)
 					.NewLine();
 			}
 
 			// Write the Resource Kit properties
 			if (hostKitInfo.HasResourceKits)
 			{
-				GenerateResourceKitProperties(writer, hostKitInfo, context, cancellationToken);
+				GenerateResourceKitProperties(
+					context.CodeWriter,
+					hostKitInfo,
+					logger,
+					cancellationToken
+				);
 			}
 			else
 			{
-				writer.Comment(
+				context.CodeWriter.Comment(
 					"Note: No app resources were discovered for this host app. The Resources property will be an empty list."
 				);
 			}
 
 			// Write the Build method
-			GenerateBuildMethod(writer, hostKitInfo, notNull, cancellationToken);
+			GenerateBuildMethod(hostKitInfo, context, logger, cancellationToken);
 
 			// Write the Configure method
-			GenerateConfigureMethod(writer, cancellationToken);
+			GenerateConfigureMethod(hostKitInfo, context, logger, cancellationToken);
 
 			if (hostKitInfo.ShouldGenerateOptions)
 			{
 				// Generate the options class.
-				GenerateHostKitOptionsClass(writer, hostKitInfo, cancellationToken);
+				GenerateHostKitOptionsClass(hostKitInfo, context, logger, cancellationToken);
 			}
 		}
-
-		hostKitNamespace?.Dispose();
-
-		GenerateResourceKitBase(writer, hostKitInfo, cancellationToken);
 	}
 
-	static void GenerateResourceKitBase(CodeWriter writer, HostKitInfo hostKitInfo, CancellationToken cancellationToken)
+	static void BuildResourceKitBase(
+		HostKitInfo hostKitInfo,
+		KitGenerationContext context,
+		GenerationLogger? logger,
+		CancellationToken cancellationToken
+	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		writer.NewLine();
-		using (writer.Block($"namespace {hostKitInfo.HostKitResourceKitBaseType.Namespace}"))
+		logger?.Debug(
+			$"Generating Resource Kit base class for host kit: {hostKitInfo.HostKitType.TypeName}"
+		);
+
+		context.CodeWriter.NewLine();
+		using (
+			context.CodeWriter.Block(
+				$"namespace {hostKitInfo.HostKitResourceKitBaseType.Namespace}"
+			)
+		)
 		{
-			writer
-				.WriteXmlSummary("Represents a typed base class for all generated Resource Kits for the Host Kit.")
+			context
+				.CodeWriter.WriteXmlSummary(
+					"Represents a typed base class for all generated Resource Kits for the Host Kit."
+				)
 				.Write(hostKitInfo.AccessibilityModifier)
 				.Write("abstract partial class ")
 				.Write(hostKitInfo.HostKitResourceKitBaseType.TypeName)
@@ -99,15 +121,19 @@ partial class HostKitGenerator
 				.NewLine()
 				.Indent()
 				.Write(": ")
-				.WriteLine(TypeHelpers.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, "TResource"))
-				.WriteLine($"where TResource : class, {TypeHelpers.IResource}")
+				.WriteLine(
+					TypeLibrary.ResourceKitBase.MakeGeneric(hostKitInfo.HostKitType, "TResource")
+				)
+				.WriteLine($"where TResource : class, {TypeLibrary.IResource}")
 				.Unindent();
 
-			using (writer.Block())
+			using (context.CodeWriter.Block())
 			{
 				// Write the constructor
-				writer
-					.WriteXmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
+				context
+					.CodeWriter.WriteXmlSummary(
+						"Initializes a new instance of the Host Kit Resource Kit base class."
+					)
 					.Write("protected ")
 					.Write(hostKitInfo.HostKitResourceKitBaseType.TypeName)
 					.Write('(')
@@ -119,7 +145,7 @@ partial class HostKitGenerator
 					.WriteLine(": base(hostKit, name)")
 					.Unindent();
 
-				using (writer.Block())
+				using (context.CodeWriter.Block())
 				{
 					// Empty constructor body
 				}
@@ -130,11 +156,11 @@ partial class HostKitGenerator
 	static void GenerateResourceKitProperties(
 		CodeWriter writer,
 		HostKitInfo hostKitInfo,
-		GenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
-		context.Logger?.Debug(
+		logger?.Debug(
 			$"Processing {hostKitInfo.ResourceKits.Length} resource kits for {hostKitInfo.HostKitType.SymbolFullName}...",
 			1
 		);
@@ -143,10 +169,15 @@ partial class HostKitGenerator
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			context.Logger?.Debug($"Generating properties for resource kit: {resourceKit.ResourceKitType.TypeName}", 2);
+			logger?.Debug(
+				$"Generating properties for resource kit: {resourceKit.ResourceKitType.TypeName}",
+				2
+			);
 
 			writer
-				.WriteXmlSummary($"Gets the <see cref=\"{resourceKit.ResourceKitType}\" /> resource instance.")
+				.WriteXmlSummary(
+					$"Gets the <see cref=\"{resourceKit.ResourceKitType}\" /> resource instance."
+				)
 				.WriteXml(
 					"<exception cref=\"System.InvalidOperationException\">Thrown if the resource has not been initialized on get, or if the resource has already been initialized on set.</exception>"
 				)
@@ -164,7 +195,9 @@ partial class HostKitGenerator
 				);
 				using (writer.Block("private set"))
 				{
-					writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(value);").NewLine();
+					writer
+						.WriteLine("global::System.ArgumentNullException.ThrowIfNull(value);")
+						.NewLine();
 					using (writer.Block("if (field is not null)"))
 					{
 						writer.WriteLine(
@@ -181,59 +214,74 @@ partial class HostKitGenerator
 	}
 
 	static void GenerateBuildMethod(
-		CodeWriter writer,
 		HostKitInfo hostKitInfo,
-		string? notNull,
+		KitGenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		writer.WriteXml("<inheritdoc />");
+		logger?.Debug($"Generating Build method for host kit: {hostKitInfo.HostKitType.TypeName}");
+
+		context.CodeWriter.WriteXml("<inheritdoc />");
 		using (
-			writer.Block($"public override void Build({notNull}{TypeHelpers.IDistributedApplicationBuilder} builder)")
+			context.CodeWriter.Block(
+				$"public override void Build({TypeLibrary.IDistributedApplicationBuilder} builder)"
+			)
 		)
 		{
-			writer.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);").NewLine();
+			context
+				.CodeWriter.WriteLine("global::System.ArgumentNullException.ThrowIfNull(builder);")
+				.NewLine();
 
 			foreach (var resourceKit in hostKitInfo.ResourceKits)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				writer.Comment($"Creating {resourceKit.ResourceKitType.TypeName} Resource Kit.");
+				context.CodeWriter.Comment(
+					$"Creating {resourceKit.ResourceKitType.TypeName} Resource Kit."
+				);
 				var resourceName =
-					resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
+					resourceKit.ResourceName
+					?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 				if (hostKitInfo.ShouldGenerateOptions)
 				{
-					writer.WriteLine($"{resourceKit.PropertyName} = new(this, Options.{resourceKit.PropertyName});");
+					context.CodeWriter.WriteLine(
+						$"{resourceKit.PropertyName} = new(this, Options.{resourceKit.PropertyName});"
+					);
 				}
 				else
 				{
-					writer.WriteLine($"{resourceKit.PropertyName} = new(this, \"{resourceName}\");");
+					context.CodeWriter.WriteLine(
+						$"{resourceKit.PropertyName} = new(this, \"{resourceName}\");"
+					);
 				}
 
-				writer.NewLine();
+				context.CodeWriter.NewLine();
 			}
 
 			if (!hostKitInfo.HasResourceKits)
-				writer.Comment("No app resources were discovered for this host app.");
+				context.CodeWriter.Comment("No app resources were discovered for this host app.");
 			else
 			{
-				writer.Comment("Register the discovered app resources with the base class.");
+				context.CodeWriter.Comment(
+					"Register the discovered app resources with the base class."
+				);
 				foreach (var resourceKit in hostKitInfo.ResourceKits)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					writer.WriteLine($"AddResource({resourceKit.PropertyName});");
+					context.CodeWriter.WriteLine($"AddResource({resourceKit.PropertyName});");
 				}
 			}
 
-			writer
-				.NewLine()
+			context
+				.CodeWriter.NewLine()
 				.Comment("Now the additional post-build func builder")
 				.WriteLine("onBuilt?.Invoke(this, builder);");
 
-			writer
-				.NewLine()
+			context
+				.CodeWriter.NewLine()
 				.Comment(
 					"Now that we've populated all of the resources, call the base classes",
 					"Build method to register the app resources with the builder."
@@ -242,36 +290,59 @@ partial class HostKitGenerator
 		}
 	}
 
-	static void GenerateConfigureMethod(CodeWriter writer, CancellationToken cancellationToken)
+	static void GenerateConfigureMethod(
+		HostKitInfo hostKit,
+		KitGenerationContext context,
+		GenerationLogger? logger,
+		CancellationToken cancellationToken
+	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		writer.WriteXml("<inheritdoc />");
-		using (writer.Block($"public override void Configure()"))
-		{
-			writer.NewLine().Comment("Call the base classes Configure method first...").WriteLine("base.Configure();");
+		logger?.Debug($"Generating Configure method for host kit: {hostKit.HostKitType.TypeName}");
 
-			writer
-				.NewLine()
+		context.CodeWriter.NewLine().WriteXml("<inheritdoc />");
+		using (context.CodeWriter.Block($"public override void Configure()"))
+		{
+			context
+				.CodeWriter.NewLine()
+				.Comment("Call the base classes Configure method first...")
+				.WriteLine("base.Configure();");
+
+			context
+				.CodeWriter.NewLine()
 				.Comment("Now the additional post-configure func builder")
 				.WriteLine("onConfigured?.Invoke(this);");
 		}
 	}
 
 	static void GenerateHostKitOptionsClass(
-		CodeWriter writer,
 		HostKitInfo hostKitInfo,
+		KitGenerationContext context,
+		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		writer.NewLine();
-		using (writer.Block($"public sealed partial class {hostKitInfo.HostKitOptionsType.TypeName}"))
+		logger?.Debug(
+			$"Generating Host Kit Options class: {hostKitInfo.HostKitOptionsType.TypeName}"
+		);
+
+		context
+			.CodeWriter.NewLine()
+			.WriteXmlSummary(
+				$"Typed settings for <see cref=\"{hostKitInfo.HostKitOptionsType}\" />."
+			);
+		using (
+			context.CodeWriter.Block(
+				$"public sealed partial class {hostKitInfo.HostKitOptionsType.TypeName}"
+			)
+		)
 		{
-			writer.WriteXmlSummary("Configuration section name for host kit options.");
-			writer
-				.Write("public const string SectionName = ")
+			context.CodeWriter.WriteXmlSummary("Configuration section name for host kit options.");
+			context
+				.CodeWriter.Write("public const string SectionName = ")
 				.Quote(hostKitInfo.HostKitType.TypeName)
 				.Write(";")
 				.NewLine();
@@ -282,10 +353,11 @@ partial class HostKitGenerator
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 
-					writer
-						.NewLine()
+					context
+						.CodeWriter.NewLine()
 						.WriteXmlSummary(
-							$"Gets or sets options for the {resourceKit.ResourceKitType.TypeName} resource kit."
+							$"Gets or sets options for <see cref=\"{resourceKit.ResourceKitType}\" />.",
+							$"<see cref=\"{resourceKit.ResourceKitOptionsType}\" /> for specific configuration options."
 						)
 						.WriteLine(
 							$"public {resourceKit.ResourceKitOptionsType} {resourceKit.PropertyName} {{ get; set; }} = new();"
@@ -293,7 +365,7 @@ partial class HostKitGenerator
 				}
 			}
 
-			writer.NewLine();
+			context.CodeWriter.NewLine();
 		}
 	}
 }
