@@ -1,10 +1,9 @@
-using Projects;
 using Purview.Aspire.ResourceKit.Example.AppHost.AppModels;
 using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit.Fixtures;
 
-public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Example_AppHost>
+public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.Example_AppHost>
 {
 	public const string AzureStorageName = "custom-options-azure-storage-example";
 

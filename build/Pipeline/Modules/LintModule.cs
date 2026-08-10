@@ -16,7 +16,9 @@ public class LintModule : Module<CommandResult>
 		CancellationToken cancellationToken
 	)
 	{
-		await context.DotNet().Tool.Restore(new DotNetToolRestoreOptions(), cancellationToken: cancellationToken);
+		await context
+			.DotNet()
+			.Tool.Restore(new DotNetToolRestoreOptions(), cancellationToken: cancellationToken);
 
 		return await context.Shell.Command.ExecuteCommandLineTool(
 			DotNetCliOptions.Create("tool", "run", "csharpier", "check", "."),

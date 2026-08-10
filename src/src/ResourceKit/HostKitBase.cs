@@ -27,7 +27,9 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	public void AddResource(IResourceKit<THostKit> resource)
 	{
 		if (_resourcesSealed)
-			throw new InvalidOperationException("Resources cannot be added after the host kit has been sealed.");
+			throw new InvalidOperationException(
+				"Resources cannot be added after the host kit has been sealed."
+			);
 
 		ArgumentNullException.ThrowIfNull(resource);
 

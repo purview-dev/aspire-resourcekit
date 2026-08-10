@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 static class GeneratorDiagnostics
 {
-	const string Category = TypeHelpers.PurviewAspireResourceKitNamespace + ".SourceGenerator";
+	const string Category = TypeLibrary.PurviewAspireResourceKitNamespace + ".SourceGenerator";
 
 	public static readonly DiagnosticDescriptor ClassMustBePartial = new(
 		id: "SG0001",
@@ -57,7 +57,7 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor ResourceMustDeriveFromBase = new(
 		id: "SG0006",
-		title: $"Resource Kit must derive from {TypeHelpers.ResourceKitBase.TypeName}<TResource> or {TypeHelpers.ResourceKitBase.TypeName}<THostKit, TResource>",
+		title: $"Resource Kit must derive from {TypeLibrary.ResourceKitBase.TypeName}<TResource> or {TypeLibrary.ResourceKitBase.TypeName}<THostKit, TResource>",
 		messageFormat: "'{0}' must derive from a valid Resource Kit Base",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
@@ -127,23 +127,25 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor NonGenericResourceDefinitionRequiresExplicitBase = new(
-		id: "SG0014",
-		title: "Non-generic ResourceDefinition requires explicit base",
-		messageFormat: "'{0}' uses ResourceDefinition and must explicitly derive from '{1}'",
-		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
+	public static readonly DiagnosticDescriptor NonGenericResourceDefinitionRequiresExplicitBase =
+		new(
+			id: "SG0014",
+			title: "Non-generic ResourceDefinition requires explicit base",
+			messageFormat: "'{0}' uses ResourceDefinition and must explicitly derive from '{1}'",
+			category: Category,
+			defaultSeverity: DiagnosticSeverity.Error,
+			isEnabledByDefault: true
+		);
 
-	public static readonly DiagnosticDescriptor GenericResourceDefinitionCannotHaveExplicitBase = new(
-		id: "SG0015",
-		title: "Generic ResourceDefinition cannot have explicit base",
-		messageFormat: "'{0}' uses ResourceDefinition<TResource> and must not declare an explicit base type",
-		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
+	public static readonly DiagnosticDescriptor GenericResourceDefinitionCannotHaveExplicitBase =
+		new(
+			id: "SG0015",
+			title: "Generic ResourceDefinition cannot have explicit base",
+			messageFormat: "'{0}' uses ResourceDefinition<TResource> and must not declare an explicit base type",
+			category: Category,
+			defaultSeverity: DiagnosticSeverity.Error,
+			isEnabledByDefault: true
+		);
 
 	public static readonly DiagnosticDescriptor NoAspireResourceFound = new(
 		id: "SG0016",

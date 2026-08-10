@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
@@ -13,12 +13,14 @@ static class CodeGenHelpers
 
 	const string EmbedAttributesHashDefineName = "PURVIEW_ASPIRE_RESOURCEKIT_ATTRIBUTES";
 
-	const string GeneratedCodeConstant = "System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
+	const string GeneratedCodeConstant =
+		"System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
 	const string ConditionalConstant = "System.Diagnostics.ConditionalAttribute(\"{0}\")";
 	const string CompilerGeneratedConstant = "System.Runtime.CompilerServices.CompilerGenerated";
 
 	const string EmbeddedConstant = "Microsoft.CodeAnalysis.EmbeddedAttribute";
-	const string ExcludeFromCodeCoverageConstant = "System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
+	const string ExcludeFromCodeCoverageConstant =
+		"System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
 
 	public const string DefaultExtensionMethodName = "AddAspireResourceKit";
 
@@ -32,7 +34,11 @@ static class CodeGenHelpers
 	);
 
 	static readonly Lazy<string> ConditionalAttribute = new(() =>
-		string.Format(CultureInfo.InvariantCulture, ConditionalConstant, EmbedAttributesHashDefineName)
+		string.Format(
+			CultureInfo.InvariantCulture,
+			ConditionalConstant,
+			EmbedAttributesHashDefineName
+		)
 	);
 
 	static readonly Lazy<string[]> GenAttributes = new(() =>
@@ -61,7 +67,7 @@ static class CodeGenHelpers
 			{
 				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
 
-				string result = string.Empty;
+				var result = string.Empty;
 				foreach (var attr in GenAttributes.Value)
 					result += $"{t}{Global(attr)}\n";
 
@@ -76,7 +82,7 @@ static class CodeGenHelpers
 			{
 				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
 
-				string result = string.Empty;
+				var result = string.Empty;
 				foreach (var attr in NonClassGenAttributes.Value)
 					result += $"{t}{Global(attr)}\n";
 
@@ -85,25 +91,27 @@ static class CodeGenHelpers
 		);
 
 	public static HostKitInfo BuildHostKit(
-		TargetSymbolDescriptor hostKitSymbol,
-		ImmutableArray<TargetSymbolDescriptor> resourceKitSymbols
+		KitTargetDescriptor hostKitSymbol,
+		ImmutableArray<KitTargetDescriptor> resourceKitSymbols
 	)
 	{
-		TypeValueObject hostKitType = new(hostKitSymbol.Symbol);
+		TypeValueObject hostKitType = new(hostKitSymbol.Target.Symbol);
 
 		var hostKitOptionsNamespace =
-			hostKitType.Namespace + (hostKitType.IsGlobalNamespace ? null : '.') + hostKitType.TypeName;
+			hostKitType.Namespace
+			+ (hostKitType.IsGlobalNamespace ? null : '.')
+			+ hostKitType.TypeName;
 
 		var hostKitOptionsType = hostKitSymbol.GenerateOptions
 			? new TypeValueObject(
-				$"{hostKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}",
+				$"{hostKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}",
 				hostKitOptionsNamespace
 			)
 			: TypeValueObject.Empty;
 		var resourceKits = resourceKitSymbols
 			.Select(r =>
 			{
-				TypeValueObject resourceKitType = new(r.Symbol);
+				TypeValueObject resourceKitType = new(r.Target.Symbol);
 
 				var resourceKitOptionsNamespace =
 					resourceKitType.Namespace
@@ -111,17 +119,19 @@ static class CodeGenHelpers
 					+ resourceKitType.TypeName;
 				var resourceKitOptionsType = hostKitSymbol.GenerateOptions
 					? new TypeValueObject(
-						$"{resourceKitType.TypeName}{TypeHelpers.OptionsBaseClassSuffix}",
+						$"{resourceKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}",
 						resourceKitOptionsNamespace
 					)
 					: TypeValueObject.Empty;
 
 				TypeValueObject aspireResourceType = new(r.AspireResourceTypeSymbol!);
-				var accessibilityModifier = GetAccessibilityKeyword(r.Symbol.DeclaredAccessibility);
+				var accessibilityModifier = GetAccessibilityKeyword(
+					r.Target.Symbol.DeclaredAccessibility
+				);
 				var resourceName = r.Name;
 				var propertyName = r.PropertyName;
 				if (string.IsNullOrWhiteSpace(propertyName))
-					propertyName = TrimSuffix(r.Symbol.Name);
+					propertyName = TrimSuffix(r.Target.Symbol.Name);
 
 				return new ResourceKitInfo(
 					r,
@@ -131,24 +141,27 @@ static class CodeGenHelpers
 					accessibilityModifier,
 					r.PropertyName!,
 					resourceName,
-					TypeHelpers.HasExplicitBaseType(r)
+					TypeHelpers.HasExplicitBaseType(r.Target)
 				);
 			})
 			.ToImmutableArray();
 
-		var accessibilityModifier = GetAccessibilityKeyword(hostKitSymbol.Symbol.DeclaredAccessibility);
+		var accessibilityModifier = GetAccessibilityKeyword(
+			hostKitSymbol.Target.Symbol.DeclaredAccessibility
+		);
 
 		return new(
 			hostKitSymbol,
 			hostKitType,
 			hostKitOptionsType,
-			TypeHelpers.ResourceKitBase,
+			TypeLibrary.ResourceKitBase,
 			accessibilityModifier,
 			hostKitSymbol.ExtensionName ?? DefaultExtensionMethodName,
 			resourceKits
 		);
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static string GetAccessibilityKeyword(Accessibility accessibility)
 	{
 		return accessibility switch
@@ -170,6 +183,7 @@ static class CodeGenHelpers
 			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("Resource", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "Resource".Length)
-		: typeName.EndsWith("Kit", StringComparison.Ordinal) ? typeName.Substring(0, typeName.Length - "Kit".Length)
+		: typeName.EndsWith("Kit", StringComparison.Ordinal)
+			? typeName.Substring(0, typeName.Length - "Kit".Length)
 		: typeName;
 }

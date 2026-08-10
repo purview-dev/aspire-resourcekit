@@ -28,7 +28,10 @@ static class Helpers
 		bool hasConnectionString;
 		try
 		{
-			var connectionString = await fixture.GetConnectionStringAsync(resourceName, cancellationToken);
+			var connectionString = await fixture.GetConnectionStringAsync(
+				resourceName,
+				cancellationToken
+			);
 			hasConnectionString = !string.IsNullOrWhiteSpace(connectionString);
 		}
 		catch (InvalidOperationException)

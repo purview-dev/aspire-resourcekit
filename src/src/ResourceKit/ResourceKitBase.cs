@@ -9,7 +9,9 @@ namespace Purview.Aspire.ResourceKit;
 /// </summary>
 /// <typeparam name="THostKit">The host application type.</typeparam>
 /// <typeparam name="TResource">The Aspire <see cref="IResource"/> type this kit builds.</typeparam>
-public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostKit>, IResourceBuilder<TResource>
+public abstract class ResourceKitBase<THostKit, TResource>
+	: IResourceKit<THostKit>,
+		IResourceBuilder<TResource>
 	where THostKit : class, IHostKit
 	where TResource : class, IResource
 {
@@ -79,7 +81,9 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	/// </summary>
 	/// <param name="builder">The distributed application builder.</param>
 	/// <returns>The resource builder created for this resource.</returns>
-	protected abstract IResourceBuilder<TResource> BuildResource(IDistributedApplicationBuilder builder);
+	protected abstract IResourceBuilder<TResource> BuildResource(
+		IDistributedApplicationBuilder builder
+	);
 
 	/// <summary>
 	/// Configures cross-resource behavior after all resources have been built.
@@ -113,7 +117,9 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	void GuardEnabled()
 	{
 		if (!IsEnabled)
-			throw new InvalidOperationException($"The '{Name}' resource is not enabled and cannot be accessed.");
+			throw new InvalidOperationException(
+				$"The '{Name}' resource is not enabled and cannot be accessed."
+			);
 	}
 
 	/// <inheritdoc />

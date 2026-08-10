@@ -1,5 +1,7 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+using Purview.SourceGeneratorFramework.Extensions;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
@@ -13,15 +15,16 @@ readonly record struct HostKitAttributeData(
 	public static readonly HostKitAttributeData Empty = new(false, null, null, true);
 
 	public static HostKitAttributeData FromAttributeData(
-		GenerationContext executionContext,
+		Compilation compilation,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.HostKitAttribute is not null)
+		var attributeSymbol = compilation.GetTypeByMetadataName(TypeLibrary.HostKitAttribute);
+		if (attributeSymbol is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
+				var result = FromAttributeData(compilation, attributeData[i]);
 				if (result.Exists)
 					return result;
 			}
@@ -31,14 +34,16 @@ readonly record struct HostKitAttributeData(
 	}
 
 	public static HostKitAttributeData FromAttributeData(
-		GenerationContext executionContext,
+		INamedTypeSymbol? attributeSymbol,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.HostKitAttribute;
 		var exists =
 			attributeSymbol is not null
-			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
+			&& SymbolEqualityComparer.Default.Equals(
+				attributeData?.AttributeClass,
+				attributeSymbol
+			);
 		var name = (string?)null;
 		var extensionMethodName = (string?)null;
 		var generateOptions = true;
@@ -49,43 +54,38 @@ readonly record struct HostKitAttributeData(
 		return new(exists, name, extensionMethodName, generateOptions);
 	}
 
+	public static HostKitAttributeData FromAttributeData(
+		Compilation compilation,
+		AttributeData attributeData
+	) =>
+		FromAttributeData(
+			compilation.GetTypeByMetadataName(TypeLibrary.HostKitAttribute),
+			attributeData
+		);
+
 	static (string? Name, string? ExtensionMethodName, bool GenerateOptions) ReadAttributeArguments(
 		AttributeData attributeData
 	)
 	{
-		string? name = null;
-		string? extensionMethodName = null;
-		bool generateOptions = true;
-
-		foreach (var ctorArg in attributeData.ConstructorArguments)
-		{
-			if (ctorArg.Value is string ctorName)
-				name = ctorName;
-			else if (ctorArg.Value is bool ctorGenerateOptions)
-				generateOptions = ctorGenerateOptions;
-		}
-
-		foreach (var namedArg in attributeData.NamedArguments)
-		{
-			switch (namedArg.Key)
-			{
-				case nameof(Name):
-					if (namedArg.Value.Value is string namedName)
-						name = namedName;
-
-					break;
-				case nameof(ExtensionMethodName):
-					if (namedArg.Value.Value is string namedExtensionMethodName)
-						extensionMethodName = namedExtensionMethodName;
-
-					break;
-				case nameof(GenerateOptions):
-					if (namedArg.Value.Value is bool namedGenerateOptions)
-						generateOptions = namedGenerateOptions;
-
-					break;
-			}
-		}
+		string? name;
+		bool generateOptions;
+		string? extensionMethodName;
+		if (!attributeData.TryGetConstructorArgument(nameof(name), out name))
+			name = attributeData.GetNamedArgument<string>(nameof(Name));
+		if (!attributeData.TryGetConstructorArgument(nameof(generateOptions), out generateOptions))
+			generateOptions = attributeData.GetNamedArgument(
+				nameof(GenerateOptions),
+				defaultValue: true
+			);
+		if (
+			!attributeData.TryGetConstructorArgument(
+				nameof(extensionMethodName),
+				out extensionMethodName
+			)
+		)
+			extensionMethodName = attributeData.GetNamedArgument<string>(
+				nameof(ExtensionMethodName)
+			);
 
 		return (name, extensionMethodName, generateOptions);
 	}

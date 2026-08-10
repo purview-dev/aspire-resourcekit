@@ -27,12 +27,17 @@ public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings
 			)
 			.Build();
 
-	protected override async Task<Release?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
+	protected override async Task<Release?> ExecuteAsync(
+		IModuleContext context,
+		CancellationToken cancellationToken
+	)
 	{
 		var versionResult = await context.GetModule<VersionModule>();
 		var version =
 			versionResult.ValueOrDefault
-			?? throw new InvalidOperationException("The version was not produced by the version module.");
+			?? throw new InvalidOperationException(
+				"The version was not produced by the version module."
+			);
 
 		var tag = $"v{version}";
 

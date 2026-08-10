@@ -5,7 +5,11 @@ namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 [ResourceDefinition<AzurePostgresFlexibleServerResource>(Platform.ResourceKits.Postgres)]
 sealed partial class PostgresKit
 {
-	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; } = default!;
+	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database
+	{
+		get;
+		private set;
+	}
 
 	protected override IResourceBuilder<AzurePostgresFlexibleServerResource> BuildResource(
 		IDistributedApplicationBuilder builder

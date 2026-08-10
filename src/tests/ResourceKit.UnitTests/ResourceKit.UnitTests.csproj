@@ -3,4 +3,8 @@
 		<TargetFramework />
 		<TargetFrameworks>$(AllTargetFrameworks)</TargetFrameworks>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	</ItemGroup>
 </Project>

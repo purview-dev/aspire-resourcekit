@@ -67,7 +67,10 @@ public interface IOptionsBuilder
 	/// <param name="sectionName">The root section name override.</param>
 	/// <param name="selector">A member selector expression.</param>
 	/// <returns>The same builder.</returns>
-	IOptionsBuilder ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector);
+	IOptionsBuilder ForOne<TOptions>(
+		string sectionName,
+		Expression<Func<TOptions, object?>> selector
+	);
 
 	/// <summary>
 	/// Adds entries from multiple member selector expressions for the specified options type.

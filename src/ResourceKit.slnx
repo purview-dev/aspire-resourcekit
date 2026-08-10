@@ -23,6 +23,5 @@
 		<Project Path="tests/ResourceKit.IntegrationTests/ResourceKit.IntegrationTests.csproj" />
 		<Project Path="tests/ResourceKit.UnitTests/ResourceKit.UnitTests.csproj" />
 		<Project Path="tests/SourceGeneration.IntegrationTests/SourceGeneration.IntegrationTests.csproj" />
-		<Project Path="tests/SourceGeneration.UnitTests/SourceGeneration.UnitTests.csproj" />
 	</Folder>
 </Solution>
