@@ -17,14 +17,6 @@
 			Include="..\ResourceKit\ResourceKit.csproj"
 			IsAspireProjectResource="false"
 		/>
-		<!--<ProjectReference
-			Include="..\SourceGeneration\SourceGeneration.csproj"
-			IsAspireProjectResource="false"
-			OutputItemType="Analyzer"
-			ReferenceOutputAssembly="false"
-			PrivateAssets="all"
-			Targets="GetSourceGeneratorAnalyzerFiles"
-		/>-->
 		<ProjectReference
 			Include="..\SourceGeneration\SourceGeneration.csproj"
 			IsAspireProjectResource="false"
