@@ -6,6 +6,7 @@
 		-->
 		<DisablePurviewAspireResourceKitSourceGenerator>true</DisablePurviewAspireResourceKitSourceGenerator>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />

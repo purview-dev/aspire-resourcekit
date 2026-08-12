@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
