@@ -210,7 +210,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					hasExplicitBaseType
 					&& !TypeHelpers.IsDerivedFromExpectedBase(
 						resourceKitDescriptor.Target,
-						TypeLibrary.ResourceKitBase
+						TypeLibrary.ResourceKitBase.MakeGeneric(TypeLibrary.IResource)
 					)
 				)
 				{

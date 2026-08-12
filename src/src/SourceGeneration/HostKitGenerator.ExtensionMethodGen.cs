@@ -17,36 +17,42 @@ partial class HostKitGenerator
 		logger?.Debug($"Generating extension class for host kit: {hostKit.HostKitType.TypeName}");
 
 		using (
-			context
-				.CodeWriter.NewLine()
-				.Block($"namespace {TypeLibrary.IDistributedApplicationBuilder.Namespace}")
+			context.CodeWriter.WriteBlockNamespaceScope(
+				TypeLibrary.IDistributedApplicationBuilder.Namespace
+			)
 		)
 		{
+			var editorBrowsable = new AttributeDeclarationOptions(
+				TypeLibrary.EditorBrowsableAttribute
+			)
+			{
+				Arguments =
+				[
+					new AttributeArgumentOptions($"{TypeLibrary.EditorBrowsableState}.Never"),
+				],
+			};
+
 			context
 				.CodeWriter.WriteXmlSummary(
 					$"Extension methods for <see cref=\"{hostKit.HostKitType}\"/>."
 				)
-				.Write("[global::")
-				.Write(TypeLibrary.EditorBrowsableAttribute.SymbolFullName)
-				.Write('(')
-				.Write(TypeLibrary.EditorBrowsableState)
-				.Write(".Never")
-				.WriteLine(")]");
-			using (
-				context.CodeWriter.Block(
-					$"{hostKit.AccessibilityModifier}static class {hostKit.HostKitType.TypeName}BuilderExtensions"
-				)
-			)
-			{
-				using (
-					context.CodeWriter.Block(
-						$"extension({TypeLibrary.IDistributedApplicationBuilder} builder)"
-					)
-				)
-				{
-					BuildExtensionMethod(context.CodeWriter, hostKit);
-				}
-			}
+				.WriteClass(
+					new($"{hostKit.HostKitType.TypeName}BuilderExtensions")
+					{
+						Accessibility = hostKit.AccessibilityModifier,
+						IsStatic = true,
+						Attributes = [editorBrowsable],
+					},
+					body =>
+					{
+						using (
+							body.OpenBlockScope(
+								$"extension({TypeLibrary.IDistributedApplicationBuilder} builder)"
+							)
+						)
+							BuildExtensionMethod(body, hostKit);
+					}
+				);
 		}
 	}
 
@@ -72,23 +78,53 @@ partial class HostKitGenerator
 			)
 			.WriteXml("<returns>The same builder instance for chaining.</returns>");
 
-		List<string> parameters =
+		List<ParameterDeclarationOptions> parameters =
 		[
-			$"{TypeLibrary.Action.MakeGeneric(hostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)}? onBuilt = null",
-			$"{TypeLibrary.Action.MakeGeneric(hostKit.HostKitType)}? onConfigured = null",
+			new(
+				"onBuilt",
+				new(
+					TypeLibrary.Action.MakeGeneric(
+						hostKit.HostKitType,
+						TypeLibrary.IDistributedApplicationBuilder
+					)
+				)
+				{
+					IsNullable = true,
+				}
+			)
+			{
+				DefaultValue = "null",
+			},
+			new("onConfigured", TypeLibrary.Action.MakeGeneric(hostKit.HostKitType))
+			{
+				DefaultValue = "null",
+				IsNullable = true,
+			},
 		];
 
 		if (hostKit.ShouldGenerateOptions)
 		{
 			parameters.Add(
-				$"{TypeLibrary.Action.MakeGeneric(TypeLibrary.OptionsBuilder.MakeGeneric(hostKit.HostKitOptionsType))}? configureOptions = null"
+				new(
+					"configureOptions",
+					TypeLibrary.Action.MakeGeneric(
+						TypeLibrary.OptionsBuilder.MakeGeneric(hostKit.HostKitOptionsType)
+					)
+				)
+				{
+					DefaultValue = "null",
+					IsNullable = true,
+				}
 			);
 		}
 
 		using (
-			writer.Block(
-				$"public {TypeLibrary.IDistributedApplicationBuilder} {hostKit.ExtensionMethodName}(",
-				additionalParts: w => w.MultiLineParameters([.. parameters])
+			writer.WriteMethodScope(
+				new(hostKit.ExtensionMethodName, TypeLibrary.IDistributedApplicationBuilder)
+				{
+					Accessibility = TypeDeclarationAccessibility.Public,
+					Parameters = [.. parameters],
+				}
 			)
 		)
 		{

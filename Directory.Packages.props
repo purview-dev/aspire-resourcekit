@@ -3,7 +3,7 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>1.63.0</TUnitVersion>
 		<ModularPipelinesVersion>3.2.8</ModularPipelinesVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.8</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.10</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />

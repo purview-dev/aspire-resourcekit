@@ -1,4 +1,3 @@
-using Purview.Aspire.ResourceKit.Example.AppHost.AppModels;
 using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit.Fixtures;

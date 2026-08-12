@@ -83,6 +83,11 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 	);
 
 	// Other useful types
+	public static readonly TypeValueObject RequiredAttribute = new(
+		nameof(RequiredAttribute),
+		"System.ComponentModel.DataAnnotations"
+	);
+
 	public static readonly TypeValueObject EditorBrowsableState = new(
 		nameof(EditorBrowsableState),
 		"System.ComponentModel"

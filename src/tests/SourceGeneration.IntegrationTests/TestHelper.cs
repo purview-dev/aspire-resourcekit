@@ -54,12 +54,19 @@ static class TestHelper
 	{
 		CodeWriter writer = new();
 
-		var hostKitAttribute =
-			"[global::"
-			+ TypeLibrary.HostKitAttribute.SymbolFullName
-			+ "(GenerateOptions = "
-			+ (generateOptions ? "true" : "false")
-			+ ")]";
+#pragma warning disable CA1308 // Normalize strings to uppercase
+		var hostKitAttribute = new AttributeDeclarationOptions(TypeLibrary.HostKitAttribute)
+		{
+			Arguments =
+			[
+				new AttributeArgumentOptions(generateOptions)
+				{
+					Name = "GenerateOptions",
+					IsPropertyAssignment = true,
+				},
+			],
+		};
+#pragma warning restore CA1308 // Normalize strings to uppercase
 
 		writer
 			.WriteFileScopedNamespace(namespaceName)
@@ -69,7 +76,7 @@ static class TestHelper
 					BaseType = baseClass,
 					Accessibility = TypeDeclarationAccessibility.Public,
 					IsPartial = true,
-					TypeAttributes = [hostKitAttribute],
+					Attributes = [hostKitAttribute],
 				},
 				bodyWriter => bodyWriter.Comment("Empty")
 			);
@@ -89,19 +96,21 @@ static class TestHelper
 		CodeWriter writer = new();
 
 		var baseType = baseClass is null ? null : $"{baseClass}<{aspireResource}>";
-		var resourceDefinitionAttribute = baseClass is null
-			? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource)
-			: TypeLibrary.ResourceDefinitionAttribute;
+		AttributeDeclarationOptions resourceDefinitionAttribute = new(
+			baseClass is null
+				? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource)
+				: TypeLibrary.ResourceDefinitionAttribute
+		);
 
 		writer
 			.WriteFileScopedNamespace(namespaceName)
 			.WriteClass(
-				new TypeDeclarationOptions(resourceKitName)
+				new(resourceKitName)
 				{
 					BaseType = baseType,
 					Accessibility = TypeDeclarationAccessibility.Public,
 					IsPartial = true,
-					TypeAttributes = [resourceDefinitionAttribute],
+					Attributes = [resourceDefinitionAttribute],
 				},
 				bodyWriter => bodyWriter.WriteLine(GenerateBuildResource(aspireResource))
 			);

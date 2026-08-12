@@ -17,13 +17,20 @@
 			Include="..\ResourceKit\ResourceKit.csproj"
 			IsAspireProjectResource="false"
 		/>
-		<ProjectReference
+		<!--<ProjectReference
 			Include="..\SourceGeneration\SourceGeneration.csproj"
 			IsAspireProjectResource="false"
 			OutputItemType="Analyzer"
 			ReferenceOutputAssembly="false"
 			PrivateAssets="all"
 			Targets="GetSourceGeneratorAnalyzerFiles"
+		/>-->
+		<ProjectReference
+			Include="..\SourceGeneration\SourceGeneration.csproj"
+			IsAspireProjectResource="false"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
 		/>
 	</ItemGroup>
 	<ItemGroup>
