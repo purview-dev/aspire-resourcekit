@@ -204,15 +204,12 @@ static class SourceGenLibrary
 		GenerationLogger? logger
 	)
 	{
-		var data = HostKitAttributeData.FromAttributeData(
-			context.SemanticModel.Compilation,
-			context.Attributes
-		);
+		var data = HostKitAttributeData.FromAttributeData(context.Attributes);
 		logger?.Debug($"Name: '{data.Name ?? "<null>"}'", 2);
 		logger?.Debug($"ExtensionMethodName: '{data.ExtensionMethodName ?? "<null>"}'", 2);
 		logger?.Debug($"GenerateOptions: '{data.GenerateOptions}'", 2);
 
-		return new KitTargetDescriptor(
+		return new(
 			Target: new(symbol, classDeclaration),
 			IsHostKit: true,
 			Name: data.Name,
@@ -232,21 +229,31 @@ static class SourceGenLibrary
 	)
 	{
 		var data = ResourceDefinitionAttributeData.FromAttributeData(
-			context.SemanticModel.Compilation,
-			context.Attributes
+			context.Attributes,
+			out var attribute
 		);
+
+		if (attribute is null)
+		{
+			logger?.Warning(
+				$"No attribute data found for {symbol.Name}, this should not happen",
+				1
+			);
+		}
+
+		var isGenericResourceDefinition = attribute?.AttributeClass?.IsGenericType ?? false;
 		var propertyName = data.PropertyName ?? CodeGenHelpers.TrimSuffix(symbol.Name);
 		var aspireResourceTypeSymbol = data.AspireResourceType;
 
 		logger?.Debug($"Name: '{data.Name ?? "<null>"}'", 2);
 		logger?.Debug($"PropertyName: '{propertyName ?? "<null>"}'", 2);
-		logger?.Debug($"GenericAttribute: '{data.IsGeneric}'", 2);
+		logger?.Debug($"IsGenericResourceDefinition: '{isGenericResourceDefinition}'", 2);
 		logger?.Debug(
 			$"AspireResourceType: '{aspireResourceTypeSymbol?.ToDisplayString() ?? "<null>"}'",
 			2
 		);
 
-		if (!data.IsGeneric)
+		if (data.AspireResourceType is null)
 		{
 			aspireResourceTypeSymbol = ResolveAspireResourceTypeFromBaseClass(
 				symbol,
@@ -262,7 +269,7 @@ static class SourceGenLibrary
 			PropertyName: propertyName,
 			ExtensionName: null,
 			GenerateOptions: true,
-			IsGenericResourceDefinition: data.IsGeneric,
+			IsGenericResourceDefinition: isGenericResourceDefinition,
 			AspireResourceTypeSymbol: aspireResourceTypeSymbol
 		);
 	}

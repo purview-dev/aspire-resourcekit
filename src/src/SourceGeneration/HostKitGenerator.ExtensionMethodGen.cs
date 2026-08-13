@@ -22,14 +22,9 @@ partial class HostKitGenerator
 			)
 		)
 		{
-			var editorBrowsable = new AttributeDeclarationOptions(
-				TypeLibrary.EditorBrowsableAttribute
-			)
+			AttributeDeclarationOptions editorBrowsable = new(TypeLibrary.EditorBrowsableAttribute)
 			{
-				Arguments =
-				[
-					new AttributeArgumentOptions($"{TypeLibrary.EditorBrowsableState}.Never"),
-				],
+				Arguments = [new($"{TypeLibrary.EditorBrowsableState}.Never")],
 			};
 
 			context
@@ -66,17 +61,22 @@ partial class HostKitGenerator
 				$"An optional action to invoke after the host kit is built (post <see cref=\"{TypeLibrary.IHostKit}.Build({TypeLibrary.IDistributedApplicationBuilder})\"/>).",
 				"</para>",
 				"<para>",
-				"Allows for additional customisation/ additions to the host kit before it is configured.",
+				"Allows for additional customization/ additions to the host kit before it is configured.",
 				"</para>",
 				"</param>"
 			)
 			.WriteXml(
 				$"<param name=\"onConfigured\">An optional action to invoke after the host kit is configured (post <see cref=\"{TypeLibrary.IHostKit}.Configure\"/>).</param>"
-			)
-			.WriteXml(
+			);
+
+		if (hostKit.ShouldGenerateOptions)
+		{
+			writer.WriteXml(
 				$"<param name=\"configureOptions\">An optional action that provides access to the <see cref=\"{TypeLibrary.OptionsBuilder.MakeGenericXml("TOptions")}\"/> for additional configuration.</param>"
-			)
-			.WriteXml("<returns>The same builder instance for chaining.</returns>");
+			);
+		}
+
+		writer.WriteXml("<returns>The same builder instance for chaining.</returns>");
 
 		List<ParameterDeclarationOptions> parameters =
 		[
@@ -137,26 +137,30 @@ partial class HostKitGenerator
 					.WriteLine(
 						$"var optionsBuilder = builder.Services.AddOptions<{hostKit.HostKitOptionsType}>()"
 					)
-					.Indent()
-					.WriteLine($".BindConfiguration({hostKit.HostKitOptionsType}.SectionName);")
-					.Unindent()
+					.Indented(w =>
+						w.WriteLine(
+							$".BindConfiguration({hostKit.HostKitOptionsType}.SectionName);"
+						)
+					);
+
+				writer
 					.NewLine()
 					.WriteLine("configureOptions?.Invoke(optionsBuilder);")
-					.NewLine()
 					.WriteLine("optionsBuilder.ValidateOnStart();")
 					.NewLine();
 
 				writer
 					.WriteLine($"var hostKitOptions = builder.Configuration.GetSection(")
-					.Indent()
-					.Indent()
-					.WriteLine($"{hostKit.HostKitOptionsType}.SectionName")
-					.Unindent()
-					.WriteLine(")")
-					.WriteLine($".Get<{hostKit.HostKitOptionsType}>()")
-					.WriteLine($"?? new();")
-					.Unindent()
-					.NewLine();
+					.Indented(w =>
+					{
+						w.Indented(w =>
+							w.Write(hostKit.HostKitOptionsType).WriteLine(".SectionName")
+						);
+						w.WriteLine(")")
+							.Write(".Get<")
+							.Write(hostKit.HostKitOptionsType)
+							.Write(">() ?? new();");
+					});
 			}
 
 			writer
