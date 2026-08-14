@@ -18,12 +18,12 @@ sealed record KitGenerationModel(
 
 sealed record class KitGenerationContext : GenerationContext
 {
-	public KitGenerationContext(Compilation compilation)
-		: base(
-			compilation,
-			generatorName: AssemblyInfo.AssemblyName,
-			generatorVersion: AssemblyInfo.Version
-		)
+	public KitGenerationContext(
+		Compilation compilation,
+		string generatorName,
+		string generatorVersion
+	)
+		: base(compilation, generatorName: generatorName, generatorVersion: generatorVersion)
 	{
 		IServiceCollection = GetTypeByMetadataName(TypeLibrary.IServiceCollection)!;
 		ConfigurationBinder = GetTypeByMetadataName(TypeLibrary.ConfigurationBinder)!;

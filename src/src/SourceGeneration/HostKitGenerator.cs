@@ -12,21 +12,19 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		context.RegisterEmbeddedAttribute(
+			$"{AssemblyInfo.AssemblyName}.{nameof(HostKitGenerator)}",
+			AssemblyInfo.Version
+		);
+
 		context.RegisterPostInitializationOutput(postInitContext =>
 		{
 			_logger?.Debug("Adding attributes:");
-			_logger?.Debug($"- {TypeLibrary.EmbeddedAttribute.TypeName}", 1);
-
-			postInitContext.AddSource(
-				TypeLibrary.EmbeddedAttribute.TypeName + ".cs",
-				SourceText.From(TypeLibrary.EmbeddedAttributeSource, Encoding.UTF8)
-			);
-
 			foreach (var resourceType in TypeLibrary.GeneratedTypes)
 			{
 				_logger?.Debug($"- {resourceType.TypeName}", 1);
 				postInitContext.AddSource(
-					resourceType.SymbolFullName + ".g.cs",
+					resourceType.MetadataFullName + ".g.cs",
 					EmbeddedResources.Load(resourceType.TypeName)
 				);
 			}
@@ -157,7 +155,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 							GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
 							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
 							resourceKitSymbol.Name,
-							TypeLibrary.ResourceKitBase.SymbolFullName
+							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
 					continue;
@@ -219,7 +217,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 							GeneratorDiagnostics.ResourceMustDeriveFromBase,
 							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
 							resourceKitSymbol.Name,
-							TypeLibrary.ResourceKitBase.SymbolFullName
+							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
 					continue;

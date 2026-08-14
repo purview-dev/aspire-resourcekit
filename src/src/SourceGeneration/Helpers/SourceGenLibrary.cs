@@ -18,7 +18,10 @@ static class SourceGenLibrary
 		);
 		var generationContext = IncrementalPipeline.GenerationContextValueProvider(
 			context,
-			(compilation, _) => new KitGenerationContext(compilation),
+			$"{AssemblyInfo.AssemblyName}.{nameof(HostKitGenerator)}",
+			AssemblyInfo.Version,
+			(compilation, generatorName, version, _) =>
+				new KitGenerationContext(compilation, generatorName, version),
 			logger
 		);
 
@@ -182,7 +185,7 @@ static class SourceGenLibrary
 
 		var isHostKit = attributeType == TypeLibrary.HostKitAttribute;
 
-		logger?.Debug($"Processing Attribute: {attributeType.SymbolFullName}");
+		logger?.Debug($"Processing Attribute: {attributeType.MetadataFullName}");
 		logger?.Debug(
 			isHostKit
 				? $"For HostKit {symbol.Name}, values:"
@@ -348,18 +351,5 @@ static class SourceGenLibrary
 		}
 
 		return false;
-	}
-
-	public static string AddCodeGen(string source)
-	{
-		return source
-			.Replace(
-				CodeGenHelpers.CodeGenReplacementToken,
-				CodeGenHelpers.GetGeneratedCodeAttribute()
-			)
-			.Replace(
-				CodeGenHelpers.NonClassCodeGenReplacementToken,
-				CodeGenHelpers.GetNonClassGeneratedCodeAttribute()
-			);
 	}
 }

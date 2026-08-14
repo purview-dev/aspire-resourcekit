@@ -15,7 +15,7 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		logger?.Info($"Generating {hostKitInfo.HostKitType.SymbolFullName}...");
+		logger?.Info($"Generating {hostKitInfo.HostKitType.MetadataFullName}...");
 
 		using var nsScope = context.CodeWriter.WriteBlockNamespaceScope(
 			hostKitInfo.HostKitType.Namespace
@@ -185,7 +185,7 @@ partial class HostKitGenerator
 	)
 	{
 		logger?.Debug(
-			$"Processing {hostKitInfo.ResourceKits.Length} resource kits for {hostKitInfo.HostKitType.SymbolFullName}...",
+			$"Processing {hostKitInfo.ResourceKits.Length} resource kits for {hostKitInfo.HostKitType.MetadataFullName}...",
 			1
 		);
 
