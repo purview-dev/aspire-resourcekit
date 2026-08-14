@@ -1,4 +1,3 @@
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
@@ -29,6 +28,6 @@ partial class HostKitGenerator
 		BuildResourceKits(hostKitInfo, context, logger, cancellationToken);
 		BuildExtensionClass(hostKitInfo, context, logger, cancellationToken);
 
-		return SourceGenLibrary.AddCodeGen(writer.ToString());
+		return writer.ToString();
 	}
 }

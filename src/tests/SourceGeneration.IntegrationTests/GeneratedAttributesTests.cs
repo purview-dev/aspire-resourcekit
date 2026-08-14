@@ -60,39 +60,6 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesEmbeddedAttributeSource(
-		CancellationToken cancellationToken
-	)
-	{
-		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
-
-		var tree = result.GetGeneratedTree("EmbeddedAttribute.cs");
-		tree = await Assert.That(tree).IsNotNull();
-
-		var syntaxTree = await tree.GetTextAsync(cancellationToken);
-		var text = syntaxTree.ToString();
-
-		await Assert.That(text).Contains("class EmbeddedAttribute");
-		await Assert.That(text).Contains("namespace Microsoft.CodeAnalysis");
-	}
-
-	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesEmbeddedAttributeSourceAsPartialClass(
-		CancellationToken cancellationToken
-	)
-	{
-		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
-
-		var tree = result.GetGeneratedTree("EmbeddedAttribute.cs");
-		tree = await Assert.That(tree).IsNotNull();
-
-		var syntaxTree = await tree.GetTextAsync(cancellationToken);
-		var text = syntaxTree.ToString();
-
-		await Assert.That(text).Contains("partial class EmbeddedAttribute");
-	}
-
-	[Test]
 	public async Task Generate_GivenEmptySource_AttributesAreEmittedIntoResourceKitNamespace(
 		CancellationToken cancellationToken
 	)
@@ -121,13 +88,13 @@ namespace Testing
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
 
 		await Assert
-			.That(assembly.GetType(TypeLibrary.HostKitAttribute.SymbolFullName))
+			.That(assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName))
 			.IsNotNull();
 		await Assert
-			.That(assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.SymbolFullName))
+			.That(assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName))
 			.IsNotNull();
 		await Assert
-			.That(assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.SymbolFullName))
+			.That(assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName))
 			.IsNotNull();
 	}
 
@@ -138,7 +105,7 @@ namespace Testing
 	{
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
-		var type = assembly.GetType(TypeLibrary.HostKitAttribute.SymbolFullName)!;
+		var type = assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName)!;
 
 		var nameProp = type.GetProperty("Name");
 		await Assert.That(nameProp).IsNotNull();
@@ -152,7 +119,7 @@ namespace Testing
 	{
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
-		var type = assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.SymbolFullName)!;
+		var type = assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName)!;
 
 		await Assert
 			.That(type.GetProperty("Name")!.PropertyType.FullName)
@@ -162,7 +129,7 @@ namespace Testing
 			.IsEqualTo(typeof(string).FullName);
 
 		var genericType = assembly.GetType(
-			TypeLibrary.GenericResourceDefinitionAttribute.SymbolFullName
+			TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName
 		)!;
 		await Assert
 			.That(genericType.GetProperty("Name")!.PropertyType.FullName)
@@ -183,9 +150,9 @@ namespace Testing
 		foreach (
 			var fullName in new[]
 			{
-				TypeLibrary.HostKitAttribute.SymbolFullName,
-				TypeLibrary.ResourceDefinitionAttribute.SymbolFullName,
-				TypeLibrary.GenericResourceDefinitionAttribute.SymbolFullName,
+				TypeLibrary.HostKitAttribute.MetadataFullName,
+				TypeLibrary.ResourceDefinitionAttribute.MetadataFullName,
+				TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName,
 			}
 		)
 		{

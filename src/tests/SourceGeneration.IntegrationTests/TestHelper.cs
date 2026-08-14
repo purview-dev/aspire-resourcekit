@@ -52,7 +52,7 @@ static class TestHelper
 		bool generateOptions = true
 	)
 	{
-		CodeWriter writer = new();
+		var writer = CodeWriter.CreateTestWriter();
 
 #pragma warning disable CA1308 // Normalize strings to uppercase
 		var hostKitAttribute = new AttributeDeclarationOptions(TypeLibrary.HostKitAttribute)
@@ -93,7 +93,7 @@ static class TestHelper
 	{
 		aspireResource ??= DefaultAspireResource;
 
-		CodeWriter writer = new();
+		var writer = CodeWriter.CreateTestWriter();
 
 		var baseType = baseClass is null ? null : $"{baseClass}<{aspireResource}>";
 		AttributeDeclarationOptions resourceDefinitionAttribute = new(

@@ -58,8 +58,7 @@ public abstract class SourceGeneratorTestBase<TGenerator> : TUnitSourceGenerator
 
 	IEnumerable<string> BuildSources(IEnumerable<string> sources)
 	{
-		CodeWriter writer = new();
-
+		var writer = CodeWriter.CreateTestWriter();
 		writer
 			.WriteFileScopedNamespace(TestHelper.DefaultAspireResource.Namespace)
 			.WriteClass(
