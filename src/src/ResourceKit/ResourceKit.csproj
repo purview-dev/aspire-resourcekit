@@ -13,6 +13,7 @@
 		<!-- Enable our own agent skills to be packed with the NuGet package -->
 		<EnabledAgentFolderInPackage>true</EnabledAgentFolderInPackage>
 		<ProjectAgentFolder>src/ProjectAgent</ProjectAgentFolder>
+		<NoWarn>$(NoWarn);NU5118;</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

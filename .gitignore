@@ -665,3 +665,5 @@ sketch
 !src/src/ResourceKit/build/**
 
 build/Pipeline/.vs/
+
+*.binlog

@@ -2,10 +2,42 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.SourceGeneratorFramework.Extensions;
+using Purview.SourceGeneratorFramework.Testing.Generators;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-readonly record struct ResourceDefinitionAttributeData(
+[GenerateAttributeDataModel("Purview.Aspire.ResourceKit.HostKitAttribute")]
+readonly partial record struct HostKitAttributeData(
+	// For the property
+	[AttributeNamedProperty]
+	// For the ctor
+	[AttributeCtorProperty("name")]
+		string? Name,
+	string? ExtensionMethodName,
+	[AttributeNamedProperty]
+	[AttributeCtorProperty("generateOptions", DefaultValue = true)]
+		bool GenerateOptions
+);
+
+[GenerateAttributeDataModel(
+	"Purview.Aspire.ResourceKit.ResourceDefinitionAttribute",
+	MatchByInheritance = true
+)]
+readonly partial record struct ResourceDefinitionAttributeData(
+	// For the property
+	[AttributeNamedProperty]
+	// For the ctor
+	[AttributeCtorProperty("name")]
+		string? Name,
+	// For the property
+	[AttributeNamedProperty]
+	// For the ctor
+	[AttributeCtorProperty("propertyName")]
+		string? PropertyName,
+	[AttributeGenericTypeArgumentProperty(0)] INamedTypeSymbol? AspireResourceType
+);
+
+readonly record struct ResourceDefinitionAttributeData1(
 	bool Exists,
 	string? Name,
 	string? PropertyName,
@@ -13,7 +45,7 @@ readonly record struct ResourceDefinitionAttributeData(
 	INamedTypeSymbol? AspireResourceType
 )
 {
-	public static readonly ResourceDefinitionAttributeData Empty = new(
+	public static readonly ResourceDefinitionAttributeData1 Empty = new(
 		false,
 		null,
 		null,
@@ -21,7 +53,7 @@ readonly record struct ResourceDefinitionAttributeData(
 		null
 	);
 
-	public static ResourceDefinitionAttributeData FromAttributeData(
+	public static ResourceDefinitionAttributeData1 FromAttributeData(
 		Compilation compilation,
 		ImmutableArray<AttributeData> attributeData
 	)
@@ -53,7 +85,7 @@ readonly record struct ResourceDefinitionAttributeData(
 		return Empty;
 	}
 
-	public static ResourceDefinitionAttributeData FromAttributeData(
+	public static ResourceDefinitionAttributeData1 FromAttributeData(
 		INamedTypeSymbol? resourceDefinitionAttribute,
 		INamedTypeSymbol? genericResourceDefinitionAttribute,
 		AttributeData attributeData

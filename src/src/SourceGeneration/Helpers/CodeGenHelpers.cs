@@ -125,9 +125,6 @@ static class CodeGenHelpers
 					: TypeValueObject.Empty;
 
 				TypeValueObject aspireResourceType = new(r.AspireResourceTypeSymbol!);
-				var accessibilityModifier = GetAccessibilityKeyword(
-					r.Target.Symbol.DeclaredAccessibility
-				);
 				var resourceName = r.Name;
 				var propertyName = r.PropertyName;
 				if (string.IsNullOrWhiteSpace(propertyName))
@@ -138,7 +135,7 @@ static class CodeGenHelpers
 					resourceKitType,
 					resourceKitOptionsType,
 					aspireResourceType,
-					accessibilityModifier,
+					r.Target.Symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!.Value,
 					r.PropertyName!,
 					resourceName,
 					TypeHelpers.HasExplicitBaseType(r.Target)
@@ -146,34 +143,17 @@ static class CodeGenHelpers
 			})
 			.ToImmutableArray();
 
-		var accessibilityModifier = GetAccessibilityKeyword(
-			hostKitSymbol.Target.Symbol.DeclaredAccessibility
-		);
-
 		return new(
 			hostKitSymbol,
 			hostKitType,
 			hostKitOptionsType,
 			TypeLibrary.ResourceKitBase,
-			accessibilityModifier,
+			hostKitSymbol
+				.Target.Symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
+				.Value,
 			hostKitSymbol.ExtensionName ?? DefaultExtensionMethodName,
 			resourceKits
 		);
-	}
-
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
-	static string GetAccessibilityKeyword(Accessibility accessibility)
-	{
-		return accessibility switch
-		{
-			Accessibility.Public => "public ",
-			Accessibility.Internal => "internal ",
-			Accessibility.Private => "private ",
-			Accessibility.Protected => "protected ",
-			Accessibility.ProtectedAndInternal => "private protected ",
-			Accessibility.ProtectedOrInternal => "protected internal ",
-			_ => string.Empty,
-		};
 	}
 
 	public static string TrimSuffix(string typeName) =>

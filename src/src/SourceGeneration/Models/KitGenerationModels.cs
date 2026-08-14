@@ -19,7 +19,11 @@ sealed record KitGenerationModel(
 sealed record class KitGenerationContext : GenerationContext
 {
 	public KitGenerationContext(Compilation compilation)
-		: base(compilation)
+		: base(
+			compilation,
+			generatorName: AssemblyInfo.AssemblyName,
+			generatorVersion: AssemblyInfo.Version
+		)
 	{
 		IServiceCollection = GetTypeByMetadataName(TypeLibrary.IServiceCollection)!;
 		ConfigurationBinder = GetTypeByMetadataName(TypeLibrary.ConfigurationBinder)!;
@@ -48,7 +52,7 @@ readonly record struct HostKitInfo(
 	TypeValueObject HostKitType,
 	TypeValueObject HostKitOptionsType,
 	TypeValueObject HostKitResourceKitBaseType,
-	string AccessibilityModifier,
+	TypeDeclarationAccessibility AccessibilityModifier,
 	string ExtensionMethodName,
 	ImmutableArray<ResourceKitInfo> ResourceKits
 )
@@ -63,7 +67,7 @@ readonly record struct ResourceKitInfo(
 	TypeValueObject ResourceKitType,
 	TypeValueObject ResourceKitOptionsType,
 	TypeValueObject AspireResourceType,
-	string AccessibilityModifier,
+	TypeDeclarationAccessibility AccessibilityModifier,
 	string PropertyName,
 	string? ResourceName,
 	bool HasExplicitBaseType

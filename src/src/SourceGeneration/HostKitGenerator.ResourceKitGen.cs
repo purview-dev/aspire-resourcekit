@@ -16,17 +16,14 @@ partial class HostKitGenerator
 
 		logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
 
-		if (!hostKit.ResourceKits.IsDefaultOrEmpty)
-			context.CodeWriter.NewLine();
-
-		var isFirst = true;
 		foreach (
 			var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace)
 		)
 		{
+			cancellationToken.ThrowIfCancellationRequested();
 			var resourceNs = resourceKitGroup.Key is null
 				? default
-				: context.CodeWriter.Block($"namespace {resourceKitGroup.Key}");
+				: context.CodeWriter.WriteBlockNamespaceScope(resourceKitGroup.Key);
 
 			logger?.Debug(
 				$"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}",
@@ -42,19 +39,20 @@ partial class HostKitGenerator
 					2
 				);
 
-				var suffix = resourceKit.HasExplicitBaseType
-					? null
-					: $" : {hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType)}";
-
-				if (isFirst)
-					isFirst = false;
-				else
-					context.CodeWriter.NewLine();
+				var baseClass = resourceKit.HasExplicitBaseType
+					? TypeValueObject.Empty
+					: hostKit.HostKitResourceKitBaseType.MakeGeneric(
+						resourceKit.AspireResourceType
+					);
 
 				// Generate the resource kit class
 				using (
-					context.CodeWriter.Block(
-						$"partial class {resourceKit.ResourceKitType.TypeName}{suffix}"
+					context.CodeWriter.WriteClassScope(
+						new(resourceKit.ResourceKitType.TypeName)
+						{
+							IsPartial = true,
+							BaseType = baseClass,
+						}
 					)
 				)
 				{
@@ -63,63 +61,55 @@ partial class HostKitGenerator
 						.CodeWriter.WriteXmlSummary(
 							"Initializes a new instance of the Host Kit Resource Kit base class."
 						)
-						.Write("public ")
-						.Write(resourceKit.ResourceKitType.TypeName)
-						.Write('(')
-						.Write(hostKit.HostKitType)
-						.Write(" hostKit, ");
-
-					if (hostKit.ShouldGenerateOptions)
-					{
-						context
-							.CodeWriter.Write($"{resourceKit.ResourceKitOptionsType} options)")
-							.NewLine()
-							.Indent()
-							.WriteLine(
-								": base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
-							)
-							.Unindent();
-					}
-					else
-					{
-						context
-							.CodeWriter.Write("string? name)")
-							.NewLine()
-							.Indent()
-							.WriteLine(": base(hostKit, name)")
-							.Unindent();
-					}
-
-					using (context.CodeWriter.Block())
-					{
-						if (hostKit.ShouldGenerateOptions)
-						{
-							context
-								.CodeWriter.NewLine()
-								.WriteLine("Options = options;")
-								.WriteLine("IsEnabled = options.IsEnabled;");
-						}
-					}
+						.WriteConstructor(
+							new(resourceKit.ResourceKitType.TypeName)
+							{
+								Accessibility = TypeDeclarationAccessibility.Public,
+								Parameters =
+								[
+									new("hostKit", hostKit.HostKitType),
+									hostKit.ShouldGenerateOptions
+										? new("options", resourceKit.ResourceKitOptionsType)
+										: new("name", "string") { IsNullable = true },
+								],
+								Initializer = hostKit.ShouldGenerateOptions
+									? "base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
+									: "base(hostKit, name)",
+							},
+							body =>
+							{
+								if (hostKit.ShouldGenerateOptions)
+								{
+									body.WriteLine("Options = options;")
+										.WriteLine("IsEnabled = options.IsEnabled;");
+								}
+							}
+						);
 
 					// Write the Options property if the host kit has options
 					if (hostKit.ShouldGenerateOptions)
 					{
 						context
-							.CodeWriter.NewLine()
-							.WriteXmlSummary("Gets the Resource Kit options.")
-							.WriteLine(
-								$"public {resourceKit.ResourceKitOptionsType} Options {{ get; }}"
+							.CodeWriter.WriteXmlSummary("Gets the Resource Kit options.")
+							.WriteProperty(
+								new("Options", resourceKit.ResourceKitOptionsType)
+								{
+									Accessibility = TypeDeclarationAccessibility.Public,
+									HasGetter = true,
+								}
 							);
 					}
 
 					if (hostKit.ShouldGenerateOptions)
+					{
 						GenerateResourceKitOptionsClass(
-							context.CodeWriter.NewLine(),
+							context.CodeWriter,
 							hostKit,
 							resourceKit,
 							logger,
 							cancellationToken
 						);
+					}
 				}
 			}
 
@@ -148,8 +138,13 @@ partial class HostKitGenerator
 		);
 
 		using (
-			writer.Block(
-				$"public sealed partial class {resourceKit.ResourceKitOptionsType.TypeName}"
+			writer.WriteClassScope(
+				new(resourceKit.ResourceKitOptionsType.TypeName)
+				{
+					Accessibility = TypeDeclarationAccessibility.Public,
+					IsSealed = true,
+					IsPartial = true,
+				}
 			)
 		)
 		{
@@ -159,17 +154,41 @@ partial class HostKitGenerator
 
 			writer
 				.WriteXmlSummary("Gets or sets the logical name used to register the resource.")
-				.WriteLine(
-					"[global::System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = false)]"
-				)
-				.Write("public string Name { get; set; } = ")
-				.Quote(defaultResourceName)
-				.WriteLine(";")
-				.NewLine();
+				.WriteProperty(
+					new("Name", "string")
+					{
+						Accessibility = TypeDeclarationAccessibility.Public,
+						HasGetter = true,
+						HasSetter = true,
+						Initializer = defaultResourceName.Surround(),
+						Attributes =
+						[
+							new(TypeLibrary.RequiredAttribute)
+							{
+								Arguments =
+								[
+									new(false)
+									{
+										Name = "AllowEmptyStrings",
+										IsPropertyAssignment = true,
+									},
+								],
+							},
+						],
+					}
+				);
 
 			writer
 				.WriteXmlSummary("Gets or sets whether the resource is enabled.")
-				.WriteLine("public bool IsEnabled { get; set; } = true;");
+				.WriteProperty(
+					new("IsEnabled", "bool")
+					{
+						Accessibility = TypeDeclarationAccessibility.Public,
+						HasGetter = true,
+						HasSetter = true,
+						Initializer = "true",
+					}
+				);
 		}
 	}
 }

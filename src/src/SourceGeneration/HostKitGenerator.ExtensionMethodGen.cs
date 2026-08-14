@@ -17,36 +17,37 @@ partial class HostKitGenerator
 		logger?.Debug($"Generating extension class for host kit: {hostKit.HostKitType.TypeName}");
 
 		using (
-			context
-				.CodeWriter.NewLine()
-				.Block($"namespace {TypeLibrary.IDistributedApplicationBuilder.Namespace}")
+			context.CodeWriter.WriteBlockNamespaceScope(
+				TypeLibrary.IDistributedApplicationBuilder.Namespace
+			)
 		)
 		{
+			AttributeDeclarationOptions editorBrowsable = new(TypeLibrary.EditorBrowsableAttribute)
+			{
+				Arguments = [new($"{TypeLibrary.EditorBrowsableState}.Never")],
+			};
+
 			context
 				.CodeWriter.WriteXmlSummary(
 					$"Extension methods for <see cref=\"{hostKit.HostKitType}\"/>."
 				)
-				.Write("[global::")
-				.Write(TypeLibrary.EditorBrowsableAttribute.SymbolFullName)
-				.Write('(')
-				.Write(TypeLibrary.EditorBrowsableState)
-				.Write(".Never")
-				.WriteLine(")]");
-			using (
-				context.CodeWriter.Block(
-					$"{hostKit.AccessibilityModifier}static class {hostKit.HostKitType.TypeName}BuilderExtensions"
-				)
-			)
-			{
-				using (
-					context.CodeWriter.Block(
-						$"extension({TypeLibrary.IDistributedApplicationBuilder} builder)"
-					)
-				)
-				{
-					BuildExtensionMethod(context.CodeWriter, hostKit);
-				}
-			}
+				.WriteClass(
+					new($"{hostKit.HostKitType.TypeName}BuilderExtensions")
+					{
+						Accessibility = hostKit.AccessibilityModifier,
+						IsStatic = true,
+						Attributes = [editorBrowsable],
+					},
+					body =>
+					{
+						using (
+							body.OpenBlockScope(
+								$"extension({TypeLibrary.IDistributedApplicationBuilder} builder)"
+							)
+						)
+							BuildExtensionMethod(body, hostKit);
+					}
+				);
 		}
 	}
 
@@ -60,35 +61,70 @@ partial class HostKitGenerator
 				$"An optional action to invoke after the host kit is built (post <see cref=\"{TypeLibrary.IHostKit}.Build({TypeLibrary.IDistributedApplicationBuilder})\"/>).",
 				"</para>",
 				"<para>",
-				"Allows for additional customisation/ additions to the host kit before it is configured.",
+				"Allows for additional customization/ additions to the host kit before it is configured.",
 				"</para>",
 				"</param>"
 			)
 			.WriteXml(
 				$"<param name=\"onConfigured\">An optional action to invoke after the host kit is configured (post <see cref=\"{TypeLibrary.IHostKit}.Configure\"/>).</param>"
-			)
-			.WriteXml(
-				$"<param name=\"configureOptions\">An optional action that provides access to the <see cref=\"{TypeLibrary.OptionsBuilder.MakeGenericXml("TOptions")}\"/> for additional configuration.</param>"
-			)
-			.WriteXml("<returns>The same builder instance for chaining.</returns>");
+			);
 
-		List<string> parameters =
+		if (hostKit.ShouldGenerateOptions)
+		{
+			writer.WriteXml(
+				$"<param name=\"configureOptions\">An optional action that provides access to the <see cref=\"{TypeLibrary.OptionsBuilder.MakeGenericXml("TOptions")}\"/> for additional configuration.</param>"
+			);
+		}
+
+		writer.WriteXml("<returns>The same builder instance for chaining.</returns>");
+
+		List<ParameterDeclarationOptions> parameters =
 		[
-			$"{TypeLibrary.Action.MakeGeneric(hostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)}? onBuilt = null",
-			$"{TypeLibrary.Action.MakeGeneric(hostKit.HostKitType)}? onConfigured = null",
+			new(
+				"onBuilt",
+				new(
+					TypeLibrary.Action.MakeGeneric(
+						hostKit.HostKitType,
+						TypeLibrary.IDistributedApplicationBuilder
+					)
+				)
+				{
+					IsNullable = true,
+				}
+			)
+			{
+				DefaultValue = "null",
+			},
+			new("onConfigured", TypeLibrary.Action.MakeGeneric(hostKit.HostKitType))
+			{
+				DefaultValue = "null",
+				IsNullable = true,
+			},
 		];
 
 		if (hostKit.ShouldGenerateOptions)
 		{
 			parameters.Add(
-				$"{TypeLibrary.Action.MakeGeneric(TypeLibrary.OptionsBuilder.MakeGeneric(hostKit.HostKitOptionsType))}? configureOptions = null"
+				new(
+					"configureOptions",
+					TypeLibrary.Action.MakeGeneric(
+						TypeLibrary.OptionsBuilder.MakeGeneric(hostKit.HostKitOptionsType)
+					)
+				)
+				{
+					DefaultValue = "null",
+					IsNullable = true,
+				}
 			);
 		}
 
 		using (
-			writer.Block(
-				$"public {TypeLibrary.IDistributedApplicationBuilder} {hostKit.ExtensionMethodName}(",
-				additionalParts: w => w.MultiLineParameters([.. parameters])
+			writer.WriteMethodScope(
+				new(hostKit.ExtensionMethodName, TypeLibrary.IDistributedApplicationBuilder)
+				{
+					Accessibility = TypeDeclarationAccessibility.Public,
+					Parameters = [.. parameters],
+				}
 			)
 		)
 		{
@@ -101,26 +137,30 @@ partial class HostKitGenerator
 					.WriteLine(
 						$"var optionsBuilder = builder.Services.AddOptions<{hostKit.HostKitOptionsType}>()"
 					)
-					.Indent()
-					.WriteLine($".BindConfiguration({hostKit.HostKitOptionsType}.SectionName);")
-					.Unindent()
+					.Indented(w =>
+						w.WriteLine(
+							$".BindConfiguration({hostKit.HostKitOptionsType}.SectionName);"
+						)
+					);
+
+				writer
 					.NewLine()
 					.WriteLine("configureOptions?.Invoke(optionsBuilder);")
-					.NewLine()
 					.WriteLine("optionsBuilder.ValidateOnStart();")
 					.NewLine();
 
 				writer
 					.WriteLine($"var hostKitOptions = builder.Configuration.GetSection(")
-					.Indent()
-					.Indent()
-					.WriteLine($"{hostKit.HostKitOptionsType}.SectionName")
-					.Unindent()
-					.WriteLine(")")
-					.WriteLine($".Get<{hostKit.HostKitOptionsType}>()")
-					.WriteLine($"?? new();")
-					.Unindent()
-					.NewLine();
+					.Indented(w =>
+					{
+						w.Indented(w =>
+							w.Write(hostKit.HostKitOptionsType).WriteLine(".SectionName")
+						);
+						w.WriteLine(")")
+							.Write(".Get<")
+							.Write(hostKit.HostKitOptionsType)
+							.Write(">() ?? new();");
+					});
 			}
 
 			writer
