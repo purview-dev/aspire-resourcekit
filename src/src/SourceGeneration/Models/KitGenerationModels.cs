@@ -1,10 +1,6 @@
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-sealed record KitGenerationModel(
-	bool IsSourceGeneratorEnabled,
-	bool HasIServiceCollection,
-	bool HasConfigurationBinder
-)
+sealed record KitGenerationModel(bool IsSourceGeneratorEnabled, bool HasIServiceCollection, bool HasConfigurationBinder)
 {
 	public GeneratorResult<KitTargetDescriptor> HostKit { get; init; }
 
@@ -13,40 +9,24 @@ sealed record KitGenerationModel(
 	public EquatableArray<DiagnosticInfo> Diagnostics { get; init; }
 }
 
-readonly record struct GenerationCapabilities(
-	bool HasIServiceCollection,
-	bool HasConfigurationBinder
-);
+readonly record struct GenerationCapabilities(bool HasIServiceCollection, bool HasConfigurationBinder);
 
-readonly record struct TypeModel(
-	string TypeName,
-	string Namespace,
-	string MetadataFullName,
-	string RenderFullName
-)
+readonly record struct TypeModel(string TypeName, string Namespace, string MetadataFullName, string RenderFullName)
 {
-	public TypeValueObject AsTypeValueObject() =>
-		new(TypeName, Namespace.Length == 0 ? null : Namespace);
+	public TypeValueObject AsTypeValueObject() => new(TypeName, Namespace.Length == 0 ? null : Namespace);
 
 	public TypeModel MakeGeneric(params TypeModel[] arguments)
 	{
-		var typeName =
-			$"{TypeName}<{string.Join(", ", arguments.Select(argument => argument.RenderFullName))}>";
+		var typeName = $"{TypeName}<{string.Join(", ", arguments.Select(argument => argument.RenderFullName))}>";
 		return new(typeName, Namespace, MetadataFullName, $"global::{Namespace}.{typeName}");
 	}
 
 	public static implicit operator TypeValueObject(TypeModel model) => model.AsTypeValueObject();
 
 	public static implicit operator TypeModel(TypeValueObject model) =>
-		new(
-			model.TypeName,
-			model.Namespace ?? string.Empty,
-			model.MetadataFullName,
-			model.RenderFullName
-		);
+		new(model.TypeName, model.Namespace ?? string.Empty, model.MetadataFullName, model.RenderFullName);
 
-	public static implicit operator TypeReferenceOptions(TypeModel model) =>
-		new(model.RenderFullName);
+	public static implicit operator TypeReferenceOptions(TypeModel model) => new(model.RenderFullName);
 
 	public static implicit operator string(TypeModel model) => model.RenderFullName;
 

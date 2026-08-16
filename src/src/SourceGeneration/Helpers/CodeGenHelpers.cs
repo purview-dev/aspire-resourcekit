@@ -23,10 +23,7 @@ static class CodeGenHelpers
 			: $"{hostKitType.Namespace}.{hostKitType.TypeName}";
 
 		var hostKitOptionsType = hostKitSymbol.GenerateOptions
-			? CreateTypeModel(
-				$"{hostKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}",
-				hostKitOptionsNamespace
-			)
+			? CreateTypeModel($"{hostKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}", hostKitOptionsNamespace)
 			: default;
 		var resourceKits = resourceKitSymbols
 			.Select(r =>
@@ -84,9 +81,7 @@ static class CodeGenHelpers
 	}
 
 	static string RenderTypeName(string @namespace, string typeName) =>
-		string.IsNullOrEmpty(@namespace)
-			? $"global::{typeName}"
-			: $"global::{@namespace}.{typeName}";
+		string.IsNullOrEmpty(@namespace) ? $"global::{typeName}" : $"global::{@namespace}.{typeName}";
 
 	public static string TrimSuffix(string typeName) =>
 		typeName.EndsWith("ResourceKit", StringComparison.Ordinal)
@@ -95,7 +90,6 @@ static class CodeGenHelpers
 			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("Resource", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "Resource".Length)
-		: typeName.EndsWith("Kit", StringComparison.Ordinal)
-			? typeName.Substring(0, typeName.Length - "Kit".Length)
+		: typeName.EndsWith("Kit", StringComparison.Ordinal) ? typeName.Substring(0, typeName.Length - "Kit".Length)
 		: typeName;
 }

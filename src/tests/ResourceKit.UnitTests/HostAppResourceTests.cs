@@ -85,9 +85,7 @@ public sealed class HostResourceKitTests
 		hostApp.Build(IDistributedApplicationBuilder.Mock());
 
 		// Act/Assert
-		await Assert
-			.That(() => hostApp.AddResource(resource))
-			.ThrowsExactly<InvalidOperationException>();
+		await Assert.That(() => hostApp.AddResource(resource)).ThrowsExactly<InvalidOperationException>();
 	}
 
 	sealed class TestHostKit : HostKitBase<TestHostKit>;
@@ -99,9 +97,7 @@ public sealed class HostResourceKitTests
 
 		public bool ConfigureCalled { get; private set; }
 
-		protected override bool IsResourceEnabled(
-			[NotNull] IDistributedApplicationBuilder builder
-		) => enabled;
+		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => enabled;
 
 		protected override IResourceBuilder<ParameterResource> BuildResource(
 			[NotNull] IDistributedApplicationBuilder builder
@@ -121,9 +117,7 @@ public sealed class HostResourceKitTests
 		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")
 	{
 		// Does NOT override IsResourceEnabled(builder, services) — should delegate to builder-only.
-		protected override bool IsResourceEnabled(
-			[NotNull] IDistributedApplicationBuilder builder
-		) => false;
+		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder) => false;
 
 		protected override IResourceBuilder<ParameterResource> BuildResource(
 			[NotNull] IDistributedApplicationBuilder builder

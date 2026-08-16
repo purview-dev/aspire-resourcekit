@@ -43,7 +43,9 @@ These are the most important configurable properties exposed by the SDK:
 
 - `NamespacePrefix` — required unless `DisableNamespacePrefixCheck=true`
 - `DisableNamespacePrefixCheck` — default `false`
-- `TargetFramework` — defaults to `net10.0` when neither `TargetFramework` nor `TargetFrameworks` is set
+- `TargetFramework` — defaults to `net10.0` when neither `TargetFramework` nor `TargetFrameworks` is set; projects explicitly declaring `IsRoslynComponent=true` default to `netstandard2.0`
+- `IsRoslynComponent` — when explicitly `true`, applies source-generator defaults: a single `netstandard2.0` target, extended analyzer rules, disabled SourceLink and untracked-source embedding, no dependency file, compiler-generated output under the framework-specific intermediate directory, `symbols.nupkg`, `PackSourceGeneratorSymbols`, telemetry exclusion, and excluded normal build output
+- `PackProjectReferencedSourceGenerators` — default `true`; packable projects automatically include analyzer `ProjectReference` outputs and runtime dependencies under `analyzers/dotnet/cs/`. Set it to `false` globally or use `Pack="false"` on one analyzer reference to opt out.
 - `EnableAssemblyNameGeneration` — default `false`; when `true`, `AssemblyName` and default `PackageId` follow the logical project name
 - `DisableProjectFileNamingConventionCheck` — default `false`; disables the directory-name/file-name match validation
 - `DisableGenerateAssemblyInfoClass` — default `false`; disables generated `AssemblyInfo`

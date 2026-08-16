@@ -22,9 +22,7 @@ public class PackModule(IOptions<BuildSettings> settings) : Module<CommandResult
 		var versionResult = await context.GetModule<VersionModule>();
 		var version =
 			versionResult.ValueOrDefault
-			?? throw new InvalidOperationException(
-				"The version was not produced by the version module."
-			);
+			?? throw new InvalidOperationException("The version was not produced by the version module.");
 
 		Directory.CreateDirectory(settings.Value.ArtifactsFolder);
 

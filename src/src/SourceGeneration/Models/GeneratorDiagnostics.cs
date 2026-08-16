@@ -127,25 +127,23 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor NonGenericResourceDefinitionRequiresExplicitBase =
-		new(
-			id: "SG0014",
-			title: "Non-generic ResourceDefinition requires explicit base",
-			messageFormat: "'{0}' uses ResourceDefinition and must explicitly derive from '{1}'",
-			category: Category,
-			defaultSeverity: DiagnosticSeverity.Error,
-			isEnabledByDefault: true
-		);
+	public static readonly DiagnosticDescriptor NonGenericResourceDefinitionRequiresExplicitBase = new(
+		id: "SG0014",
+		title: "Non-generic ResourceDefinition requires explicit base",
+		messageFormat: "'{0}' uses ResourceDefinition and must explicitly derive from '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 
-	public static readonly DiagnosticDescriptor GenericResourceDefinitionCannotHaveExplicitBase =
-		new(
-			id: "SG0015",
-			title: "Generic ResourceDefinition cannot have explicit base",
-			messageFormat: "'{0}' uses ResourceDefinition<TResource> and must not declare an explicit base type",
-			category: Category,
-			defaultSeverity: DiagnosticSeverity.Error,
-			isEnabledByDefault: true
-		);
+	public static readonly DiagnosticDescriptor GenericResourceDefinitionCannotHaveExplicitBase = new(
+		id: "SG0015",
+		title: "Generic ResourceDefinition cannot have explicit base",
+		messageFormat: "'{0}' uses ResourceDefinition<TResource> and must not declare an explicit base type",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 
 	public static readonly DiagnosticDescriptor NoAspireResourceFound = new(
 		id: "SG0016",

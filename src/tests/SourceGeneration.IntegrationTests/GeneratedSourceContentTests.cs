@@ -19,9 +19,7 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 
 		var generated = result.GetSource();
 		await Assert.That(generated).DoesNotContain(TestHelper.DefaultHostKitType + "Options()");
-		await Assert
-			.That(generated)
-			.DoesNotContain(TestHelper.DefaultResourceKitType + "Options()");
+		await Assert.That(generated).DoesNotContain(TestHelper.DefaultResourceKitType + "Options()");
 	}
 
 	[Test]
@@ -39,15 +37,11 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
-		await Assert
-			.That(generated)
-			.Contains($"{TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>");
+		await Assert.That(generated).Contains($"{TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>");
 	}
 
 	[Test]
-	public async Task Generate_GivenExplicitBaseClass_CorrectlyGenerates(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenExplicitBaseClass_CorrectlyGenerates(CancellationToken cancellationToken)
 	{
 		// Arrange
 		var sources = TestHelper.GenerateSources(
@@ -64,9 +58,7 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 	}
 
 	[Test]
-	public async Task Generate_GivenNoExplicitBaseClass_CorrectlyGenerates(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenNoExplicitBaseClass_CorrectlyGenerates(CancellationToken cancellationToken)
 	{
 		// Arrange
 		var source =
@@ -134,9 +126,7 @@ namespace Testing
 
 		var generated = result.GetSource();
 		await Assert.That(generated).Contains("public global::Testing.RedisResourceKit Redis");
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.SqlServerResourceKit SqlServer");
+		await Assert.That(generated).Contains("public global::Testing.SqlServerResourceKit SqlServer");
 		await Assert.That(generated).Contains("Redis = new(this, Options.Redis);");
 		await Assert.That(generated).Contains("SqlServer = new(this, Options.SqlServer);");
 		await Assert.That(generated).Contains("AddResource(Redis);");
@@ -169,12 +159,7 @@ namespace Testing
 
 		var generated = result.GetSource();
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"Redis\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"Redis\";", StringComparison.Ordinal))
 			.IsFalse();
 	}
 
@@ -205,12 +190,7 @@ namespace Testing
 		var generated = result.GetSource();
 		await Assert.That(generated).Contains("public global::Testing.RedisResourceKit MyRedis");
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"MyRedis\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"MyRedis\";", StringComparison.Ordinal))
 			.IsFalse();
 		await Assert.That(generated).Contains("MyRedis = new(this, Options.MyRedis);");
 	}
@@ -247,20 +227,10 @@ namespace Testing
 
 		var generated = result.GetSource();
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"Redis\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"Redis\";", StringComparison.Ordinal))
 			.IsFalse();
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"SqlServer\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"SqlServer\";", StringComparison.Ordinal))
 			.IsFalse();
 	}
 
@@ -289,9 +259,7 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.AzureStorageResourceKit AzureStorage");
+		await Assert.That(generated).Contains("public global::Testing.AzureStorageResourceKit AzureStorage");
 		await Assert.That(generated).Contains("AzureStorage = new(this, Options.AzureStorage);");
 	}
 
@@ -332,20 +300,10 @@ namespace Testing
 		await Assert.That(generated).Contains("public global::Testing.CacheResourceKit Cache");
 		await Assert.That(generated).Contains("public global::Testing.SecretsKit Secrets");
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"Cache\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"Cache\";", StringComparison.Ordinal))
 			.IsFalse();
 		await Assert
-			.That(
-				generated.Contains(
-					"public const string SectionName = \"Secrets\";",
-					StringComparison.Ordinal
-				)
-			)
+			.That(generated.Contains("public const string SectionName = \"Secrets\";", StringComparison.Ordinal))
 			.IsFalse();
 	}
 
@@ -374,9 +332,7 @@ namespace Testing
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
-		await Assert
-			.That(generated)
-			.Contains("public global::Testing.KeyVaultResourceKit KeyVault");
+		await Assert.That(generated).Contains("public global::Testing.KeyVaultResourceKit KeyVault");
 		await Assert.That(generated).Contains("KeyVault = new(this, Options.KeyVault);");
 	}
 
@@ -411,9 +367,7 @@ namespace Testing.Resources
 		var types = assembly.GetExportedTypes();
 
 		var hostKitType = await Assert.That(types).HasSingleItem(m => m.Name == "TestingHostKit");
-		var redisResourceKitType = await Assert
-			.That(types)
-			.HasSingleItem(m => m.Name == "RedisResourceKit");
+		var redisResourceKitType = await Assert.That(types).HasSingleItem(m => m.Name == "RedisResourceKit");
 
 		await Assert.That(hostKitType.Namespace).IsEqualTo("Testing.Host");
 		await Assert.That(redisResourceKitType.Namespace).IsEqualTo("Testing.Resources");
@@ -423,9 +377,7 @@ namespace Testing.Resources
 	[Skip(
 		"This test is skipped because the current implementation does not support custom base class names for HostKit."
 	)]
-	public async Task Generate_GivenHostKitWithNameOverride_UsesCustomBaseClassName(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenHostKitWithNameOverride_UsesCustomBaseClassName(CancellationToken cancellationToken)
 	{
 		var source =
 			@$"

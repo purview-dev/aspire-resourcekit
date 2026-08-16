@@ -22,12 +22,7 @@ static class SourceGenLibrary
 				$"{AssemblyInfo.AssemblyName}.{nameof(HostKitGenerator)}",
 				AssemblyInfo.Version,
 				(compilation, generatorName, version, _) =>
-					new GenerationContext(
-						compilation,
-						generatorName,
-						version,
-						validateCodeWriterScopes: true
-					),
+					new GenerationContext(compilation, generatorName, version, validateCodeWriterScopes: true),
 				logger
 			)
 			.Select(
@@ -41,8 +36,7 @@ static class SourceGenLibrary
 		var hostKits = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
 			TypeLibrary.HostKitAttribute,
-			transform: (ctx, ct) =>
-				GetSemanticTargetForGeneration(ctx, TypeLibrary.HostKitAttribute, logger, ct),
+			transform: (ctx, ct) => GetSemanticTargetForGeneration(ctx, TypeLibrary.HostKitAttribute, logger, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.HostKitTargets
 		);
@@ -50,12 +44,7 @@ static class SourceGenLibrary
 			context,
 			TypeLibrary.ResourceDefinitionAttribute,
 			transform: (ctx, ct) =>
-				GetSemanticTargetForGeneration(
-					ctx,
-					TypeLibrary.ResourceDefinitionAttribute,
-					logger,
-					ct
-				),
+				GetSemanticTargetForGeneration(ctx, TypeLibrary.ResourceDefinitionAttribute, logger, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.ResourceDefinitionTargets
 		);
@@ -63,12 +52,7 @@ static class SourceGenLibrary
 			context,
 			TypeLibrary.GenericResourceDefinitionAttribute,
 			transform: (ctx, ct) =>
-				GetSemanticTargetForGeneration(
-					ctx,
-					TypeLibrary.GenericResourceDefinitionAttribute,
-					logger,
-					ct
-				),
+				GetSemanticTargetForGeneration(ctx, TypeLibrary.GenericResourceDefinitionAttribute, logger, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.GenericResourceDefinitionTargets
 		);
@@ -77,10 +61,7 @@ static class SourceGenLibrary
 		var allResourceKits = resourceDefinitions.CollectWith(
 			genericResourceDefinitions,
 			static (resourceKits, genericResourceKits, _) =>
-				EquatableArray<GeneratorResult<KitTargetDescriptor>>.Create([
-					.. resourceKits,
-					.. genericResourceKits,
-				]),
+				EquatableArray<GeneratorResult<KitTargetDescriptor>>.Create([.. resourceKits, .. genericResourceKits]),
 			GeneratorTrackingNames.CollectGenericResourceKits
 		);
 
@@ -98,7 +79,7 @@ static class SourceGenLibrary
 							)
 						);
 
-					return (hostKit, EquatableArray<DiagnosticInfo>.Create(diagnostics.ToArray()));
+					return (hostKit, EquatableArray<DiagnosticInfo>.Create([.. diagnostics]));
 				},
 				GeneratorTrackingNames.CollectHostKits
 			)
@@ -108,13 +89,9 @@ static class SourceGenLibrary
 				{
 					var diagnostics = new List<DiagnosticInfo>(hostState.Item2);
 					if (!capabilities.HasIServiceCollection)
-						diagnostics.Add(
-							DiagnosticInfo.Create(GeneratorDiagnostics.ServiceCollectionMissing)
-						);
+						diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.ServiceCollectionMissing));
 					if (!capabilities.HasConfigurationBinder)
-						diagnostics.Add(
-							DiagnosticInfo.Create(GeneratorDiagnostics.OptionDependencyMissing)
-						);
+						diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.OptionDependencyMissing));
 
 					return new KitGenerationModel(
 						true,
@@ -122,8 +99,8 @@ static class SourceGenLibrary
 						capabilities.HasConfigurationBinder
 					)
 					{
-						HostKit = hostState.Item1,
-						Diagnostics = EquatableArray<DiagnosticInfo>.Create(diagnostics.ToArray()),
+						HostKit = hostState.hostKit,
+						Diagnostics = EquatableArray<DiagnosticInfo>.Create([.. diagnostics]),
 					};
 				},
 				GeneratorTrackingNames.CombineCapabilities
@@ -148,14 +125,9 @@ static class SourceGenLibrary
 	)
 	{
 		var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
-		logger?.Debug(
-			$"Checking target {classDeclaration.Identifier} based on {attributeType.TypeName}"
-		);
+		logger?.Debug($"Checking target {classDeclaration.Identifier} based on {attributeType.TypeName}");
 
-		if (
-			context.SemanticModel.GetDeclaredSymbol(classDeclaration, cancellationToken)
-			is not INamedTypeSymbol symbol
-		)
+		if (context.SemanticModel.GetDeclaredSymbol(classDeclaration, cancellationToken) is not INamedTypeSymbol symbol)
 		{
 			logger?.Error($"The symbol could not be found for {classDeclaration}");
 			return GeneratorResult<KitTargetDescriptor>.Empty;
@@ -165,11 +137,7 @@ static class SourceGenLibrary
 		{
 			logger?.Error($"Declaration is not partial for {symbol.Name}");
 			return GeneratorResult<KitTargetDescriptor>.Fail(
-				GeneratorDiagnostics.Create(
-					GeneratorDiagnostics.ClassMustBePartial,
-					symbol,
-					classDeclaration
-				)
+				GeneratorDiagnostics.Create(GeneratorDiagnostics.ClassMustBePartial, symbol, classDeclaration)
 			);
 		}
 
@@ -188,12 +156,7 @@ static class SourceGenLibrary
 		var isHostKit = attributeType == TypeLibrary.HostKitAttribute;
 
 		logger?.Debug($"Processing Attribute: {attributeType.MetadataFullName}");
-		logger?.Debug(
-			isHostKit
-				? $"For HostKit {symbol.Name}, values:"
-				: $"For ResourceKit {symbol.Name}, values:",
-			1
-		);
+		logger?.Debug(isHostKit ? $"For HostKit {symbol.Name}, values:" : $"For ResourceKit {symbol.Name}, values:", 1);
 
 		var result = isHostKit
 			? BuildHostKitDescriptor(context, symbol, classDeclaration, logger)
@@ -220,9 +183,7 @@ static class SourceGenLibrary
 			TypeName: type.TypeName,
 			Namespace: type.Namespace ?? string.Empty,
 			MetadataFullName: type.MetadataFullName,
-			AccessibilityModifier: symbol
-				.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
-				.Value,
+			AccessibilityModifier: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!.Value,
 			IsHostKit: true,
 			Name: data.Name,
 			PropertyName: null,
@@ -242,17 +203,11 @@ static class SourceGenLibrary
 		GenerationLogger? logger
 	)
 	{
-		var data = ResourceDefinitionAttributeData.FromAttributeData(
-			context.Attributes,
-			out var attribute
-		);
+		var data = ResourceDefinitionAttributeData.FromAttributeData(context.Attributes, out var attribute);
 
 		if (attribute is null)
 		{
-			logger?.Warning(
-				$"No attribute data found for {symbol.Name}, this should not happen",
-				1
-			);
+			logger?.Warning($"No attribute data found for {symbol.Name}, this should not happen", 1);
 		}
 
 		var isGenericResourceDefinition = attribute?.AttributeClass?.IsGenericType ?? false;
@@ -262,33 +217,22 @@ static class SourceGenLibrary
 		logger?.Debug($"Name: '{data.Name ?? "<null>"}'", 2);
 		logger?.Debug($"PropertyName: '{propertyName ?? "<null>"}'", 2);
 		logger?.Debug($"IsGenericResourceDefinition: '{isGenericResourceDefinition}'", 2);
-		logger?.Debug(
-			$"AspireResourceType: '{aspireResourceTypeSymbol?.ToDisplayString() ?? "<null>"}'",
-			2
-		);
+		logger?.Debug($"AspireResourceType: '{aspireResourceTypeSymbol?.ToDisplayString() ?? "<null>"}'", 2);
 
 		if (data.AspireResourceType is null)
 		{
-			aspireResourceTypeSymbol = ResolveAspireResourceTypeFromBaseClass(
-				symbol,
-				aspireResourceTypeSymbol,
-				logger
-			);
+			aspireResourceTypeSymbol = ResolveAspireResourceTypeFromBaseClass(symbol, aspireResourceTypeSymbol, logger);
 		}
 
 		var type = new TypeValueObject(symbol);
 		var target = new TargetSymbolDescriptor(symbol, classDeclaration);
-		TypeModel? aspireResourceType = aspireResourceTypeSymbol is null
-			? null
-			: ToTypeModel(aspireResourceTypeSymbol);
+		TypeModel? aspireResourceType = aspireResourceTypeSymbol is null ? null : ToTypeModel(aspireResourceTypeSymbol);
 
 		return new KitTargetDescriptor(
 			TypeName: type.TypeName,
 			Namespace: type.Namespace ?? string.Empty,
 			MetadataFullName: type.MetadataFullName,
-			AccessibilityModifier: symbol
-				.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
-				.Value,
+			AccessibilityModifier: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!.Value,
 			IsHostKit: false,
 			Name: data.Name,
 			PropertyName: propertyName,
@@ -309,9 +253,7 @@ static class SourceGenLibrary
 	{
 		var type = new TypeValueObject(symbol);
 		var @namespace = type.Namespace ?? string.Empty;
-		var renderFullName = string.IsNullOrEmpty(@namespace)
-			? $"global::{type.TypeName}"
-			: type.RenderFullName;
+		var renderFullName = string.IsNullOrEmpty(@namespace) ? $"global::{type.TypeName}" : type.RenderFullName;
 		return new(type.TypeName, @namespace, type.MetadataFullName, renderFullName);
 	}
 
@@ -321,10 +263,7 @@ static class SourceGenLibrary
 		GenerationLogger? logger
 	)
 	{
-		logger?.Debug(
-			"Checking for explicit base class for attribute-based Aspire resource type",
-			1
-		);
+		logger?.Debug("Checking for explicit base class for attribute-based Aspire resource type", 1);
 
 		if (symbol.BaseType is null || symbol.BaseType.TypeParameters.Length == 0)
 		{
@@ -339,10 +278,7 @@ static class SourceGenLibrary
 
 		foreach (var param in symbol.BaseType.TypeArguments)
 		{
-			logger?.Debug(
-				$"Checking type parameter '{param.ToDisplayString()}' for implemented interfaces",
-				3
-			);
+			logger?.Debug($"Checking type parameter '{param.ToDisplayString()}' for implemented interfaces", 3);
 			foreach (var @interface in param.AllInterfaces)
 			{
 				var t = new TypeValueObject(@interface);
@@ -364,18 +300,13 @@ static class SourceGenLibrary
 
 	static bool HasNonEmptyConstructors(ClassDeclarationSyntax classDeclaration, string className)
 	{
-		if (
-			classDeclaration.ParameterList is not null
-			&& classDeclaration.ParameterList.Parameters.Count > 0
-		)
+		if (classDeclaration.ParameterList is not null && classDeclaration.ParameterList.Parameters.Count > 0)
 			return true;
 
 		foreach (
 			var constructor in classDeclaration
 				.Members.OfType<ConstructorDeclarationSyntax>()
-				.Where(c =>
-					string.Equals(c.Identifier.ValueText, className, StringComparison.Ordinal)
-				)
+				.Where(c => string.Equals(c.Identifier.ValueText, className, StringComparison.Ordinal))
 		)
 		{
 			if (constructor.ParameterList.Parameters.Count > 0)

@@ -18,9 +18,7 @@ namespace Testing
 ";
 
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(CancellationToken cancellationToken)
 	{
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 
@@ -52,9 +50,7 @@ namespace Testing
 
 		await Assert.That(text).Contains("class ResourceDefinitionAttribute");
 		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource>");
-		await Assert
-			.That(text)
-			.Contains("class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute");
+		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute");
 		await Assert.That(text).Contains("string? Name");
 		await Assert.That(text).Contains("string? PropertyName");
 	}
@@ -87,21 +83,15 @@ namespace Testing
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
 
-		await Assert
-			.That(assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName))
-			.IsNotNull();
-		await Assert
-			.That(assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName))
-			.IsNotNull();
+		await Assert.That(assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName)).IsNotNull();
+		await Assert.That(assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName)).IsNotNull();
 		await Assert
 			.That(assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName))
 			.IsNotNull();
 	}
 
 	[Test]
-	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(
-		CancellationToken cancellationToken
-	)
+	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
@@ -121,28 +111,18 @@ namespace Testing
 		var assembly = await Assert.That(result.Assembly).IsNotNull();
 		var type = assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName)!;
 
-		await Assert
-			.That(type.GetProperty("Name")!.PropertyType.FullName)
-			.IsEqualTo(typeof(string).FullName);
-		await Assert
-			.That(type.GetProperty("PropertyName")!.PropertyType.FullName)
-			.IsEqualTo(typeof(string).FullName);
+		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
+		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 
-		var genericType = assembly.GetType(
-			TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName
-		)!;
-		await Assert
-			.That(genericType.GetProperty("Name")!.PropertyType.FullName)
-			.IsEqualTo(typeof(string).FullName);
+		var genericType = assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName)!;
+		await Assert.That(genericType.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert
 			.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName)
 			.IsEqualTo(typeof(string).FullName);
 	}
 
 	[Test]
-	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(
-		CancellationToken cancellationToken
-	)
+	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
 		var result = await ResourceKitGenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.Assembly).IsNotNull();

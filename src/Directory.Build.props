@@ -1,12 +1,8 @@
 <Project>
-	<Import
-		Project="Versions.props"
-		Condition="Exists('$(MSBuildThisFileDirectory)Versions.props')"
-	/>
+	<Import Project="Versions.props" Condition="Exists('$(MSBuildThisFileDirectory)Versions.props')" />
 
 	<PropertyGroup>
-		<TargetFramework Condition="'$(TargetFrameworks)' == ''"
-			>$(DefaultTargetFramework)</TargetFramework>
+		<TargetFramework Condition="'$(TargetFrameworks)' == ''">$(DefaultTargetFramework)</TargetFramework>
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<IsPackable>false</IsPackable>
 		<RepositoryUrl>https://github.com/purview-dev/purview-aspire-resourcekit</RepositoryUrl>
@@ -14,30 +10,21 @@
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
 
-	<PropertyGroup>
-		<NoWarn>$(NoWarn);CS0436;</NoWarn>
-		<!-- Ignoring XML comments for now -->
-		<NoWarn>$(NoWarn);CS1574;CS1591;CA2234;</NoWarn>
-	</PropertyGroup>
-
 	<PropertyGroup Label="NuGet package metadata">
-		<Authors>Kieron Lanning</Authors>
+		<Authors>Purview Contributors</Authors>
 		<Company>Purview.dev</Company>
 		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+		<RepositoryUrl>$(RepositoryUrl)</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageIcon>purview-logo.jpg</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
 	<ItemGroup Label="NuGet package assets" Condition="'$(IsPackable)' == 'true'">
-		<None Include="$(MSBuildThisFileDirectory)../README.md" Pack="true" PackagePath="/" />
-		<None Include="$(MSBuildThisFileDirectory)../LICENSE.md" Pack="true" PackagePath="/" />
-		<None
-			Include="$(MSBuildThisFileDirectory)../assets/images/purview-logo.jpg"
-			Pack="true"
-			PackagePath="/"
-		/>
+		<None Include="$(MSBuildThisFileDirectory)/../LICENSE.md" Link="Sdk/LICENSE.md" />
+		<None Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo.jpg" Link="Sdk/purview-logo.jpg" />
+		<None Include="$(MSBuildThisFileDirectory)/../README.md" Link="Sdk/README.md" />
 	</ItemGroup>
 </Project>

@@ -26,9 +26,7 @@ public static class HintNameHelper
 
 		var hash = new StringBuilder(12);
 		for (var index = 0; index < 6; index++)
-			hash.Append(
-				digest[index].ToString("x2", System.Globalization.CultureInfo.InvariantCulture)
-			);
+			hash.Append(digest[index].ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
 		return $"{safeIdentity}.AspireResourceKit.{hash}.g.cs";
 	}
 }

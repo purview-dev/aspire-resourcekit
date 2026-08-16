@@ -37,18 +37,12 @@ public class PublishNuGetModule(
 	)
 	{
 		var packages = Directory
-			.EnumerateFiles(
-				buildSettings.Value.ArtifactsFolder,
-				"*.nupkg",
-				SearchOption.TopDirectoryOnly
-			)
+			.EnumerateFiles(buildSettings.Value.ArtifactsFolder, "*.nupkg", SearchOption.TopDirectoryOnly)
 			.ToList();
 
 		if (packages.Count == 0)
 		{
-			throw new InvalidOperationException(
-				$"No NuGet packages found in {buildSettings.Value.ArtifactsFolder}."
-			);
+			throw new InvalidOperationException($"No NuGet packages found in {buildSettings.Value.ArtifactsFolder}.");
 		}
 
 		var tasks = packages.Select(package =>

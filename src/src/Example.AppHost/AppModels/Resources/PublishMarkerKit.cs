@@ -6,7 +6,6 @@ sealed partial class PublishMarkerKit
 	protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 
-	protected override IResourceBuilder<ParameterResource> BuildResource(
-		IDistributedApplicationBuilder builder
-	) => builder.AddParameter(Name, "enabled", secret: false);
+	protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder) =>
+		builder.AddParameter(Name, "enabled", secret: false);
 }

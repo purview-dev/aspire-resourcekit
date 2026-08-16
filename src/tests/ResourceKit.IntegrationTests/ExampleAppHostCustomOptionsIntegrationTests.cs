@@ -4,20 +4,12 @@ using Purview.Aspire.ResourceKit.Fixtures;
 namespace Purview.Aspire.ResourceKit;
 
 [ClassDataSource<CustomOptionsExampleAppHostFixture>(Shared = SharedType.PerTestSession)]
-public sealed class ExampleAppHostCustomOptionsIntegrationTests(
-	CustomOptionsExampleAppHostFixture fixture
-)
+public sealed class ExampleAppHostCustomOptionsIntegrationTests(CustomOptionsExampleAppHostFixture fixture)
 {
 	[Test]
-	public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(
-		CancellationToken cancellationToken
-	)
+	public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(CancellationToken cancellationToken)
 	{
-		await Helpers.ConnectionStringIsUnavailableAsync(
-			fixture,
-			Platform.ResourceKits.Redis,
-			cancellationToken
-		);
+		await Helpers.ConnectionStringIsUnavailableAsync(fixture, Platform.ResourceKits.Redis, cancellationToken);
 
 		await Assert
 			.That(fixture.GetResourceSnapshot(CustomOptionsExampleAppHostFixture.AzureStorageName))

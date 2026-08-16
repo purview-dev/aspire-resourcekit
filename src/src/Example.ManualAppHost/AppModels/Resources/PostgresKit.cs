@@ -3,16 +3,9 @@ using Aspire.Hosting.Azure;
 namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 
 sealed partial class PostgresKit(ExampleHostKit hostKit)
-	: ResourceKitBase<ExampleHostKit, AzurePostgresFlexibleServerResource>(
-		hostKit,
-		Platform.ResourceKits.Postgres
-	)
+	: ResourceKitBase<ExampleHostKit, AzurePostgresFlexibleServerResource>(hostKit, Platform.ResourceKits.Postgres)
 {
-	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database
-	{
-		get;
-		private set;
-	} = default!;
+	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; } = default!;
 
 	protected override IResourceBuilder<AzurePostgresFlexibleServerResource> BuildResource(
 		IDistributedApplicationBuilder builder

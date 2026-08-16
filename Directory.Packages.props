@@ -3,7 +3,7 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>1.63.0</TUnitVersion>
 		<ModularPipelinesVersion>3.2.8</ModularPipelinesVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.17</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSourceGeneratorFrameworkVersion>[1.0.0-prerelease.18,)</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />
@@ -18,20 +18,11 @@
 		<PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="13.4.6" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion
-			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-			Version="10.0.10"
-		/>
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
-		<PackageVersion
-			Include="Microsoft.Extensions.Options.ConfigurationExtensions"
-			Version="10.0.10"
-		/>
+		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
-		<PackageVersion
-			Include="Microsoft.Extensions.Configuration.Abstractions"
-			Version="10.0.10"
-		/>
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
 		<!-- Keep Roslyn pinned only for netstandard2.0 because the generator must not pull System.Collections.Immutable 10.x into net8+ consumer and test builds. -->
 		<PackageVersion
 			Include="Microsoft.CodeAnalysis.Analyzers"

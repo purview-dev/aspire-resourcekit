@@ -56,11 +56,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					resourceKitDescriptors
 				);
 
-				if (
-					model.HostKit.IsFatal
-					|| model.ResourceKits.Any(s => s.IsFatal)
-					|| hostKit is null
-				)
+				if (model.HostKit.IsFatal || model.ResourceKits.Any(s => s.IsFatal) || hostKit is null)
 					return;
 
 				var hostKitInfo = CodeGenHelpers.BuildHostKit(hostKit, validResourceDescriptors);
@@ -82,7 +78,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 		List<KitTargetDescriptor> validResourceDescriptors = [];
 		if (hostKit is not null)
 		{
-			HashSet<string> seenPropertyNames = new(StringComparer.Ordinal);
+			HashSet<string> seenPropertyNames = [with(StringComparer.Ordinal)];
 			foreach (var resource in resourceKitDescriptors)
 			{
 				if (resource.IsGenericResourceDefinition && resource.HasExplicitBaseType)
@@ -112,34 +108,22 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				if (string.IsNullOrWhiteSpace(resourceName))
 				{
 					diagnostics.Add(
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.ResourceNameNotDerivable,
-							resource.TypeName
-						)
+						DiagnosticInfo.Create(GeneratorDiagnostics.ResourceNameNotDerivable, resource.TypeName)
 					);
 					continue;
 				}
 
-				var propertyName =
-					resource.PropertyName ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
+				var propertyName = resource.PropertyName ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
 				if (!TypeHelpers.IsValidIdentifier(propertyName))
 				{
-					diagnostics.Add(
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.InvalidPropertyName,
-							propertyName
-						)
-					);
+					diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.InvalidPropertyName, propertyName));
 					continue;
 				}
 
 				if (!seenPropertyNames.Add(propertyName))
 				{
 					diagnostics.Add(
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.DuplicateResourcePropertyName,
-							propertyName
-						)
+						DiagnosticInfo.Create(GeneratorDiagnostics.DuplicateResourcePropertyName, propertyName)
 					);
 					continue;
 				}
@@ -159,10 +143,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				if (resource.AspireResourceType is null)
 				{
 					diagnostics.Add(
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.NoAspireResourceFound,
-							resource.TypeName
-						)
+						DiagnosticInfo.Create(GeneratorDiagnostics.NoAspireResourceFound, resource.TypeName)
 					);
 					continue;
 				}
@@ -173,10 +154,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 		if (validResourceDescriptors.Count == 0 && !model.HostKit.IsEmpty)
 			diagnostics.Add(
-				DiagnosticInfo.Create(
-					GeneratorDiagnostics.NoResourceKitsDefined,
-					hostKit?.TypeName ?? string.Empty
-				)
+				DiagnosticInfo.Create(GeneratorDiagnostics.NoResourceKitsDefined, hostKit?.TypeName ?? string.Empty)
 			);
 		else if (model.HostKit.IsEmpty)
 			diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
@@ -187,23 +165,12 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 		return validResourceDescriptors;
 	}
 
-	static List<KitTargetDescriptor> GatherResourceKits(
-		KitGenerationModel model,
-		List<DiagnosticInfo> diagnostics
-	)
+	static List<KitTargetDescriptor> GatherResourceKits(KitGenerationModel model, List<DiagnosticInfo> diagnostics)
 	{
-		var resources = model
-			.ResourceKits.Where(result => result.IsSuccess)
-			.Select(result => result.Value!)
-			.ToList();
+		var resources = model.ResourceKits.Where(result => result.IsSuccess).Select(result => result.Value!).ToList();
 		var mixedTypes = new HashSet<string>(StringComparer.Ordinal);
 
-		foreach (
-			var group in resources.GroupBy(
-				resource => resource.MetadataFullName,
-				StringComparer.Ordinal
-			)
-		)
+		foreach (var group in resources.GroupBy(resource => resource.MetadataFullName, StringComparer.Ordinal))
 		{
 			if (
 				group.Any(resource => resource.IsGenericResourceDefinition)

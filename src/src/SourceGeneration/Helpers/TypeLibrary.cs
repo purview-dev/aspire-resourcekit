@@ -33,25 +33,16 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 	);
 
 	// Library types
-	public static readonly TypeValueObject IHostKit = new(
-		nameof(IHostKit),
-		PurviewAspireResourceKitNamespace
-	);
+	public static readonly TypeValueObject IHostKit = new(nameof(IHostKit), PurviewAspireResourceKitNamespace);
 
-	public static readonly TypeValueObject HostKitBase = new(
-		nameof(HostKitBase),
-		PurviewAspireResourceKitNamespace
-	);
+	public static readonly TypeValueObject HostKitBase = new(nameof(HostKitBase), PurviewAspireResourceKitNamespace);
 
 	public static readonly TypeValueObject ResourceKitBase = new(
 		nameof(ResourceKitBase),
 		PurviewAspireResourceKitNamespace
 	);
 
-	public static readonly TypeValueObject IResourceKit = new(
-		nameof(IResourceKit),
-		PurviewAspireResourceKitNamespace
-	);
+	public static readonly TypeValueObject IResourceKit = new(nameof(IResourceKit), PurviewAspireResourceKitNamespace);
 
 	// Other required types
 	// Required for DI
@@ -66,16 +57,10 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 	);
 
 	// Required for Options
-	public static readonly TypeValueObject OptionsBuilder = new(
-		nameof(OptionsBuilder),
-		"Microsoft.Extensions.Options"
-	);
+	public static readonly TypeValueObject OptionsBuilder = new(nameof(OptionsBuilder), "Microsoft.Extensions.Options");
 
 	// Aspire types.
-	public static readonly TypeValueObject IResource = new(
-		nameof(IResource),
-		"Aspire.Hosting.ApplicationModel"
-	);
+	public static readonly TypeValueObject IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
 
 	public static readonly TypeValueObject IDistributedApplicationBuilder = new(
 		nameof(IDistributedApplicationBuilder),
@@ -105,15 +90,8 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 
 	public static readonly TypeValueObject Action = new(nameof(Action), "System");
 
-	public static readonly TypeValueObject EmbeddedAttribute = new(
-		nameof(EmbeddedAttribute),
-		"Microsoft.CodeAnalysis"
-	);
+	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
 
 	// Generated attributes (make sure this is after they're all initialized!)
-	public static readonly TypeValueObject[] GeneratedTypes =
-	[
-		HostKitAttribute,
-		ResourceDefinitionAttribute,
-	];
+	public static readonly TypeValueObject[] GeneratedTypes = [HostKitAttribute, ResourceDefinitionAttribute];
 }

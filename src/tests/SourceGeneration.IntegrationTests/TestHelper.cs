@@ -59,11 +59,7 @@ static class TestHelper
 		{
 			Arguments =
 			[
-				new AttributeArgumentOptions(generateOptions)
-				{
-					Name = "GenerateOptions",
-					IsPropertyAssignment = true,
-				},
+				new AttributeArgumentOptions(generateOptions) { Name = "GenerateOptions", IsPropertyAssignment = true },
 			],
 		};
 #pragma warning restore CA1308 // Normalize strings to uppercase

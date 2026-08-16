@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Purview.SourceGeneratorFramework.Generators;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 

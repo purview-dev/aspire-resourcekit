@@ -8,7 +8,7 @@ namespace Purview.Aspire.ResourceKit;
 /// Marks the single host application type used by ResourceKit source generation.
 /// </summary>
 [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-public sealed class HostKitAttribute : global::System.Attribute
+internal sealed class HostKitAttribute : global::System.Attribute
 {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="HostKitAttribute"/> class.

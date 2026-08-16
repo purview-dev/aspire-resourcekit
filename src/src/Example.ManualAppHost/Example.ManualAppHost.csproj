@@ -14,10 +14,7 @@
 			Include="..\Example.ServiceDefaults\Example.ServiceDefaults.csproj"
 			IsAspireProjectResource="false"
 		/>
-		<ProjectReference
-			Include="..\ResourceKit\ResourceKit.csproj"
-			IsAspireProjectResource="false"
-		/>
+		<ProjectReference Include="..\ResourceKit\ResourceKit.csproj" IsAspireProjectResource="false" />
 		<ProjectReference
 			Include="..\SourceGeneration\SourceGeneration.csproj"
 			IsAspireProjectResource="false"

@@ -10,11 +10,7 @@ public sealed class OptionsHelperTests
 
 		// Act
 		var args = OptionsHelper
-			.ForSet<HostKitOptions>(
-				sectionName,
-				c => c.Redis.IsEnabled = false,
-				c => c.Redis.Name = "PIES"
-			)
+			.ForSet<HostKitOptions>(sectionName, c => c.Redis.IsEnabled = false, c => c.Redis.Name = "PIES")
 			.Build();
 
 		// Assert
@@ -43,12 +39,8 @@ public sealed class OptionsHelperTests
 
 		// Act
 		var fromOptions = OptionsHelper.ForSet<ServiceOptions>(c => c.Redis.Name = "PIES").Build();
-		var fromSettings = OptionsHelper
-			.ForSet<ServiceSettings>(c => c.Redis.Name = "PIES")
-			.Build();
-		var fromConfiguration = OptionsHelper
-			.ForSet<ServiceConfiguration>(c => c.Redis.Name = "PIES")
-			.Build();
+		var fromSettings = OptionsHelper.ForSet<ServiceSettings>(c => c.Redis.Name = "PIES").Build();
+		var fromConfiguration = OptionsHelper.ForSet<ServiceConfiguration>(c => c.Redis.Name = "PIES").Build();
 		var fromConfig = OptionsHelper.ForSet<ServiceConfig>(c => c.Redis.Name = "PIES").Build();
 
 		// Assert
@@ -77,9 +69,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var args = OptionsHelper
-			.ForSet<DeepOptions>(c => c.Level1.Level2.Level3.Level4.Name = "PIES")
-			.Build();
+		var args = OptionsHelper.ForSet<DeepOptions>(c => c.Level1.Level2.Level3.Level4.Name = "PIES").Build();
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(1);
@@ -159,9 +149,7 @@ public sealed class OptionsHelperTests
 		const string sectionName = "MySection";
 
 		// Act
-		var arg = OptionsHelper.ForOne<SampleStoreOptions>(sectionName, f => f.CurrentKey).Build()[
-			0
-		];
+		var arg = OptionsHelper.ForOne<SampleStoreOptions>(sectionName, f => f.CurrentKey).Build()[0];
 
 		// Assert
 		await Assert.That(arg).IsEqualTo("--MySection:CurrentKey=default-key");
@@ -200,9 +188,7 @@ public sealed class OptionsHelperTests
 		const string sectionName = "MySection";
 
 		// Act
-		var args = OptionsHelper
-			.For<SampleStoreOptions>(sectionName, f => f.CurrentKey, f => f.Count)
-			.Build();
+		var args = OptionsHelper.For<SampleStoreOptions>(sectionName, f => f.CurrentKey, f => f.Count).Build();
 
 		// Assert
 		await Assert.That(args.Length).IsEqualTo(2);
@@ -280,10 +266,7 @@ public sealed class OptionsHelperTests
 		// Arrange
 
 		// Act
-		var envVars = OptionsHelper
-			.ForSet<HostKitOptions>(c => c.Redis.Name = "PIES")
-			.AsEnvironmentVariables()
-			.Build();
+		var envVars = OptionsHelper.ForSet<HostKitOptions>(c => c.Redis.Name = "PIES").AsEnvironmentVariables().Build();
 
 		// Assert
 		await Assert.That(envVars).ContainsKey("HostKit__Redis__Name");
