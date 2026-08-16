@@ -40,9 +40,11 @@ partial class HostKitGenerator
 				);
 
 				var baseClass = resourceKit.HasExplicitBaseType
-					? TypeValueObject.Empty
-					: hostKit.HostKitResourceKitBaseType.MakeGeneric(
-						resourceKit.AspireResourceType
+					? default
+					: new TypeReferenceOptions(
+						hostKit
+							.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType)
+							.RenderFullName
 					);
 
 				// Generate the resource kit class
@@ -160,7 +162,7 @@ partial class HostKitGenerator
 						Accessibility = TypeDeclarationAccessibility.Public,
 						HasGetter = true,
 						HasSetter = true,
-						Initializer = defaultResourceName.Surround(),
+						Initializer = GeneratedText.QuoteLiteral(defaultResourceName),
 						Attributes =
 						[
 							new(TypeLibrary.RequiredAttribute)

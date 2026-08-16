@@ -134,48 +134,61 @@ partial class HostKitGenerator
 					.Comment(
 						"Bind the host kit options from configuration, or create a new instance if not found."
 					)
-					.WriteLine(
-						$"var optionsBuilder = builder.Services.AddOptions<{hostKit.HostKitOptionsType}>()"
+					.Write(
+						$"var optionsBuilder = builder.Services.AddOptions<{hostKit.HostKitOptionsType}>"
 					)
+					.WriteArgumentList([], terminate: false)
+					.NewLine()
 					.Indented(w =>
-						w.WriteLine(
-							$".BindConfiguration({hostKit.HostKitOptionsType}.SectionName);"
+						w.WriteInvocationLine(
+							".BindConfiguration",
+							[$"{hostKit.HostKitOptionsType}.SectionName"]
 						)
 					);
 
 				writer
 					.NewLine()
-					.WriteLine("configureOptions?.Invoke(optionsBuilder);")
-					.WriteLine("optionsBuilder.ValidateOnStart();")
+					.WriteInvocationLine("configureOptions?.Invoke", ["optionsBuilder"])
+					.WriteInvocationLine("optionsBuilder.ValidateOnStart", [])
 					.NewLine();
 
 				writer
-					.WriteLine($"var hostKitOptions = builder.Configuration.GetSection(")
+					.Write("var hostKitOptions = ")
+					.WriteInvocation(
+						"builder.Configuration.GetSection",
+						[$"{hostKit.HostKitOptionsType}.SectionName"],
+						terminate: false
+					)
+					.NewLine()
 					.Indented(w =>
 					{
-						w.Indented(w =>
-							w.Write(hostKit.HostKitOptionsType).WriteLine(".SectionName")
-						);
-						w.WriteLine(")")
-							.Write(".Get<")
-							.Write(hostKit.HostKitOptionsType)
-							.Write(">() ?? new();");
+						w.WriteInvocation(
+								$".Get<{hostKit.HostKitOptionsType}>",
+								[],
+								terminate: false
+							)
+							.Write(" ?? new();")
+							.NewLine();
 					});
 			}
 
-			writer
-				.Comment("Create an instance of the generated host kit and configure it.")
-				.Write($"{hostKit.HostKitType} hostKit = new (onBuilt, onConfigured");
-			if (hostKit.ShouldGenerateOptions)
-				writer.Write(", hostKitOptions");
-			writer.WriteLine(");");
+			writer.Comment("Create an instance of the generated host kit and configure it.");
+			writer.Write($"{hostKit.HostKitType} hostKit = ");
+			writer.WriteInvocation(
+				"new",
+				hostKit.ShouldGenerateOptions
+					? ["onBuilt", "onConfigured", "hostKitOptions"]
+					: ["onBuilt", "onConfigured"],
+				terminate: false
+			);
+			writer.WriteLine(";");
 
 			writer
 				.NewLine()
-				.WriteLine("hostKit.Build(builder);")
-				.WriteLine("hostKit.Configure();")
+				.WriteInvocationLine("hostKit.Build", ["builder"])
+				.WriteInvocationLine("hostKit.Configure", [])
 				.NewLine()
-				.WriteLine("builder.Services.AddSingleton(hostKit);")
+				.WriteInvocationLine("builder.Services.AddSingleton", ["hostKit"])
 				.NewLine();
 
 			writer.WriteLine("return builder;");

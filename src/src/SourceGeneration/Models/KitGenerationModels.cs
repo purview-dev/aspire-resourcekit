@@ -1,85 +1,96 @@
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
-
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 sealed record KitGenerationModel(
 	bool IsSourceGeneratorEnabled,
-	KitGenerationContext GenerationContext
+	bool HasIServiceCollection,
+	bool HasConfigurationBinder
 )
 {
-	public GeneratorResult<KitTargetDescriptor> HostKit { get; set; }
+	public GeneratorResult<KitTargetDescriptor> HostKit { get; init; }
 
-	public ImmutableArray<GeneratorResult<KitTargetDescriptor>> ResourceKits { get; set; }
+	public EquatableArray<GeneratorResult<KitTargetDescriptor>> ResourceKits { get; init; }
 
-	public ImmutableArray<DiagnosticInfo> Diagnostics { get; set; } = [];
+	public EquatableArray<DiagnosticInfo> Diagnostics { get; init; }
 }
 
-sealed record class KitGenerationContext : GenerationContext
+readonly record struct GenerationCapabilities(
+	bool HasIServiceCollection,
+	bool HasConfigurationBinder
+);
+
+readonly record struct TypeModel(
+	string TypeName,
+	string Namespace,
+	string MetadataFullName,
+	string RenderFullName
+)
 {
-	public KitGenerationContext(
-		Compilation compilation,
-		string generatorName,
-		string generatorVersion
-	)
-		: base(compilation, generatorName: generatorName, generatorVersion: generatorVersion)
+	public TypeValueObject AsTypeValueObject() =>
+		new(TypeName, Namespace.Length == 0 ? null : Namespace);
+
+	public TypeModel MakeGeneric(params TypeModel[] arguments)
 	{
-		IServiceCollection = GetTypeByMetadataName(TypeLibrary.IServiceCollection)!;
-		ConfigurationBinder = GetTypeByMetadataName(TypeLibrary.ConfigurationBinder)!;
-		HostKitAttribute = GetTypeByMetadataName(TypeLibrary.HostKitAttribute)!;
-		ResourceDefinitionAttribute = GetTypeByMetadataName(
-			TypeLibrary.ResourceDefinitionAttribute
-		)!;
-		GenericResourceDefinitionAttribute = GetTypeByMetadataName(
-			TypeLibrary.GenericResourceDefinitionAttribute
-		)!;
+		var typeName =
+			$"{TypeName}<{string.Join(", ", arguments.Select(argument => argument.RenderFullName))}>";
+		return new(typeName, Namespace, MetadataFullName, $"global::{Namespace}.{typeName}");
 	}
 
-	public INamedTypeSymbol? IServiceCollection { get; }
+	public static implicit operator TypeValueObject(TypeModel model) => model.AsTypeValueObject();
 
-	public INamedTypeSymbol? ConfigurationBinder { get; }
+	public static implicit operator TypeModel(TypeValueObject model) =>
+		new(
+			model.TypeName,
+			model.Namespace ?? string.Empty,
+			model.MetadataFullName,
+			model.RenderFullName
+		);
 
-	public INamedTypeSymbol HostKitAttribute { get; }
+	public static implicit operator TypeReferenceOptions(TypeModel model) =>
+		new(model.RenderFullName);
 
-	public INamedTypeSymbol ResourceDefinitionAttribute { get; }
+	public static implicit operator string(TypeModel model) => model.RenderFullName;
 
-	public INamedTypeSymbol GenericResourceDefinitionAttribute { get; }
+	public override string ToString() => RenderFullName;
 }
 
 readonly record struct HostKitInfo(
 	KitTargetDescriptor SymbolDescriptor,
-	TypeValueObject HostKitType,
-	TypeValueObject HostKitOptionsType,
-	TypeValueObject HostKitResourceKitBaseType,
+	TypeModel HostKitType,
+	TypeModel HostKitOptionsType,
+	TypeModel HostKitResourceKitBaseType,
 	TypeDeclarationAccessibility AccessibilityModifier,
 	string ExtensionMethodName,
-	ImmutableArray<ResourceKitInfo> ResourceKits
+	EquatableArray<ResourceKitInfo> ResourceKits
 )
 {
-	public bool ShouldGenerateOptions => HostKitOptionsType != TypeValueObject.Empty;
+	public bool ShouldGenerateOptions => !HostKitOptionsType.Equals(default);
 
-	public bool HasResourceKits => !ResourceKits.IsDefaultOrEmpty;
+	public bool HasResourceKits => !ResourceKits.IsEmpty;
 }
 
 readonly record struct ResourceKitInfo(
 	KitTargetDescriptor SymbolDescriptor,
-	TypeValueObject ResourceKitType,
-	TypeValueObject ResourceKitOptionsType,
-	TypeValueObject AspireResourceType,
+	TypeModel ResourceKitType,
+	TypeModel ResourceKitOptionsType,
+	TypeModel AspireResourceType,
 	TypeDeclarationAccessibility AccessibilityModifier,
 	string PropertyName,
 	string? ResourceName,
 	bool HasExplicitBaseType
 );
 
-sealed record class KitTargetDescriptor(
-	TargetSymbolDescriptor Target,
+sealed record KitTargetDescriptor(
+	string TypeName,
+	string Namespace,
+	string MetadataFullName,
+	TypeDeclarationAccessibility AccessibilityModifier,
 	bool IsHostKit,
 	string? Name,
 	string? PropertyName,
 	string? ExtensionName,
 	bool GenerateOptions,
 	bool IsGenericResourceDefinition,
-	INamedTypeSymbol? AspireResourceTypeSymbol
+	TypeModel? AspireResourceType,
+	bool HasExplicitBaseType,
+	bool IsDerivedFromExpectedBase
 );

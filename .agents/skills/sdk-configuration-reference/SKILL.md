@@ -87,12 +87,21 @@ These settings control the SDK’s repo-level helper file bootstrapping:
 - `BootstrapGlobalJsonToRepoRoot` — default `true`
 - `RepositoryGlobalJsonFilePath` — optional override for the destination `global.json`
 - `PurviewDotNetProjectSdkVersionForGlobalJson` — defaults to detected SDK package version, fallback `1.0.0`
-- `EnableAgentFolderInPackage` — default `true`; copies the bundled `agents/**` folder from the SDK NuGet package into the consuming repo’s `.agents/`
-- `EnabledAgentFolderInPackage` — default `false`; when `true`, packs `$(ProjectAgentFolder)` into the NuGet package under `agents/**`
-- `ProjectAgentFolder` — default `ProjectAgent`; repo-relative root folder that contains the agent content to pack
-- `ProjectAgentDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied agent content as `$(ProjectAgentDestinationFolder)/**`
+- `PurviewAutoSdkPack` — default `true`; when `true`, automatically packs the `Sdk/` folder contents into the NuGet package with the correct root-level paths
+- `EnableAgentFolderInPackage` — default `true`; copies the bundled `.agents/**` folder from the SDK NuGet package into the consuming repo’s `.agents/`
+- `AgentPackDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied agent content as `$(AgentPackDestinationFolder)/**`
 
-When `EnabledAgentFolderInPackage` is `true`, the SDK injects a `.gitignore` file into each second-level packed agent folder during packaging with the following content:
+**Hard requirement:** This SDK must pack the contents of `Sdk/` into the NuGet package so that downstream consumers of `Purview.DotNetProjectSdk` receive the same `Sdk/**` files. The `PurviewAutoSdkPack` feature (default `true`) is the mechanism that delivers this for standard consuming projects. When a project is packable, the SDK automatically adds `Sdk/**/*` as package content with the correct root-level paths:
+
+- `Sdk/.agents/**` → `.agents/**`
+- `Sdk/.github/**` → `.github/**`
+- `Sdk/build/**` → `build/**`
+- `Sdk/buildTransitive/**` → `buildTransitive/**`
+- `Sdk/buildMultiTargeting/**` → `buildMultiTargeting/**`
+- `Sdk/*.md`, `Sdk/*.png`, `Sdk/*.jpg`, etc. → package root
+- everything else under `Sdk/` → `Sdk/`
+
+The SDK injects a `.gitignore` file into each second-level folder under `Sdk/.agents` during packaging with the following content:
 
 ```text[.gitignore]
 # Ignore all files

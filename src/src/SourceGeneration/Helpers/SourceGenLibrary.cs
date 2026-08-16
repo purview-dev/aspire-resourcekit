@@ -7,7 +7,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class SourceGenLibrary
 {
-	public static IncrementalValueProvider<KitGenerationModel> GetGeneratorValueProviders(
+	public static IncrementalValuesProvider<KitGenerationModel> GetGeneratorValueProviders(
 		IncrementalGeneratorInitializationContext context,
 		GenerationLogger? logger
 	)
@@ -16,14 +16,27 @@ static class SourceGenLibrary
 			context,
 			PropertyLibrary.DisablePurviewAspireResourceKitSourceGeneratorPropertyName
 		);
-		var generationContext = IncrementalPipeline.GenerationContextValueProvider(
-			context,
-			$"{AssemblyInfo.AssemblyName}.{nameof(HostKitGenerator)}",
-			AssemblyInfo.Version,
-			(compilation, generatorName, version, _) =>
-				new KitGenerationContext(compilation, generatorName, version),
-			logger
-		);
+		var generationContext = IncrementalPipeline
+			.GenerationContextValueProvider(
+				context,
+				$"{AssemblyInfo.AssemblyName}.{nameof(HostKitGenerator)}",
+				AssemblyInfo.Version,
+				(compilation, generatorName, version, _) =>
+					new GenerationContext(
+						compilation,
+						generatorName,
+						version,
+						validateCodeWriterScopes: true
+					),
+				logger
+			)
+			.Select(
+				static (context, _) =>
+					new GenerationCapabilities(
+						context.GetTypeByMetadataName(TypeLibrary.IServiceCollection) is not null,
+						context.GetTypeByMetadataName(TypeLibrary.ConfigurationBinder) is not null
+					)
+			);
 
 		var hostKits = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
@@ -31,7 +44,7 @@ static class SourceGenLibrary
 			transform: (ctx, ct) =>
 				GetSemanticTargetForGeneration(ctx, TypeLibrary.HostKitAttribute, logger, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
-			trackingName: "GetHostKitTargets"
+			trackingName: GeneratorTrackingNames.HostKitTargets
 		);
 		var resourceDefinitions = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
@@ -44,7 +57,7 @@ static class SourceGenLibrary
 					ct
 				),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
-			trackingName: "GetResourceDefinitionTargets"
+			trackingName: GeneratorTrackingNames.ResourceDefinitionTargets
 		);
 		var genericResourceDefinitions = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
@@ -57,84 +70,73 @@ static class SourceGenLibrary
 					ct
 				),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
-			trackingName: "GetGenericResourceDefinitionTargets"
+			trackingName: GeneratorTrackingNames.GenericResourceDefinitionTargets
 		);
 
-		return isDisabled
+		var allHostKits = hostKits.Collect();
+		var allResourceKits = resourceDefinitions.CollectWith(
+			genericResourceDefinitions,
+			static (resourceKits, genericResourceKits, _) =>
+				EquatableArray<GeneratorResult<KitTargetDescriptor>>.Create([
+					.. resourceKits,
+					.. genericResourceKits,
+				]),
+			GeneratorTrackingNames.CollectGenericResourceKits
+		);
+
+		return hostKits
+			.CombineWith(
+				allHostKits,
+				static (hostKit, hostKitCollection, _) =>
+				{
+					var diagnostics = new List<DiagnosticInfo>();
+					if (hostKitCollection.Length > 1 && hostKit.IsSuccess)
+						diagnostics.Add(
+							DiagnosticInfo.Create(
+								GeneratorDiagnostics.MultipleHostKitsFoundInfo,
+								hostKit.Value!.TypeName
+							)
+						);
+
+					return (hostKit, EquatableArray<DiagnosticInfo>.Create(diagnostics.ToArray()));
+				},
+				GeneratorTrackingNames.CollectHostKits
+			)
 			.CombineWith(
 				generationContext,
-				static (isDisabled, GenerationContext, _) =>
+				static (hostState, capabilities, _) =>
 				{
-					KitGenerationModel model = new(!isDisabled, GenerationContext);
-
-					List<DiagnosticInfo> diagnostics = [];
-					if (GenerationContext.IServiceCollection is null)
-					{
+					var diagnostics = new List<DiagnosticInfo>(hostState.Item2);
+					if (!capabilities.HasIServiceCollection)
 						diagnostics.Add(
-							GeneratorDiagnostics.Create(
-								GeneratorDiagnostics.ServiceCollectionMissing
-							)
+							DiagnosticInfo.Create(GeneratorDiagnostics.ServiceCollectionMissing)
 						);
-					}
-
-					if (GenerationContext.ConfigurationBinder is null)
-					{
+					if (!capabilities.HasConfigurationBinder)
 						diagnostics.Add(
-							GeneratorDiagnostics.Create(
-								GeneratorDiagnostics.OptionDependencyMissing
-							)
+							DiagnosticInfo.Create(GeneratorDiagnostics.OptionDependencyMissing)
 						);
-					}
 
-					if (diagnostics.Count > 0)
-						model.Diagnostics = model.Diagnostics.AddRange(diagnostics);
-
-					return model;
-				},
-				"CombineIsDisabledWithGenerationContext"
-			)
-			.CollectWith(
-				hostKits,
-				(model, hostKits, _) =>
-				{
-					model.HostKit = hostKits.FirstOrDefault();
-					if (hostKits.Length > 1)
+					return new KitGenerationModel(
+						true,
+						capabilities.HasIServiceCollection,
+						capabilities.HasConfigurationBinder
+					)
 					{
-						foreach (var hostKit in hostKits)
-						{
-							if (hostKit.IsSuccess)
-							{
-								model.Diagnostics = model.Diagnostics.Add(
-									GeneratorDiagnostics.Create(
-										GeneratorDiagnostics.MultipleHostKitsFoundInfo,
-										hostKit.Value!.Target.Symbol
-									)
-								);
-							}
-						}
-					}
-
-					return model;
+						HostKit = hostState.Item1,
+						Diagnostics = EquatableArray<DiagnosticInfo>.Create(diagnostics.ToArray()),
+					};
 				},
-				"CollectHostKits"
+				GeneratorTrackingNames.CombineCapabilities
 			)
-			.CollectWith(
-				resourceDefinitions,
-				(model, resourceKits, _) =>
-				{
-					model.ResourceKits = resourceKits;
-					return model;
-				},
-				"CollectResourceKits"
+			.CombineWith(
+				allResourceKits,
+				static (model, resources, _) => model with { ResourceKits = resources },
+				GeneratorTrackingNames.CollectResourceKits
 			)
-			.CollectWith(
-				genericResourceDefinitions,
-				(model, genericResourceKits, _) =>
-				{
-					model.ResourceKits = model.ResourceKits.AddRange(genericResourceKits);
-					return model;
-				},
-				"CollectGenericResourceKits"
+			.CombineWith(
+				isDisabled,
+				static (model, disabled, _) => model with { IsSourceGeneratorEnabled = !disabled },
+				GeneratorTrackingNames.ApplyDisabled
 			);
 	}
 
@@ -207,20 +209,29 @@ static class SourceGenLibrary
 		GenerationLogger? logger
 	)
 	{
+		_ = classDeclaration;
 		var data = HostKitAttributeData.FromAttributeData(context.Attributes);
 		logger?.Debug($"Name: '{data.Name ?? "<null>"}'", 2);
 		logger?.Debug($"ExtensionMethodName: '{data.ExtensionMethodName ?? "<null>"}'", 2);
 		logger?.Debug($"GenerateOptions: '{data.GenerateOptions}'", 2);
+		var type = new TypeValueObject(symbol);
 
 		return new(
-			Target: new(symbol, classDeclaration),
+			TypeName: type.TypeName,
+			Namespace: type.Namespace ?? string.Empty,
+			MetadataFullName: type.MetadataFullName,
+			AccessibilityModifier: symbol
+				.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
+				.Value,
 			IsHostKit: true,
 			Name: data.Name,
 			PropertyName: null,
 			ExtensionName: null,
 			GenerateOptions: data.GenerateOptions,
 			IsGenericResourceDefinition: false,
-			AspireResourceTypeSymbol: null
+			AspireResourceType: null,
+			HasExplicitBaseType: false,
+			IsDerivedFromExpectedBase: true
 		);
 	}
 
@@ -265,16 +276,43 @@ static class SourceGenLibrary
 			);
 		}
 
+		var type = new TypeValueObject(symbol);
+		var target = new TargetSymbolDescriptor(symbol, classDeclaration);
+		TypeModel? aspireResourceType = aspireResourceTypeSymbol is null
+			? null
+			: ToTypeModel(aspireResourceTypeSymbol);
+
 		return new KitTargetDescriptor(
-			Target: new(symbol, classDeclaration),
+			TypeName: type.TypeName,
+			Namespace: type.Namespace ?? string.Empty,
+			MetadataFullName: type.MetadataFullName,
+			AccessibilityModifier: symbol
+				.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
+				.Value,
 			IsHostKit: false,
 			Name: data.Name,
 			PropertyName: propertyName,
 			ExtensionName: null,
 			GenerateOptions: true,
 			IsGenericResourceDefinition: isGenericResourceDefinition,
-			AspireResourceTypeSymbol: aspireResourceTypeSymbol
+			AspireResourceType: aspireResourceType,
+			HasExplicitBaseType: TypeHelpers.HasExplicitBaseType(target),
+			IsDerivedFromExpectedBase: !TypeHelpers.HasExplicitBaseType(target)
+				|| TypeHelpers.IsDerivedFromExpectedBase(
+					target,
+					TypeLibrary.ResourceKitBase.MakeGeneric(TypeLibrary.IResource)
+				)
 		);
+	}
+
+	static TypeModel ToTypeModel(INamedTypeSymbol symbol)
+	{
+		var type = new TypeValueObject(symbol);
+		var @namespace = type.Namespace ?? string.Empty;
+		var renderFullName = string.IsNullOrEmpty(@namespace)
+			? $"global::{type.TypeName}"
+			: type.RenderFullName;
+		return new(type.TypeName, @namespace, type.MetadataFullName, renderFullName);
 	}
 
 	static INamedTypeSymbol? ResolveAspireResourceTypeFromBaseClass(

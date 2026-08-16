@@ -1,7 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
@@ -30,300 +27,199 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			}
 		});
 
-		// Collect all of the host app types and host resource types.
-		var valueProviders = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
+		var valueProvider = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
 
 		context.RegisterSourceOutput(
-			valueProviders,
+			valueProvider,
 			(sourceProductionContext, model) =>
 			{
 				if (!model.IsSourceGeneratorEnabled)
-				{
-					_logger?.Debug("Source generator disabled.");
 					return;
-				}
 
-				_logger?.Debug("Source generator enabled, processing...");
-
-				List<DiagnosticInfo> diagnostics = [];
+				var diagnostics = new List<DiagnosticInfo>();
+				diagnostics.AddRange(model.Diagnostics);
 				if (model.HostKit.HasDiagnostics)
 					diagnostics.AddRange(model.HostKit.Diagnostics);
-				if (!model.Diagnostics.IsDefaultOrEmpty)
-					diagnostics.AddRange(model.Diagnostics);
-
-				// Collect any diagnostics from the app resource results.
 				foreach (var resourceResult in model.ResourceKits)
 				{
 					if (resourceResult.HasDiagnostics)
 						diagnostics.AddRange(resourceResult.Diagnostics);
 				}
 
-				// Resolve the host app symbol (if any).
-				var hostKitSymbol = model.HostKit.IsSuccess
-					? model.HostKit.Value!.Target.Symbol
-					: null;
-
-				var resourceKitDescriptors = GatherResourceKits(
-					model,
-					diagnostics,
-					hostKitSymbol,
-					_logger
-				);
-
+				var resourceKitDescriptors = GatherResourceKits(model, diagnostics);
+				var hostKit = model.HostKit.IsSuccess ? model.HostKit.Value : null;
 				var validResourceDescriptors = ReportDiagnostics(
 					sourceProductionContext,
 					model,
 					diagnostics,
-					hostKitSymbol,
-					resourceKitDescriptors,
-					_logger
+					hostKit,
+					resourceKitDescriptors
 				);
 
-				// If any fatal diagnostics were reported, do not generate any source code.
-				if (model.HostKit.IsFatal || model.ResourceKits.Any(s => s.IsFatal))
+				if (
+					model.HostKit.IsFatal
+					|| model.ResourceKits.Any(s => s.IsFatal)
+					|| hostKit is null
+				)
 					return;
 
-				// We only support a single host app - if none was found, there is nothing to generate.
-				if (hostKitSymbol is null)
-					return;
-
-				var hostKitInfo = CodeGenHelpers.BuildHostKit(
-					model.HostKit.Value!,
-					[.. validResourceDescriptors]
-				);
-				var source = BuildSource(
-					hostKitInfo,
-					model.GenerationContext,
-					_logger,
-					sourceProductionContext.CancellationToken
-				);
-
-				var fileName = $"{hostKitSymbol.Name}.AspireResourceKit.g.cs";
-
-				_logger?.Debug($"Adding source file: {fileName}");
-
-				sourceProductionContext.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
+				var hostKitInfo = CodeGenHelpers.BuildHostKit(hostKit, validResourceDescriptors);
+				var writer = BuildSource(hostKitInfo, sourceProductionContext.CancellationToken);
+				var hintName = HintNameHelper.ForHost(hostKitInfo.HostKitType.MetadataFullName);
+				sourceProductionContext.AddSource(hintName, writer);
 			}
 		);
 	}
 
-	[SuppressMessage(
-		"Style",
-		"CA1502:Avoid excessive complexity",
-		Justification = "This method is complex due to the number of validation checks."
-	)]
 	static List<KitTargetDescriptor> ReportDiagnostics(
 		SourceProductionContext sourceProductionContext,
 		KitGenerationModel model,
 		List<DiagnosticInfo> diagnostics,
-		INamedTypeSymbol? hostKitSymbol,
-		List<KitTargetDescriptor> resourceKitDescriptors,
-		GenerationLogger? logger
+		KitTargetDescriptor? hostKit,
+		List<KitTargetDescriptor> resourceKitDescriptors
 	)
 	{
 		List<KitTargetDescriptor> validResourceDescriptors = [];
-
-		// Validate app resources: derive names, check uniqueness and base type.
-		if (hostKitSymbol is not null && resourceKitDescriptors.Count > 0)
+		if (hostKit is not null)
 		{
-			//var descriptor = model.HostKit.Value!;
-			HashSet<string> seenPropertyNames = [with(StringComparer.Ordinal)];
-
-			foreach (var resourceKitDescriptor in resourceKitDescriptors)
+			HashSet<string> seenPropertyNames = new(StringComparer.Ordinal);
+			foreach (var resource in resourceKitDescriptors)
 			{
-				var resourceKitSymbol = resourceKitDescriptor.Target.Symbol;
-				var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(
-					resourceKitDescriptor.Target
-				);
-
-				if (resourceKitDescriptor.IsGenericResourceDefinition && hasExplicitBaseType)
+				if (resource.IsGenericResourceDefinition && resource.HasExplicitBaseType)
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
-							resourceKitSymbol.Name
+							resource.TypeName
 						)
 					);
 					continue;
 				}
 
-				if (!resourceKitDescriptor.IsGenericResourceDefinition && !hasExplicitBaseType)
+				if (!resource.IsGenericResourceDefinition && !resource.HasExplicitBaseType)
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
-							resourceKitSymbol.Name,
+							resource.TypeName,
 							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
 					continue;
 				}
 
-				// Derive the resource name (from attribute or type name).
-				var resourceName =
-					resourceKitDescriptor.Name ?? CodeGenHelpers.TrimSuffix(resourceKitSymbol.Name);
+				var resourceName = resource.Name ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
 				if (string.IsNullOrWhiteSpace(resourceName))
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.ResourceNameNotDerivable,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
-							resourceKitSymbol.Name
+							resource.TypeName
 						)
 					);
 					continue;
 				}
 
-				var propertyName = resourceKitDescriptor.PropertyName!;
+				var propertyName =
+					resource.PropertyName ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
 				if (!TypeHelpers.IsValidIdentifier(propertyName))
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.InvalidPropertyName,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
 							propertyName
 						)
 					);
 					continue;
 				}
 
-				// Check for duplicate property names (SG0005).
 				if (!seenPropertyNames.Add(propertyName))
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.DuplicateResourcePropertyName,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
 							propertyName
 						)
 					);
 					continue;
 				}
 
-				// Check that resources with an explicit base derive from the expected generated base (SG0006).
-				// If no explicit base was declared, a generated partial will provide the host-specific base.
-				if (
-					hasExplicitBaseType
-					&& !TypeHelpers.IsDerivedFromExpectedBase(
-						resourceKitDescriptor.Target,
-						TypeLibrary.ResourceKitBase.MakeGeneric(TypeLibrary.IResource)
-					)
-				)
+				if (resource.HasExplicitBaseType && !resource.IsDerivedFromExpectedBase)
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.ResourceMustDeriveFromBase,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
-							resourceKitSymbol.Name,
+							resource.TypeName,
 							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
 					continue;
 				}
 
-				if (resourceKitDescriptor.AspireResourceTypeSymbol is null)
+				if (resource.AspireResourceType is null)
 				{
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.NoAspireResourceFound,
-							resourceKitDescriptor.Target.Declaration?.Identifier.GetLocation(),
-							resourceKitSymbol.Name
+							resource.TypeName
 						)
 					);
 					continue;
 				}
 
-				validResourceDescriptors.Add(resourceKitDescriptor);
+				validResourceDescriptors.Add(resource);
 			}
 		}
 
-		if (validResourceDescriptors.Count == 0)
-		{
-			if (!model.HostKit.IsEmpty)
-			{
-				diagnostics.Add(
-					GeneratorDiagnostics.Create(
-						GeneratorDiagnostics.NoResourceKitsDefined,
-						hostKitSymbol
-					)
-				);
-			}
-		}
+		if (validResourceDescriptors.Count == 0 && !model.HostKit.IsEmpty)
+			diagnostics.Add(
+				DiagnosticInfo.Create(
+					GeneratorDiagnostics.NoResourceKitsDefined,
+					hostKit?.TypeName ?? string.Empty
+				)
+			);
 		else if (model.HostKit.IsEmpty)
-			diagnostics.Add(GeneratorDiagnostics.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
+			diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
 
-		// Report any diagnostics that were collected during the generation process.
 		if (diagnostics.Count > 0)
-		{
-			ReportDiagnostics(sourceProductionContext, diagnostics, logger);
-		}
+			ReportDiagnostics(sourceProductionContext, diagnostics, null);
 
 		return validResourceDescriptors;
 	}
 
 	static List<KitTargetDescriptor> GatherResourceKits(
 		KitGenerationModel model,
-		List<DiagnosticInfo> diagnostics,
-		INamedTypeSymbol? hostKitSymbol,
-		GenerationLogger? logger
+		List<DiagnosticInfo> diagnostics
 	)
 	{
-		// Resolve the app resource descriptors. All [ResourceKit] classes
-		// attach to the single [HostApp]; the generated base class is not
-		// visible during source generation, so interface-based filtering
-		// is not possible.
-		List<KitTargetDescriptor> resourceKitDescriptors;
-		if (hostKitSymbol is not null)
-		{
-			resourceKitDescriptors = [];
-			foreach (var resourceResult in model.ResourceKits)
-			{
-				if (!resourceResult.IsSuccess)
-					continue;
+		var resources = model
+			.ResourceKits.Where(result => result.IsSuccess)
+			.Select(result => result.Value!)
+			.ToList();
+		var mixedTypes = new HashSet<string>(StringComparer.Ordinal);
 
-				resourceKitDescriptors.Add(resourceResult.Value!);
-			}
-		}
-		else
-		{
-			logger?.Debug("No host app found");
-			resourceKitDescriptors = [];
-		}
-
-		var mixedUsageResourceSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
 		foreach (
-			var group in resourceKitDescriptors.GroupBy(
-				r => r.Target.Symbol,
-				SymbolEqualityComparer.Default
+			var group in resources.GroupBy(
+				resource => resource.MetadataFullName,
+				StringComparer.Ordinal
 			)
 		)
 		{
-			if (group.Key is null)
-				continue;
-
-			var hasGeneric = group.Any(r => r.IsGenericResourceDefinition);
-			var hasNonGeneric = group.Any(r => !r.IsGenericResourceDefinition);
-			if (!hasGeneric || !hasNonGeneric)
-				continue;
-
-			mixedUsageResourceSymbols.Add(group.Key);
-			diagnostics.Add(
-				DiagnosticInfo.Create(
-					GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported,
-					group.First().Target.Declaration?.Identifier.GetLocation(),
-					group.Key.Name
-				)
-			);
+			if (
+				group.Any(resource => resource.IsGenericResourceDefinition)
+				&& group.Any(resource => !resource.IsGenericResourceDefinition)
+			)
+			{
+				mixedTypes.Add(group.Key);
+				diagnostics.Add(
+					DiagnosticInfo.Create(
+						GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported,
+						group.First().TypeName
+					)
+				);
+			}
 		}
 
-		resourceKitDescriptors =
-		[
-			.. resourceKitDescriptors.Where(resource =>
-				!mixedUsageResourceSymbols.Contains(resource.Target.Symbol)
-			),
-		];
-		return resourceKitDescriptors;
+		return [.. resources.Where(resource => !mixedTypes.Contains(resource.MetadataFullName))];
 	}
 }

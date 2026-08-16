@@ -185,7 +185,7 @@ partial class HostKitGenerator
 	)
 	{
 		logger?.Debug(
-			$"Processing {hostKitInfo.ResourceKits.Length} resource kits for {hostKitInfo.HostKitType.MetadataFullName}...",
+			$"Processing {hostKitInfo.ResourceKits.Count} resource kits for {hostKitInfo.HostKitType.MetadataFullName}...",
 			1
 		);
 
@@ -277,14 +277,16 @@ partial class HostKitGenerator
 					?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 				if (hostKitInfo.ShouldGenerateOptions)
 				{
-					context.CodeWriter.WriteLine(
-						$"{resourceKit.PropertyName} = new(this, Options.{resourceKit.PropertyName});"
+					context.CodeWriter.WriteInvocationLine(
+						$"{resourceKit.PropertyName} = new",
+						[$"this", $"Options.{resourceKit.PropertyName}"]
 					);
 				}
 				else
 				{
-					context.CodeWriter.WriteLine(
-						$"{resourceKit.PropertyName} = new(this, \"{resourceName}\");"
+					context.CodeWriter.WriteInvocationLine(
+						$"{resourceKit.PropertyName} = new",
+						[$"this", GeneratedText.QuoteLiteral(resourceName)]
 					);
 				}
 
@@ -301,14 +303,17 @@ partial class HostKitGenerator
 				foreach (var resourceKit in hostKitInfo.ResourceKits)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					context.CodeWriter.WriteLine($"AddResource({resourceKit.PropertyName});");
+					context.CodeWriter.WriteInvocationLine(
+						"AddResource",
+						[$"{resourceKit.PropertyName}"]
+					);
 				}
 			}
 
 			context
 				.CodeWriter.NewLine()
 				.Comment("Now the additional post-build func builder")
-				.WriteLine("onBuilt?.Invoke(this, builder);");
+				.WriteInvocationLine("onBuilt?.Invoke", ["this", "builder"]);
 
 			context
 				.CodeWriter.NewLine()
@@ -316,7 +321,7 @@ partial class HostKitGenerator
 					"Now that we've populated all of the resources, call the base classes",
 					"Build method to register the app resources with the builder."
 				)
-				.WriteLine("base.Build(builder);");
+				.WriteInvocationLine("base.Build", ["builder"]);
 		}
 	}
 
@@ -345,12 +350,12 @@ partial class HostKitGenerator
 			context
 				.CodeWriter.NewLine()
 				.Comment("Call the base classes Configure method first...")
-				.WriteLine("base.Configure();");
+				.WriteInvocationLine("base.Configure", []);
 
 			context
 				.CodeWriter.NewLine()
 				.Comment("Now the additional post-configure func builder")
-				.WriteLine("onConfigured?.Invoke(this);");
+				.WriteInvocationLine("onConfigured?.Invoke", ["this"]);
 		}
 	}
 
@@ -390,7 +395,7 @@ partial class HostKitGenerator
 					{
 						IsConst = true,
 						Accessibility = TypeDeclarationAccessibility.Public,
-						Initializer = hostKitInfo.HostKitType.TypeName.Surround(),
+						Initializer = GeneratedText.QuoteLiteral(hostKitInfo.HostKitType.TypeName),
 					}
 				);
 
