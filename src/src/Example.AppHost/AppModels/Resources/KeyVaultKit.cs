@@ -8,7 +8,6 @@ sealed partial class KeyVaultKit
 	protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder) =>
 		builder.ExecutionContext.IsPublishMode;
 
-	protected override IResourceBuilder<AzureKeyVaultResource> BuildResource(
-		IDistributedApplicationBuilder builder
-	) => builder.AddAzureKeyVault(Name);
+	protected override IResourceBuilder<AzureKeyVaultResource> BuildResource(IDistributedApplicationBuilder builder) =>
+		builder.AddAzureKeyVault(Name);
 }

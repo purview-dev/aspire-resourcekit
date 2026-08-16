@@ -26,9 +26,7 @@ static string FindRepositoryRoot(string startDirectory)
 		directory = directory.Parent;
 	}
 
-	throw new InvalidOperationException(
-		"Could not locate the repository root (no package.json found)."
-	);
+	throw new InvalidOperationException("Could not locate the repository root (no package.json found).");
 }
 
 var builder = Pipeline.CreateBuilder(args);
@@ -37,24 +35,15 @@ builder
 	.Configuration.AddJsonFile(Path.Combine(pipelineDirectory, "appsettings.json"), optional: false)
 	.AddEnvironmentVariables();
 
-builder.Services.Configure<BuildSettings>(
-	builder.Configuration.GetSection(BuildSettings.SectionName)
-);
-builder.Services.Configure<NuGetSettings>(
-	builder.Configuration.GetSection(NuGetSettings.SectionName)
-);
-builder.Services.Configure<GitHubSettings>(
-	builder.Configuration.GetSection(GitHubSettings.SectionName)
-);
-builder.Services.Configure<ReleaseSettings>(
-	builder.Configuration.GetSection(ReleaseSettings.SectionName)
-);
+builder.Services.Configure<BuildSettings>(builder.Configuration.GetSection(BuildSettings.SectionName));
+builder.Services.Configure<NuGetSettings>(builder.Configuration.GetSection(NuGetSettings.SectionName));
+builder.Services.Configure<GitHubSettings>(builder.Configuration.GetSection(GitHubSettings.SectionName));
+builder.Services.Configure<ReleaseSettings>(builder.Configuration.GetSection(ReleaseSettings.SectionName));
 
 builder.Services.AddSingleton<IGitHubClient>(serviceProvider =>
 {
 	var settings = serviceProvider.GetRequiredService<IOptions<GitHubSettings>>();
-	var accessToken =
-		settings.Value.AccessToken ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? "token";
+	var accessToken = settings.Value.AccessToken ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? "token";
 
 	return new GitHubClient(
 		new ProductHeaderValue(settings.Value.ProductHeader),

@@ -43,7 +43,9 @@ These are the most important configurable properties exposed by the SDK:
 
 - `NamespacePrefix` — required unless `DisableNamespacePrefixCheck=true`
 - `DisableNamespacePrefixCheck` — default `false`
-- `TargetFramework` — defaults to `net10.0` when neither `TargetFramework` nor `TargetFrameworks` is set
+- `TargetFramework` — defaults to `net10.0` when neither `TargetFramework` nor `TargetFrameworks` is set; projects explicitly declaring `IsRoslynComponent=true` default to `netstandard2.0`
+- `IsRoslynComponent` — when explicitly `true`, applies source-generator defaults: a single `netstandard2.0` target, extended analyzer rules, disabled SourceLink and untracked-source embedding, no dependency file, compiler-generated output under the framework-specific intermediate directory, `symbols.nupkg`, `PackSourceGeneratorSymbols`, telemetry exclusion, and excluded normal build output
+- `PackProjectReferencedSourceGenerators` — default `true`; packable projects automatically include analyzer `ProjectReference` outputs and runtime dependencies under `analyzers/dotnet/cs/`. Set it to `false` globally or use `Pack="false"` on one analyzer reference to opt out.
 - `EnableAssemblyNameGeneration` — default `false`; when `true`, `AssemblyName` and default `PackageId` follow the logical project name
 - `DisableProjectFileNamingConventionCheck` — default `false`; disables the directory-name/file-name match validation
 - `DisableGenerateAssemblyInfoClass` — default `false`; disables generated `AssemblyInfo`
@@ -87,12 +89,21 @@ These settings control the SDK’s repo-level helper file bootstrapping:
 - `BootstrapGlobalJsonToRepoRoot` — default `true`
 - `RepositoryGlobalJsonFilePath` — optional override for the destination `global.json`
 - `PurviewDotNetProjectSdkVersionForGlobalJson` — defaults to detected SDK package version, fallback `1.0.0`
-- `EnableAgentFolderInPackage` — default `true`; copies the bundled `agents/**` folder from the SDK NuGet package into the consuming repo’s `.agents/`
-- `EnabledAgentFolderInPackage` — default `false`; when `true`, packs `$(ProjectAgentFolder)` into the NuGet package under `agents/**`
-- `ProjectAgentFolder` — default `ProjectAgent`; repo-relative root folder that contains the agent content to pack
-- `ProjectAgentDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied agent content as `$(ProjectAgentDestinationFolder)/**`
+- `PurviewAutoSdkPack` — default `true`; when `true`, automatically packs the `Sdk/` folder contents into the NuGet package with the correct root-level paths
+- `EnableAgentFolderInPackage` — default `true`; copies the bundled `.agents/**` folder from the SDK NuGet package into the consuming repo’s `.agents/`
+- `AgentPackDestinationFolder` — default `.agents`; repo-relative destination folder that receives copied agent content as `$(AgentPackDestinationFolder)/**`
 
-When `EnabledAgentFolderInPackage` is `true`, the SDK injects a `.gitignore` file into each second-level packed agent folder during packaging with the following content:
+**Hard requirement:** This SDK must pack the contents of `Sdk/` into the NuGet package so that downstream consumers of `Purview.DotNetProjectSdk` receive the same `Sdk/**` files. The `PurviewAutoSdkPack` feature (default `true`) is the mechanism that delivers this for standard consuming projects. When a project is packable, the SDK automatically adds `Sdk/**/*` as package content with the correct root-level paths:
+
+- `Sdk/.agents/**` → `.agents/**`
+- `Sdk/.github/**` → `.github/**`
+- `Sdk/build/**` → `build/**`
+- `Sdk/buildTransitive/**` → `buildTransitive/**`
+- `Sdk/buildMultiTargeting/**` → `buildMultiTargeting/**`
+- `Sdk/*.md`, `Sdk/*.png`, `Sdk/*.jpg`, etc. → package root
+- everything else under `Sdk/` → `Sdk/`
+
+The SDK injects a `.gitignore` file into each second-level folder under `Sdk/.agents` during packaging with the following content:
 
 ```text[.gitignore]
 # Ignore all files

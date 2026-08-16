@@ -1,9 +1,6 @@
 namespace Purview.Aspire.ResourceKit.Example;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-	"Design",
-	"CA1034:Nested types should not be visible"
-)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class Platform
 {
 	public static class ResourceKits

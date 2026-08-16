@@ -10,10 +10,6 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<AssemblyName>Purview.Aspire.ResourceKit</AssemblyName>
-		<!-- Enable our own agent skills to be packed with the NuGet package -->
-		<EnabledAgentFolderInPackage>true</EnabledAgentFolderInPackage>
-		<ProjectAgentFolder>src/ProjectAgent</ProjectAgentFolder>
-		<NoWarn>$(NoWarn);NU5118;</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -21,47 +17,12 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
 	</ItemGroup>
 
-	<PropertyGroup>
-		<ResourceKitSourceGeneratorProjectName>SourceGeneration</ResourceKitSourceGeneratorProjectName>
-		<ResourceKitSourceGeneratorProject>$(MSBuildThisFileDirectory)..\$(ResourceKitSourceGeneratorProjectName)\$(ResourceKitSourceGeneratorProjectName).csproj</ResourceKitSourceGeneratorProject>
-		<ResourceKitSourceGeneratorTargetFramework>netstandard2.0</ResourceKitSourceGeneratorTargetFramework>
-		<ResourceKitSourceGeneratorAssembly>$(MSBuildThisFileDirectory)..\$(ResourceKitSourceGeneratorProjectName)\bin\$(Configuration)\$(ResourceKitSourceGeneratorTargetFramework)\$(RootNamespace).$(ResourceKitSourceGeneratorProjectName).dll</ResourceKitSourceGeneratorAssembly>
-		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeResourceKitSourceGenerator</TargetsForTfmSpecificContentInPackage>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<ProjectReference
-			Include="$(ResourceKitSourceGeneratorProject)"
+			Include="..\SourceGeneration\SourceGeneration.csproj"
 			PrivateAssets="all"
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
-
-		<None
-			Include="buildTransitive\Purview.Aspire.ResourceKit.props"
-			Pack="true"
-			PackagePath="buildTransitive\Purview.Aspire.ResourceKit.props"
-			Visible="true"
-		/>
 	</ItemGroup>
-
-	<Target
-		Name="IncludeResourceKitSourceGenerator"
-		Condition="'$(TargetFramework)' == '$(DefaultTargetFramework)'"
-	>
-		<MSBuild
-			Projects="$(ResourceKitSourceGeneratorProject)"
-			Targets="GetSourceGeneratorAnalyzerFiles"
-			Properties="Configuration=$(Configuration);TargetFramework=$(ResourceKitSourceGeneratorTargetFramework)"
-		>
-			<Output TaskParameter="TargetOutputs" ItemName="_ResourceKitSourceGeneratorFiles" />
-		</MSBuild>
-
-		<ItemGroup>
-			<TfmSpecificPackageFile
-				Include="@(_ResourceKitSourceGeneratorFiles)"
-				PackagePath="analyzers/dotnet/cs/"
-			/>
-		</ItemGroup>
-	</Target>
 </Project>

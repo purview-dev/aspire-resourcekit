@@ -1,3 +1,5 @@
+using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
 
 public sealed record GenerationDriverContext(
@@ -35,7 +37,7 @@ public sealed record GenerationDriverContext(
 	/// <summary>
 	/// Omits the <c>Microsoft.Extensions.DependencyInjection.Abstractions</c> metadata reference so
 	/// the <c>IServiceCollection</c> type is unavailable to the generator, exercising the
-	/// <see cref="GeneratorDiagnostics.IServiceCollectionMissing" /> diagnostic.
+	/// <see cref="GeneratorDiagnostics.ServiceCollectionMissing" /> diagnostic.
 	/// </summary>
 	public static readonly GenerationDriverContext WithoutIServiceCollection = new(
 		IncludeIServiceCollectionReference: false
@@ -46,9 +48,7 @@ public sealed record GenerationDriverContext(
 	/// configuration-related extension dependencies are unavailable to the generator, exercising the
 	/// <see cref="GeneratorDiagnostics.OptionDependencyMissing" /> diagnostic.
 	/// </summary>
-	public static readonly GenerationDriverContext WithoutOptions = new(
-		IncludeOptionsReference: false
-	);
+	public static readonly GenerationDriverContext WithoutOptions = new(IncludeOptionsReference: false);
 
 	/// <summary>
 	/// Omits the options/configuration extension metadata reference so
@@ -62,9 +62,7 @@ public sealed record GenerationDriverContext(
 	/// <summary>
 	/// Omits the compilation step so the generated code is not compiled into an assembly, allowing inspection of the generated source code without requiring a valid compilation.
 	/// </summary>
-	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(
-		CompileToAssembly: false
-	);
+	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(CompileToAssembly: false);
 
 	public static readonly GenerationDriverContext NoCompileOrThrowOnException = new(
 		ThrowOnGenerationException: false,

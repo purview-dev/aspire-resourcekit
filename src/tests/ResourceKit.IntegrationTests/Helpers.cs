@@ -1,4 +1,4 @@
-﻿using Purview.Aspire.ResourceKit.Example;
+using Purview.Aspire.ResourceKit.Example;
 using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit;
@@ -13,7 +13,7 @@ static class Helpers
 	{
 		var client = fixture.CreateHttpClient(Platform.ResourceKits.API);
 
-		var response = await client.GetAsync("/health", cancellationToken);
+		var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
 
 		await Assert.That(response.StatusCode).IsEqualTo(System.Net.HttpStatusCode.OK);
 	}
@@ -28,10 +28,7 @@ static class Helpers
 		bool hasConnectionString;
 		try
 		{
-			var connectionString = await fixture.GetConnectionStringAsync(
-				resourceName,
-				cancellationToken
-			);
+			var connectionString = await fixture.GetConnectionStringAsync(resourceName, cancellationToken);
 			hasConnectionString = !string.IsNullOrWhiteSpace(connectionString);
 		}
 		catch (InvalidOperationException)

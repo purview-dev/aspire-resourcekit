@@ -16,51 +16,37 @@ partial class HostKitGenerator
 
 		logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
 
-		foreach (
-			var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace)
-		)
+		foreach (var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace))
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 			var resourceNs = resourceKitGroup.Key is null
 				? default
 				: context.CodeWriter.WriteBlockNamespaceScope(resourceKitGroup.Key);
 
-			logger?.Debug(
-				$"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}",
-				1
-			);
+			logger?.Debug($"Processing resource kit group: {resourceKitGroup.Key ?? "<global-namespace>"}", 1);
 
 			foreach (var resourceKit in resourceKitGroup)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
-				logger?.Debug(
-					$"Processing resource kit: {resourceKit.ResourceKitType.TypeName}",
-					2
-				);
+				logger?.Debug($"Processing resource kit: {resourceKit.ResourceKitType.TypeName}", 2);
 
 				var baseClass = resourceKit.HasExplicitBaseType
-					? TypeValueObject.Empty
-					: hostKit.HostKitResourceKitBaseType.MakeGeneric(
-						resourceKit.AspireResourceType
+					? default
+					: new TypeReferenceOptions(
+						hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType).RenderFullName
 					);
 
 				// Generate the resource kit class
 				using (
 					context.CodeWriter.WriteClassScope(
-						new(resourceKit.ResourceKitType.TypeName)
-						{
-							IsPartial = true,
-							BaseType = baseClass,
-						}
+						new(resourceKit.ResourceKitType.TypeName) { IsPartial = true, BaseType = baseClass }
 					)
 				)
 				{
 					// Write the constructor
 					context
-						.CodeWriter.WriteXmlSummary(
-							"Initializes a new instance of the Host Kit Resource Kit base class."
-						)
+						.CodeWriter.XmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
 						.WriteConstructor(
 							new(resourceKit.ResourceKitType.TypeName)
 							{
@@ -80,8 +66,7 @@ partial class HostKitGenerator
 							{
 								if (hostKit.ShouldGenerateOptions)
 								{
-									body.WriteLine("Options = options;")
-										.WriteLine("IsEnabled = options.IsEnabled;");
+									body.WriteLine("Options = options;").WriteLine("IsEnabled = options.IsEnabled;");
 								}
 							}
 						);
@@ -90,7 +75,7 @@ partial class HostKitGenerator
 					if (hostKit.ShouldGenerateOptions)
 					{
 						context
-							.CodeWriter.WriteXmlSummary("Gets the Resource Kit options.")
+							.CodeWriter.XmlSummary("Gets the Resource Kit options.")
 							.WriteProperty(
 								new("Options", resourceKit.ResourceKitOptionsType)
 								{
@@ -127,12 +112,9 @@ partial class HostKitGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		logger?.Debug(
-			$"Generating Resource Kit Options class: {resourceKit.ResourceKitOptionsType.TypeName}",
-			3
-		);
+		logger?.Debug($"Generating Resource Kit Options class: {resourceKit.ResourceKitOptionsType.TypeName}", 3);
 
-		writer.WriteXmlSummary(
+		writer.XmlSummary(
 			$"Typed settings for <see cref=\"{resourceKit.ResourceKitOptionsType}\" />.",
 			$"Can be accessed by resolving <see cref=\"{hostKit.HostKitOptionsType}.{resourceKit.PropertyName}\" />."
 		);
@@ -149,37 +131,29 @@ partial class HostKitGenerator
 		)
 		{
 			var defaultResourceName =
-				resourceKit.ResourceName
-				?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
+				resourceKit.ResourceName ?? CodeGenHelpers.TrimSuffix(resourceKit.ResourceKitType.TypeName);
 
 			writer
-				.WriteXmlSummary("Gets or sets the logical name used to register the resource.")
+				.XmlSummary("Gets or sets the logical name used to register the resource.")
 				.WriteProperty(
 					new("Name", "string")
 					{
 						Accessibility = TypeDeclarationAccessibility.Public,
 						HasGetter = true,
 						HasSetter = true,
-						Initializer = defaultResourceName.Surround(),
+						Initializer = GeneratedText.QuoteLiteral(defaultResourceName),
 						Attributes =
 						[
 							new(TypeLibrary.RequiredAttribute)
 							{
-								Arguments =
-								[
-									new(false)
-									{
-										Name = "AllowEmptyStrings",
-										IsPropertyAssignment = true,
-									},
-								],
+								Arguments = [new(false) { Name = "AllowEmptyStrings", IsPropertyAssignment = true }],
 							},
 						],
 					}
 				);
 
 			writer
-				.WriteXmlSummary("Gets or sets whether the resource is enabled.")
+				.XmlSummary("Gets or sets whether the resource is enabled.")
 				.WriteProperty(
 					new("IsEnabled", "bool")
 					{

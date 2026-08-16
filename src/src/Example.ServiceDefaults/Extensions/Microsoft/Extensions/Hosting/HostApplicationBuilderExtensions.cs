@@ -51,10 +51,7 @@ public static class HostApplicationBuilderExtensions
 			builder
 				.Services.AddOpenTelemetry()
 				.WithMetrics(metrics =>
-					metrics
-						.AddAspNetCoreInstrumentation()
-						.AddHttpClientInstrumentation()
-						.AddRuntimeInstrumentation()
+					metrics.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation().AddRuntimeInstrumentation()
 				)
 				.WithTracing(tracing =>
 					tracing
@@ -83,9 +80,7 @@ public static class HostApplicationBuilderExtensions
 
 		TBuilder AddOpenTelemetryExporters()
 		{
-			var useOtlpExporter = !string.IsNullOrWhiteSpace(
-				builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
-			);
+			var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
 			if (useOtlpExporter)
 			{

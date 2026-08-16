@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
@@ -10,69 +8,80 @@ static class CodeGenHelpers
 
 	public static HostKitInfo BuildHostKit(
 		KitTargetDescriptor hostKitSymbol,
-		ImmutableArray<KitTargetDescriptor> resourceKitSymbols
+		IEnumerable<KitTargetDescriptor> resourceKitSymbols
 	)
 	{
-		TypeValueObject hostKitType = new(hostKitSymbol.Target.Symbol);
+		var hostKitType = new TypeModel(
+			hostKitSymbol.TypeName,
+			hostKitSymbol.Namespace,
+			hostKitSymbol.MetadataFullName,
+			RenderTypeName(hostKitSymbol.Namespace, hostKitSymbol.TypeName)
+		);
 
-		var hostKitOptionsNamespace =
-			hostKitType.Namespace
-			+ (hostKitType.IsGlobalNamespace ? null : '.')
-			+ hostKitType.TypeName;
+		var hostKitOptionsNamespace = string.IsNullOrEmpty(hostKitType.Namespace)
+			? hostKitType.TypeName
+			: $"{hostKitType.Namespace}.{hostKitType.TypeName}";
 
 		var hostKitOptionsType = hostKitSymbol.GenerateOptions
-			? new TypeValueObject(
-				$"{hostKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}",
-				hostKitOptionsNamespace
-			)
-			: TypeValueObject.Empty;
+			? CreateTypeModel($"{hostKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}", hostKitOptionsNamespace)
+			: default;
 		var resourceKits = resourceKitSymbols
 			.Select(r =>
 			{
-				TypeValueObject resourceKitType = new(r.Target.Symbol);
+				var resourceKitType = new TypeModel(
+					r.TypeName,
+					r.Namespace,
+					r.MetadataFullName,
+					RenderTypeName(r.Namespace, r.TypeName)
+				);
 
-				var resourceKitOptionsNamespace =
-					resourceKitType.Namespace
-					+ (resourceKitType.IsGlobalNamespace ? null : '.')
-					+ resourceKitType.TypeName;
+				var resourceKitOptionsNamespace = string.IsNullOrEmpty(resourceKitType.Namespace)
+					? resourceKitType.TypeName
+					: $"{resourceKitType.Namespace}.{resourceKitType.TypeName}";
 				var resourceKitOptionsType = hostKitSymbol.GenerateOptions
-					? new TypeValueObject(
+					? CreateTypeModel(
 						$"{resourceKitType.TypeName}{TypeLibrary.OptionsBaseClassSuffix}",
 						resourceKitOptionsNamespace
 					)
-					: TypeValueObject.Empty;
+					: default;
 
-				TypeValueObject aspireResourceType = new(r.AspireResourceTypeSymbol!);
 				var resourceName = r.Name;
 				var propertyName = r.PropertyName;
 				if (string.IsNullOrWhiteSpace(propertyName))
-					propertyName = TrimSuffix(r.Target.Symbol.Name);
+					propertyName = TrimSuffix(r.TypeName);
 
 				return new ResourceKitInfo(
 					r,
 					resourceKitType,
 					resourceKitOptionsType,
-					aspireResourceType,
-					r.Target.Symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!.Value,
-					r.PropertyName!,
+					r.AspireResourceType!.Value,
+					r.AccessibilityModifier,
+					propertyName!,
 					resourceName,
-					TypeHelpers.HasExplicitBaseType(r.Target)
+					r.HasExplicitBaseType
 				);
 			})
-			.ToImmutableArray();
+			.ToArray();
 
 		return new(
 			hostKitSymbol,
 			hostKitType,
 			hostKitOptionsType,
 			TypeLibrary.ResourceKitBase,
-			hostKitSymbol
-				.Target.Symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility()!
-				.Value,
+			hostKitSymbol.AccessibilityModifier,
 			hostKitSymbol.ExtensionName ?? DefaultExtensionMethodName,
-			resourceKits
+			EquatableArray<ResourceKitInfo>.Create(resourceKits)
 		);
 	}
+
+	static TypeModel CreateTypeModel(string typeName, string @namespace)
+	{
+		var metadataName = string.IsNullOrEmpty(@namespace) ? typeName : $"{@namespace}.{typeName}";
+		return new(typeName, @namespace, metadataName, RenderTypeName(@namespace, typeName));
+	}
+
+	static string RenderTypeName(string @namespace, string typeName) =>
+		string.IsNullOrEmpty(@namespace) ? $"global::{typeName}" : $"global::{@namespace}.{typeName}";
 
 	public static string TrimSuffix(string typeName) =>
 		typeName.EndsWith("ResourceKit", StringComparison.Ordinal)
@@ -81,7 +90,6 @@ static class CodeGenHelpers
 			? typeName.Substring(0, typeName.Length - "ResourceKit".Length)
 		: typeName.EndsWith("Resource", StringComparison.Ordinal)
 			? typeName.Substring(0, typeName.Length - "Resource".Length)
-		: typeName.EndsWith("Kit", StringComparison.Ordinal)
-			? typeName.Substring(0, typeName.Length - "Kit".Length)
+		: typeName.EndsWith("Kit", StringComparison.Ordinal) ? typeName.Substring(0, typeName.Length - "Kit".Length)
 		: typeName;
 }

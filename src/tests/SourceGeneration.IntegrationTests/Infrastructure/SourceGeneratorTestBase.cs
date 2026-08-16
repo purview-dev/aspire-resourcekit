@@ -34,10 +34,8 @@ public abstract class SourceGeneratorTestBase<TGenerator> : TUnitSourceGenerator
 		CancellationToken cancellationToken
 	) => ResourceKitGenerateAsync(sources, GenerationDriverContext.Default, cancellationToken);
 
-	protected Task<DriverRunResult> ResourceKitGenerateAsync(
-		string source,
-		CancellationToken cancellationToken
-	) => ResourceKitGenerateAsync([source], GenerationDriverContext.Default, cancellationToken);
+	protected Task<DriverRunResult> ResourceKitGenerateAsync(string source, CancellationToken cancellationToken) =>
+		ResourceKitGenerateAsync([source], GenerationDriverContext.Default, cancellationToken);
 
 	protected async Task<DriverRunResult> ResourceKitGenerateAsync(
 		IEnumerable<string> sources,
@@ -115,18 +113,14 @@ public abstract class SourceGeneratorTestBase<TGenerator> : TUnitSourceGenerator
 		];
 
 		if (context.IncludeIServiceCollectionReference)
-			additionalTypes.Add(
-				typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection)
-			);
+			additionalTypes.Add(typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection));
 
 		if (context.IncludeOptionsReference)
 			additionalTypes.Add(typeof(Microsoft.Extensions.Options.IOptions<>));
 
 		if (context.IncludeOptionsConfigurationExtensionReference)
 		{
-			additionalTypes.Add(
-				typeof(Microsoft.Extensions.DependencyInjection.OptionsBuilderConfigurationExtensions)
-			);
+			additionalTypes.Add(typeof(Microsoft.Extensions.DependencyInjection.OptionsBuilderConfigurationExtensions));
 			additionalTypes.Add(typeof(Microsoft.Extensions.Configuration.ConfigurationBinder));
 		}
 
