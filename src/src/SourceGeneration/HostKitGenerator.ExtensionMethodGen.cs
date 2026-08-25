@@ -6,15 +6,14 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 partial class HostKitGenerator
 {
 	static void BuildExtensionClass(
-		HostKitInfo hostKit,
+		HostKitGenerationModel hostKit,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		logger?.Debug($"Generating extension class for host kit: {hostKit.HostKitType.TypeName}");
+		context.Debug($"Generating extension class for host kit: {hostKit.HostKitType.Name}");
 
 		using (context.CodeWriter.WriteBlockNamespaceScope(TypeLibrary.IDistributedApplicationBuilder.Namespace))
 		{
@@ -41,7 +40,7 @@ partial class HostKitGenerator
 		}
 	}
 
-	static void BuildExtensionMethod(CodeWriter writer, HostKitInfo hostKit)
+	static void BuildExtensionMethod(CodeWriter writer, HostKitGenerationModel hostKit)
 	{
 		writer.XmlSummary($"Adds and configures <see cref=\"{hostKit.HostKitType}\"/>.");
 		writer

@@ -12,12 +12,12 @@ static class TestHelper
 
 	public const string DefaultResourceKitNamespace = "Testing.ResourceKitNamespace";
 
-	public static TypeValueObject DefaultAspireResource = new(
+	public static TypeIdentity DefaultAspireResource = new(
 		nameof(DefaultAspireResource),
 		"Testing.AspireResourceNamespace"
 	);
 
-	public static string GenerateBuildResource(TypeValueObject? aspireResource = null) =>
+	public static string GenerateBuildResource(TypeIdentity? aspireResource = null) =>
 		$"protected override IResourceBuilder<{aspireResource ?? DefaultAspireResource}> BuildResource({TypeLibrary.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
 
 	public static IEnumerable<string> GenerateSources(
@@ -28,7 +28,7 @@ static class TestHelper
 		string resourceKitName = DefaultResourceKitType,
 		string? resourceKitNamespace = DefaultResourceKitNamespace,
 		string? resourceKitBaseClass = null,
-		TypeValueObject? aspireResource = null
+		TypeIdentity? aspireResource = null
 	)
 	{
 		yield return GenerateHostKit(
@@ -82,7 +82,7 @@ static class TestHelper
 
 	public static string GenerateResourceKit(
 		string resourceKitName = DefaultResourceKitType,
-		TypeValueObject? aspireResource = null,
+		TypeIdentity? aspireResource = null,
 		string? baseClass = null,
 		string? namespaceName = DefaultHostKitNamespace
 	)

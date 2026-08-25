@@ -7,15 +7,14 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 partial class HostKitGenerator
 {
 	static void BuildHostKit(
-		HostKitInfo hostKitInfo,
+		HostKitGenerationModel hostKitInfo,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		logger?.Info($"Generating {hostKitInfo.HostKitType.MetadataFullName}...");
+		context.Info($"Generating {hostKitInfo.HostKitType.MetadataFullName}...");
 
 		using var nsScope = context.CodeWriter.WriteBlockNamespaceScope(hostKitInfo.HostKitType.Namespace);
 
@@ -23,14 +22,11 @@ partial class HostKitGenerator
 		primaryConstructorParameters.Add(
 			new(
 				"onBuilt",
-				TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType, TypeLibrary.IDistributedApplicationBuilder)
+				TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType, TypeLibrary.IDistributedApplicationBuilder).MakeNullable()
 			)
-			{
-				IsNullable = true,
-			}
 		);
 		primaryConstructorParameters.Add(
-			new("onConfigured", TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType)) { IsNullable = true }
+			new("onConfigured", TypeLibrary.Action.MakeGeneric(hostKitInfo.HostKitType).MakeNullable())
 		);
 
 		if (hostKitInfo.ShouldGenerateOptions)
@@ -60,9 +56,8 @@ partial class HostKitGenerator
 						$"Gets the Host Kit options <see cref=\"{hostKitInfo.HostKitOptionsType}\"/>."
 					)
 					.WriteProperty(
-						new("Options", hostKitInfo.HostKitOptionsType)
+						new("Options", hostKitInfo.HostKitOptionsType, TypeDeclarationAccessibility.Public)
 						{
-							Accessibility = TypeDeclarationAccessibility.Public,
 							HasGetter = true,
 							Initializer = "options",
 						}
@@ -96,9 +91,8 @@ partial class HostKitGenerator
 	}
 
 	static void BuildResourceKitBase(
-		HostKitInfo hostKitInfo,
+		HostKitGenerationModel hostKitInfo,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
@@ -106,14 +100,14 @@ partial class HostKitGenerator
 
 		logger?.Debug($"Generating Resource Kit base class for host kit: {hostKitInfo.HostKitType.TypeName}");
 
-		using (context.CodeWriter.WriteBlockNamespaceScope(hostKitInfo.HostKitResourceKitBaseType.Namespace))
+		using (context.CodeWriter.WriteBlockNamespaceScope(hostKitInfo.ResourceKitBaseType.Namespace))
 		{
 			context
 				.CodeWriter.XmlSummary(
 					"Represents a typed base class for all generated Resource Kits for the Host Kit."
 				)
 				.WriteClass(
-					new TypeDeclarationOptions(hostKitInfo.HostKitResourceKitBaseType.TypeName)
+					new TypeDeclarationOptions(hostKitInfo.ResourceKitBaseType.TypeName)
 					{
 						IsPartial = true,
 						IsAbstract = true,
@@ -130,10 +124,10 @@ partial class HostKitGenerator
 					body =>
 						body.XmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
 							.WriteConstructor(
-								new ConstructorDeclarationOptions(hostKitInfo.HostKitResourceKitBaseType.TypeName)
+								new ConstructorDeclarationOptions(hostKitInfo.ResourceKitBaseType)
 								{
 									Accessibility = TypeDeclarationAccessibility.Protected,
-									Parameters = [new("hostKit", $"{hostKitInfo.HostKitType}"), new("name", "string?")],
+									Parameters = [new("hostKit", hostKitInfo.HostKitType), new("name", PurviewTypeLibrary.System.String.MakeNullable())],
 									Initializer = $"base(hostKit, name)",
 								},
 								body => body.Comment("Empty")
@@ -144,8 +138,7 @@ partial class HostKitGenerator
 
 	static void GenerateResourceKitProperties(
 		CodeWriter writer,
-		HostKitInfo hostKitInfo,
-		GenerationLogger? logger,
+		HostKitGenerationModel hostKitInfo,
 		CancellationToken cancellationToken
 	)
 	{
@@ -197,9 +190,8 @@ partial class HostKitGenerator
 	}
 
 	static void GenerateBuildMethod(
-		HostKitInfo hostKitInfo,
+		HostKitGenerationModel hostKitInfo,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
@@ -274,9 +266,8 @@ partial class HostKitGenerator
 	}
 
 	static void GenerateConfigureMethod(
-		HostKitInfo hostKit,
+		HostKitGenerationModel hostKit,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
@@ -304,9 +295,8 @@ partial class HostKitGenerator
 	}
 
 	static void GenerateHostKitOptionsClass(
-		HostKitInfo hostKitInfo,
+		HostKitGenerationModel hostKitInfo,
 		KitGenerationContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{

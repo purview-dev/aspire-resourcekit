@@ -16,52 +16,42 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 		context.RegisterPostInitializationOutput(postInitContext =>
 		{
-			_logger?.Debug("Adding attributes:");
 			foreach (var resourceType in TypeLibrary.GeneratedTypes)
 			{
-				_logger?.Debug($"- {resourceType.TypeName}", 1);
 				postInitContext.AddSource(
 					resourceType.MetadataFullName + ".g.cs",
-					EmbeddedResources.Load(resourceType.TypeName)
+					EmbeddedResourceHelper.Load(resourceType.Name)
 				);
 			}
 		});
 
-		var valueProvider = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
+		var valueProvider = SourceGenLibrary.GetGeneratorValueProviders(context);
 
 		context.RegisterSourceOutput(
 			valueProvider,
-			(sourceProductionContext, model) =>
+			(sourceProductionContext, collectionResults) =>
 			{
-				if (!model.IsSourceGeneratorEnabled)
+				if (collectionResults.Context.Settings.IsSourceGeneratorDisabled)
 					return;
 
-				var diagnostics = new List<DiagnosticInfo>();
-				diagnostics.AddRange(model.Diagnostics);
-				if (model.HostKit.HasDiagnostics)
-					diagnostics.AddRange(model.HostKit.Diagnostics);
-				foreach (var resourceResult in model.ResourceKits)
+				if (collectionResults.HostKits.Count > 1)
+					sourceProductionContext.ReportDiagnostic(Diagnostic.Create( GeneratorDiagnostics.MultipleHostKitsFoundInfo, null));
+
+				if (collectionResults.HostKit.HasDiagnostics)
+					sourceProductionContext.ReportDiagnostics(collectionResults.HostKit.Diagnostics);
+
+				foreach (var resourceResult in collectionResults.ResourceKits.SelectMany(r => r.Value))
 				{
 					if (resourceResult.HasDiagnostics)
-						diagnostics.AddRange(resourceResult.Diagnostics);
+						sourceProductionContext.ReportDiagnostics(resourceResult.Diagnostics);
 				}
 
-				var resourceKitDescriptors = GatherResourceKits(model, diagnostics);
-				var hostKit = model.HostKit.IsSuccess ? model.HostKit.Value : null;
-				var validResourceDescriptors = ReportDiagnostics(
-					sourceProductionContext,
-					model,
-					diagnostics,
-					hostKit,
-					resourceKitDescriptors
-				);
-
-				if (model.HostKit.IsFatal || model.ResourceKits.Any(s => s.IsFatal) || hostKit is null)
+				if (collectionResults.HostKits.Count > 0 || collectionResults.HostKit.IsFatal || collectionResults.ResourceKits.Any(s => s.Value.Any(r => r.IsFatal)))
 					return;
 
-				var hostKitInfo = CodeGenHelpers.BuildHostKit(hostKit, validResourceDescriptors);
-				var writer = BuildSource(hostKitInfo, sourceProductionContext.CancellationToken);
-				var hintName = HintNameHelper.ForHost(hostKitInfo.HostKitType.MetadataFullName);
+				var generatioNmodel = CodeGenHelpers.BuildGenerationModel(collectionResults);
+				var writer = BuildSource(generatioNmodel, sourceProductionContext.CancellationToken);
+				var hintName = HintNameHelper.ForHost(generatioNmodel.HostKitType.MetadataFullName);
 				sourceProductionContext.AddSource(hintName, writer);
 			}
 		);
@@ -69,7 +59,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 	static List<KitTargetDescriptor> ReportDiagnostics(
 		SourceProductionContext sourceProductionContext,
-		KitGenerationModel model,
+		KitGenerationCollectionResults model,
 		List<DiagnosticInfo> diagnostics,
 		KitTargetDescriptor? hostKit,
 		List<KitTargetDescriptor> resourceKitDescriptors
@@ -86,7 +76,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase,
-							resource.TypeName
+							resource.Target.Identity.Name
 						)
 					);
 					continue;
@@ -97,23 +87,23 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase,
-							resource.TypeName,
+							resource.Target.Identity.Name,
 							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
 					continue;
 				}
 
-				var resourceName = resource.Name ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
+				var resourceName = resource.Name ?? CodeGenHelpers.TrimSuffix(resource.Target.Identity.Name);
 				if (string.IsNullOrWhiteSpace(resourceName))
 				{
 					diagnostics.Add(
-						DiagnosticInfo.Create(GeneratorDiagnostics.ResourceNameNotDerivable, resource.TypeName)
+						DiagnosticInfo.Create(GeneratorDiagnostics.ResourceNameNotDerivable, resource.Target.Identity.Name)
 					);
 					continue;
 				}
 
-				var propertyName = resource.PropertyName ?? CodeGenHelpers.TrimSuffix(resource.TypeName);
+				var propertyName = resource.PropertyName ?? CodeGenHelpers.TrimSuffix(resource.Target.Identity.Name);
 				if (!TypeHelpers.IsValidIdentifier(propertyName))
 				{
 					diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.InvalidPropertyName, propertyName));
@@ -133,7 +123,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					diagnostics.Add(
 						DiagnosticInfo.Create(
 							GeneratorDiagnostics.ResourceMustDeriveFromBase,
-							resource.TypeName,
+							resource.Target.Identity.Name,
 							TypeLibrary.ResourceKitBase.MetadataFullName
 						)
 					);
@@ -143,7 +133,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				if (resource.AspireResourceType is null)
 				{
 					diagnostics.Add(
-						DiagnosticInfo.Create(GeneratorDiagnostics.NoAspireResourceFound, resource.TypeName)
+						DiagnosticInfo.Create(GeneratorDiagnostics.NoAspireResourceFound, resource.Target.Identity.Name)
 					);
 					continue;
 				}
@@ -154,18 +144,18 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 		if (validResourceDescriptors.Count == 0 && !model.HostKit.IsEmpty)
 			diagnostics.Add(
-				DiagnosticInfo.Create(GeneratorDiagnostics.NoResourceKitsDefined, hostKit?.TypeName ?? string.Empty)
+				DiagnosticInfo.Create(GeneratorDiagnostics.NoResourceKitsDefined, model.HostKit.Value!.Target.Identity.Name)
 			);
 		else if (model.HostKit.IsEmpty)
 			diagnostics.Add(DiagnosticInfo.Create(GeneratorDiagnostics.NoHostKitInfoDefined));
 
 		if (diagnostics.Count > 0)
-			ReportDiagnostics(sourceProductionContext, diagnostics, null);
+			sourceProductionContext.ReportDiagnostics(diagnostics);
 
 		return validResourceDescriptors;
 	}
 
-	static List<KitTargetDescriptor> GatherResourceKits(KitGenerationModel model, List<DiagnosticInfo> diagnostics)
+	static List<KitTargetDescriptor> GatherResourceKits(KitGenerationCollectionResults model, List<DiagnosticInfo> diagnostics)
 	{
 		var resources = model.ResourceKits.Where(result => result.IsSuccess).Select(result => result.Value!).ToList();
 		var mixedTypes = new HashSet<string>(StringComparer.Ordinal);

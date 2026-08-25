@@ -6,15 +6,14 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 partial class HostKitGenerator
 {
 	static void BuildResourceKits(
-		HostKitInfo hostKit,
-		KitGenerationContext context,
-		GenerationLogger? logger,
+		HostKitGenerationModel hostKit,
+		KitGenerationCollectionResults collectionResults,
 		CancellationToken cancellationToken
 	)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		logger?.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
+		collectionResults.Debug($"Building resource kits for host kit: {hostKit.HostKitType}");
 
 		foreach (var resourceKitGroup in hostKit.ResourceKits.GroupBy(r => r.ResourceKitType.Namespace))
 		{
@@ -33,8 +32,8 @@ partial class HostKitGenerator
 
 				var baseClass = resourceKit.HasExplicitBaseType
 					? default
-					: new TypeReferenceOptions(
-						hostKit.HostKitResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType).RenderFullName
+					: new TypeReference(
+						hostKit.ResourceKitBaseType.MakeGeneric(resourceKit.AspireResourceType).RenderFullName
 					);
 
 				// Generate the resource kit class
@@ -104,7 +103,7 @@ partial class HostKitGenerator
 
 	static void GenerateResourceKitOptionsClass(
 		CodeWriter writer,
-		HostKitInfo hostKit,
+		HostKitGenerationModel hostKit,
 		ResourceKitInfo resourceKit,
 		GenerationLogger? logger,
 		CancellationToken cancellationToken

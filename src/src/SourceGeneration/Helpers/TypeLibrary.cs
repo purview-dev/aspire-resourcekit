@@ -17,81 +17,81 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 }
 ";
 
-	public static readonly TypeValueObject HostKitAttribute = new(
+	public static readonly TypeIdentity HostKitAttribute = new(
 		nameof(HostKitAttribute),
 		PurviewAspireResourceKitNamespace
 	);
 
-	public static readonly TypeValueObject ResourceDefinitionAttribute = new(
+	public static readonly TypeIdentity ResourceDefinitionAttribute = new(
 		nameof(ResourceDefinitionAttribute),
 		PurviewAspireResourceKitNamespace
 	);
 
-	public static readonly TypeValueObject GenericResourceDefinitionAttribute = new(
+	public static readonly TypeIdentity GenericResourceDefinitionAttribute = new(
 		"ResourceDefinitionAttribute`1",
 		PurviewAspireResourceKitNamespace
 	);
 
 	// Library types
-	public static readonly TypeValueObject IHostKit = new(nameof(IHostKit), PurviewAspireResourceKitNamespace);
+	public static readonly TypeIdentity IHostKit = new(nameof(IHostKit), PurviewAspireResourceKitNamespace);
 
-	public static readonly TypeValueObject HostKitBase = new(nameof(HostKitBase), PurviewAspireResourceKitNamespace);
+	public static readonly TypeIdentity HostKitBase = new(nameof(HostKitBase), PurviewAspireResourceKitNamespace);
 
-	public static readonly TypeValueObject ResourceKitBase = new(
+	public static readonly TypeIdentity ResourceKitBase = new(
 		nameof(ResourceKitBase),
 		PurviewAspireResourceKitNamespace
 	);
 
-	public static readonly TypeValueObject IResourceKit = new(nameof(IResourceKit), PurviewAspireResourceKitNamespace);
+	public static readonly TypeIdentity IResourceKit = new(nameof(IResourceKit), PurviewAspireResourceKitNamespace);
 
 	// Other required types
 	// Required for DI
-	public static readonly TypeValueObject IServiceCollection = new(
+	public static readonly TypeIdentity IServiceCollection = new(
 		nameof(IServiceCollection),
 		"Microsoft.Extensions.DependencyInjection"
 	);
 
-	public static readonly TypeValueObject ConfigurationBinder = new(
+	public static readonly TypeIdentity ConfigurationBinder = new(
 		nameof(ConfigurationBinder),
 		"Microsoft.Extensions.Configuration"
 	);
 
 	// Required for Options
-	public static readonly TypeValueObject OptionsBuilder = new(nameof(OptionsBuilder), "Microsoft.Extensions.Options");
+	public static readonly TypeIdentity OptionsBuilder = new(nameof(OptionsBuilder), "Microsoft.Extensions.Options");
 
 	// Aspire types.
-	public static readonly TypeValueObject IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
+	public static readonly TypeIdentity IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
 
-	public static readonly TypeValueObject IDistributedApplicationBuilder = new(
+	public static readonly TypeIdentity IDistributedApplicationBuilder = new(
 		nameof(IDistributedApplicationBuilder),
 		"Aspire.Hosting"
 	);
 
 	// Other useful types
-	public static readonly TypeValueObject RequiredAttribute = new(
+	public static readonly TypeIdentity RequiredAttribute = new(
 		nameof(RequiredAttribute),
 		"System.ComponentModel.DataAnnotations"
 	);
 
-	public static readonly TypeValueObject EditorBrowsableState = new(
+	public static readonly TypeIdentity EditorBrowsableState = new(
 		nameof(EditorBrowsableState),
 		"System.ComponentModel"
 	);
 
-	public static readonly TypeValueObject EditorBrowsableAttribute = new(
+	public static readonly TypeIdentity EditorBrowsableAttribute = new(
 		nameof(EditorBrowsableAttribute),
 		"System.ComponentModel"
 	);
 
-	public static readonly TypeValueObject NotNullAttribute = new(
+	public static readonly TypeIdentity NotNullAttribute = new(
 		nameof(NotNullAttribute),
 		"System.Diagnostics.CodeAnalysis"
 	);
 
-	public static readonly TypeValueObject Action = new(nameof(Action), "System");
+	public static readonly TypeIdentity Action = new(nameof(Action), "System");
 
-	public static readonly TypeValueObject EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
+	public static readonly TypeIdentity EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
 
 	// Generated attributes (make sure this is after they're all initialized!)
-	public static readonly TypeValueObject[] GeneratedTypes = [HostKitAttribute, ResourceDefinitionAttribute];
+	public static readonly TypeIdentity[] GeneratedTypes = [HostKitAttribute, ResourceDefinitionAttribute];
 }

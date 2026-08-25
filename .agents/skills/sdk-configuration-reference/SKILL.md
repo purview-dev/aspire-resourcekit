@@ -57,7 +57,7 @@ These are the most important configurable properties exposed by the SDK:
 ## Telemetry and package-related settings
 
 - `ExcludePurviewTelemetry` — default `false`; removes `Purview.Telemetry.SourceGenerator`
-- `ExcludeMSTelemetryExtension` — default `false`; removes `Microsoft.Extensions.Telemetry.Abstractions`
+- `ExcludeMSTelemetryExtension` — default `false`; removes `Microsoft.Extensions.Telemetry.Abstractions`, only relevant if `ExcludePurviewTelemetry` is also `true`
 - `IsPackable` — defaults to `false` if not set elsewhere
 - `PackageTags`, `IncludeSource`, `IncludeSymbols`, `PublishRepositoryUrl`, `SymbolPackageFormat` — standard pack-related settings the SDK participates in for packable projects
 
@@ -70,7 +70,6 @@ Primary settings:
 - `TestingFramework` — default `TUnit`; supported values: `TUnit`, `Xunit`, `None`
 - `SubstituteFramework` — default `TUnitMocks`; supported values: `TUnitMocks`, `NSubstitute`, `None`
 - `TestDataFramework` — default `Bogus`; supported values: `Bogus`, `None`
-- `ProjectSdkTestFramework` — legacy alias retained for compatibility
 
 Related toggles and derived settings:
 

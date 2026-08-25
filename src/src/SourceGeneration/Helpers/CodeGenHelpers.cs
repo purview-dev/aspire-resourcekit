@@ -6,7 +6,7 @@ static class CodeGenHelpers
 {
 	public const string DefaultExtensionMethodName = "AddAspireResourceKit";
 
-	public static HostKitInfo BuildHostKit(
+	public static HostKitGenerationModel BuildGenerationModel(
 		KitTargetDescriptor hostKitSymbol,
 		IEnumerable<KitTargetDescriptor> resourceKitSymbols
 	)
