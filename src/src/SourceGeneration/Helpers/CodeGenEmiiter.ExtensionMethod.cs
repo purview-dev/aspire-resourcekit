@@ -1,49 +1,42 @@
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
-namespace Purview.Aspire.ResourceKit.SourceGeneration;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-partial class HostKitGenerator
+partial class CodeGenEmiiter
 {
-	static void BuildExtensionClass(
-		HostKitGenerationModel hostKit,
-		KitGenerationContext context,
-		CancellationToken cancellationToken
-	)
+	static void EmitExtensionClass(OutputContext context, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		context.Debug($"Generating extension class for host kit: {hostKit.HostKitType.Name}");
+		context.Debug($"Generating extension class for host kit: {context.HostKit.HostKitType.Name}");
 
-		using (context.CodeWriter.WriteBlockNamespaceScope(TypeLibrary.IDistributedApplicationBuilder.Namespace))
+		using (context.Writer.WriteBlockNamespaceScope(TypeLibrary.IDistributedApplicationBuilder))
 		{
 			AttributeDeclarationOptions editorBrowsable = new(TypeLibrary.EditorBrowsableAttribute)
 			{
-				Arguments = [new($"{TypeLibrary.EditorBrowsableState}.Never")],
+				Arguments = [new(TypeLibrary.EditorBrowsableState.StaticMember("Never"))],
 			};
 
 			context
-				.CodeWriter.XmlSummary($"Extension methods for <see cref=\"{hostKit.HostKitType}\"/>.")
+				.Writer.XmlSummary($"Extension methods for {CodeWriter.XmlSee(context.HostKit.HostKitType)}.")
 				.WriteClass(
-					new($"{hostKit.HostKitType.TypeName}BuilderExtensions")
+					new($"{context.HostKit.HostKitType.Name}BuilderExtensions", context.HostKit.Accessibility)
 					{
-						Accessibility = hostKit.AccessibilityModifier,
 						IsStatic = true,
 						Attributes = [editorBrowsable],
 					},
-					body =>
-					{
-						using (body.OpenBlockScope($"extension({TypeLibrary.IDistributedApplicationBuilder} builder)"))
-							BuildExtensionMethod(body, hostKit);
-					}
+					body => BuildExtensionMethod(body, context)
 				);
 		}
 	}
 
-	static void BuildExtensionMethod(CodeWriter writer, HostKitGenerationModel hostKit)
+	static void BuildExtensionMethod(CodeWriter writer, OutputContext context)
 	{
-		writer.XmlSummary($"Adds and configures <see cref=\"{hostKit.HostKitType}\"/>.");
+		writer.XmlSummary($"Adds and configures <see cref=\"{context.HostKit.HostKitType}\"/>.");
 		writer
+			.XmlParam("builder",
+				$"The <see cref=\"{TypeLibrary.IDistributedApplicationBuilder}\"/> to add the host kit to."
+			)
 			.XmlParam(
 				"onBuilt",
 				"<para>",
@@ -58,11 +51,11 @@ partial class HostKitGenerator
 				$"An optional action to invoke after the host kit is configured (post <see cref=\"{TypeLibrary.IHostKit}.Configure\"/>)."
 			);
 
-		if (hostKit.ShouldGenerateOptions)
+		if (context.HostKit.ShouldGenerateOptions)
 		{
 			writer.XmlParam(
 				"configureOptions",
-				$"An optional action that provides access to the <see cref=\"{TypeLibrary.OptionsBuilder.MakeGenericXml("TOptions")}\"/> for additional configuration."
+				$"An optional action that provides access to the <see cref=\"{CodeWriter.XmlText(TypeLibrary.OptionsBuilder.MakeGeneric("TOptions"))}\"/> for additional configuration."
 			);
 		}
 
@@ -70,56 +63,62 @@ partial class HostKitGenerator
 
 		List<ParameterDeclarationOptions> parameters =
 		[
+			new("builder", TypeLibrary.IDistributedApplicationBuilder) {
+				IsThis = true
+			},
 			new(
 				"onBuilt",
-				new(TypeLibrary.Action.MakeGeneric(hostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder))
-				{
-					IsNullable = true,
-				}
+				TypeLibrary
+					.Action.MakeGeneric(context.HostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)
+					.MakeNullable()
 			)
 			{
 				DefaultValue = "null",
 			},
-			new("onConfigured", TypeLibrary.Action.MakeGeneric(hostKit.HostKitType))
+			new("onConfigured", TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable())
 			{
 				DefaultValue = "null",
-				IsNullable = true,
 			},
 		];
 
-		if (hostKit.ShouldGenerateOptions)
+		if (context.HostKit.ShouldGenerateOptions)
 		{
 			parameters.Add(
 				new(
 					"configureOptions",
-					TypeLibrary.Action.MakeGeneric(TypeLibrary.OptionsBuilder.MakeGeneric(hostKit.HostKitOptionsType))
+					TypeLibrary
+						.Action.MakeGeneric(TypeLibrary.OptionsBuilder.MakeGeneric(context.HostKit.OptionsType))
+						.MakeNullable()
 				)
 				{
 					DefaultValue = "null",
-					IsNullable = true,
 				}
 			);
 		}
 
 		using (
 			writer.WriteMethodScope(
-				new(hostKit.ExtensionMethodName, TypeLibrary.IDistributedApplicationBuilder)
+				new(
+					context.HostKit.ExtensionMethodName,
+					TypeLibrary.IDistributedApplicationBuilder,
+					TypeDeclarationAccessibility.Public
+				)
 				{
-					Accessibility = TypeDeclarationAccessibility.Public,
+					IsStatic = true,
 					Parameters = [.. parameters],
 				}
 			)
 		)
 		{
-			if (hostKit.ShouldGenerateOptions)
+			if (context.HostKit.ShouldGenerateOptions)
 			{
 				writer
 					.Comment("Bind the host kit options from configuration, or create a new instance if not found.")
-					.Write($"var optionsBuilder = builder.Services.AddOptions<{hostKit.HostKitOptionsType}>")
+					.Write($"var optionsBuilder = builder.Services.AddOptions<{context.HostKit.OptionsType}>")
 					.WriteArgumentList([], terminate: false)
 					.NewLine()
 					.Indented(w =>
-						w.WriteInvocationLine(".BindConfiguration", [$"{hostKit.HostKitOptionsType}.SectionName"])
+						w.WriteInvocationLine(".BindConfiguration", [$"{context.HostKit.OptionsType}.SectionName"])
 					);
 
 				writer
@@ -132,22 +131,22 @@ partial class HostKitGenerator
 					.Write("var hostKitOptions = ")
 					.WriteInvocation(
 						"builder.Configuration.GetSection",
-						[$"{hostKit.HostKitOptionsType}.SectionName"],
+						[$"{context.HostKit.OptionsType}.SectionName"],
 						terminate: false
 					)
 					.NewLine()
 					.Indented(w =>
-						w.WriteInvocation($".Get<{hostKit.HostKitOptionsType}>", [], terminate: false)
+						w.WriteInvocation($".Get<{context.HostKit.OptionsType}>", [], terminate: false)
 							.Write(" ?? new();")
 							.NewLine()
 					);
 			}
 
 			writer.Comment("Create an instance of the generated host kit and configure it.");
-			writer.Write($"{hostKit.HostKitType} hostKit = ");
+			writer.Write($"{context.HostKit.HostKitType} hostKit = ");
 			writer.WriteInvocation(
 				"new",
-				hostKit.ShouldGenerateOptions
+				context.HostKit.ShouldGenerateOptions
 					? ["onBuilt", "onConfigured", "hostKitOptions"]
 					: ["onBuilt", "onConfigured"],
 				terminate: false

@@ -3,19 +3,11 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 static class TypeLibrary
 {
 	// Generated type information...
-	public const string PurviewAspireResourceKitNamespace = "Purview.Aspire.ResourceKit";
+	public static readonly string[] TrimSuffixes = ["ResourceKit", "Resource", "Kit"];
 
 	public const string OptionsBaseClassSuffix = "Options";
 
-	public const string EmbeddedAttributeSource =
-		@"#pragma warning disable IDE0001
-
-namespace Microsoft.CodeAnalysis;
-
-sealed partial class EmbeddedAttribute : global::System.Attribute
-{
-}
-";
+	public const string PurviewAspireResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
 	public static readonly TypeIdentity HostKitAttribute = new(
 		nameof(HostKitAttribute),
@@ -83,14 +75,11 @@ sealed partial class EmbeddedAttribute : global::System.Attribute
 		"System.ComponentModel"
 	);
 
-	public static readonly TypeIdentity NotNullAttribute = new(
-		nameof(NotNullAttribute),
-		"System.Diagnostics.CodeAnalysis"
-	);
+	public static readonly TypeIdentity InvalidOperationException = TypeIdentity.Create<InvalidOperationException>();
+
+	public static readonly TypeIdentity ArgumentNullException = TypeIdentity.Create<ArgumentNullException>();
 
 	public static readonly TypeIdentity Action = new(nameof(Action), "System");
-
-	public static readonly TypeIdentity EmbeddedAttribute = new(nameof(EmbeddedAttribute), "Microsoft.CodeAnalysis");
 
 	// Generated attributes (make sure this is after they're all initialized!)
 	public static readonly TypeIdentity[] GeneratedTypes = [HostKitAttribute, ResourceDefinitionAttribute];

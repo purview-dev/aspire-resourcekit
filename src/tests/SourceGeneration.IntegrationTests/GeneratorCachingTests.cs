@@ -18,23 +18,6 @@ public sealed class GeneratorCachingTests
 	}
 
 	[Test]
-	public async Task GeneratorTrackingNames_AreStableConstants()
-	{
-		// Arrange
-
-		// Act
-		var names = new[]
-		{
-			GeneratorTrackingNames.HostKitTargets,
-			GeneratorTrackingNames.ResourceDefinitionTargets,
-			GeneratorTrackingNames.GenericResourceDefinitionTargets,
-		};
-
-		// Assert
-		await Assert.That(names.Distinct().Count()).IsEqualTo(names.Length);
-	}
-
-	[Test]
 	public async Task HintNameHelper_ForHost_DistinguishesNestedAndGenericIdentities()
 	{
 		// Arrange

@@ -55,7 +55,7 @@ static class TestHelper
 		var writer = CodeWriter.CreateTestWriter();
 
 #pragma warning disable CA1308 // Normalize strings to uppercase
-		var hostKitAttribute = new AttributeDeclarationOptions(TypeLibrary.HostKitAttribute)
+		AttributeDeclarationOptions hostKitAttribute = new(TypeLibrary.HostKitAttribute)
 		{
 			Arguments =
 			[
@@ -67,10 +67,9 @@ static class TestHelper
 		writer
 			.WriteFileScopedNamespace(namespaceName)
 			.WriteClass(
-				new TypeDeclarationOptions(hostKitName)
+				new(hostKitName, TypeDeclarationAccessibility.Public)
 				{
-					BaseType = baseClass,
-					Accessibility = TypeDeclarationAccessibility.Public,
+					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
 					IsPartial = true,
 					Attributes = [hostKitAttribute],
 				},
@@ -91,20 +90,21 @@ static class TestHelper
 
 		var writer = CodeWriter.CreateTestWriter();
 
-		var baseType = baseClass is null ? null : $"{baseClass}<{aspireResource}>";
+		var baseType = baseClass is null
+			? null
+			: new TypeIdentity(baseClass, null).MakeGeneric(aspireResource.Value).AsTypeReference();
 		AttributeDeclarationOptions resourceDefinitionAttribute = new(
 			baseClass is null
-				? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource)
+				? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource.Value)
 				: TypeLibrary.ResourceDefinitionAttribute
 		);
 
 		writer
 			.WriteFileScopedNamespace(namespaceName)
 			.WriteClass(
-				new(resourceKitName)
+				new(resourceKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseType,
-					Accessibility = TypeDeclarationAccessibility.Public,
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},

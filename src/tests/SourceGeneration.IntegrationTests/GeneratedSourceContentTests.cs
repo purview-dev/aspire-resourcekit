@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration;
 /// Asserts the structure and content of the host app source emitted by
 /// <see cref="HostKitGenerator"/> for a range of host app / app resource configurations.
 /// </summary>
-public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostKitGenerator>
+public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTestBase<HostKitGenerator>
 {
 	[Test]
 	public async Task Generate_GivenHostKitWithGenerateOptionsDisabled_DoesNotEmitOptionsClass(
@@ -15,7 +15,7 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 	{
 		var source = TestHelper.GenerateSources(generateOptions: false);
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		var generated = result.GetSource();
 		await Assert.That(generated).DoesNotContain(TestHelper.DefaultHostKitType + "Options()");
@@ -31,7 +31,7 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 		var source = TestHelper.GenerateSources(resourceKitBaseClass: null);
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -50,7 +50,7 @@ public partial class GeneratedSourceContentTests : SourceGeneratorTestBase<HostK
 		);
 
 		// Act
-		var result = await ResourceKitGenerateAsync(sources, cancellationToken);
+		var result = await GenerateAsync(sources, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -77,7 +77,7 @@ namespace Testing
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -107,20 +107,20 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""redis"")]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.TypeName}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
 	{{
 		{buildResourceMethod}
 	}}
 
 	[ResourceDefinition(""sql"")]
-	public partial class SqlServerResourceKit : {TypeLibrary.ResourceKitBase.TypeName}<{TestHelper.DefaultAspireResource}>
+	public partial class SqlServerResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
 	{{
 		{buildResourceMethod}
 	}}
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -153,7 +153,7 @@ namespace Testing
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -183,7 +183,7 @@ namespace Testing
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -221,7 +221,7 @@ namespace Testing
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -254,7 +254,7 @@ namespace Testing
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -291,7 +291,7 @@ namespace Testing
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -320,14 +320,14 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""keyvault"")]
-	public partial class KeyVaultResourceKit : {TypeLibrary.ResourceKitBase.TypeName}<{TestHelper.DefaultAspireResource}>
+	public partial class KeyVaultResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
 	{{
 		 {TestHelper.GenerateBuildResource()}
 	}}
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -359,11 +359,11 @@ namespace Testing.Resources
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
-		var assembly = await Assert.That(result.Assembly).IsNotNull();
+		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var types = assembly.GetExportedTypes();
 
 		var hostKitType = await Assert.That(types).HasSingleItem(m => m.Name == "TestingHostKit");
@@ -402,7 +402,7 @@ namespace Testing
 }}
 ";
 
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -432,8 +432,8 @@ namespace Testing
 		);
 
 		// Act
-		var result = await ResourceKitGenerateAsync(sources, cancellationToken);
-		var types = result.Assembly!.GetExportedTypes();
+		var result = await GenerateAsync(sources, cancellationToken);
+		var types = result.CompilationResult.Assembly!.GetExportedTypes();
 
 		var globalHostKitType = types.SingleOrDefault(m => m.Name == globalHostKitTypeName);
 		var redisResourceKitType = types.SingleOrDefault(m => m.Name == redisResourceKitTypeName);

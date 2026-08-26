@@ -1,10 +1,8 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-static class GeneratorDiagnostics
+static class DiagnosticLibrary
 {
 	const string Category = TypeLibrary.PurviewAspireResourceKitNamespace + ".SourceGenerator";
 
@@ -55,9 +53,9 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor ResourceMustDeriveFromBase = new(
+	public static readonly DiagnosticDescriptor ResourceMustDeriveFromResourceKitBase = new(
 		id: "SG0006",
-		title: $"Resource Kit must derive from {TypeLibrary.ResourceKitBase.TypeName}<TResource> or {TypeLibrary.ResourceKitBase.TypeName}<THostKit, TResource>",
+		title: $"Resource Kit must derive from {TypeLibrary.ResourceKitBase.Name}<TResource> or {TypeLibrary.ResourceKitBase.Name}<THostKit, TResource>",
 		messageFormat: "'{0}' must derive from a valid Resource Kit Base",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
@@ -153,20 +151,4 @@ static class GeneratorDiagnostics
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
-
-	public static DiagnosticInfo Create(
-		DiagnosticDescriptor diagnostic,
-		INamedTypeSymbol? symbol = null,
-		TypeDeclarationSyntax? declaration = null,
-		SyntaxNode? locationNode = null
-	)
-	{
-		var messageArgs = symbol is not null ? new[] { symbol.Name } : [];
-
-		return DiagnosticInfo.Create(
-			diagnostic,
-			locationNode?.GetLocation() ?? declaration?.Identifier.GetLocation(),
-			messageArgs
-		);
-	}
 }
