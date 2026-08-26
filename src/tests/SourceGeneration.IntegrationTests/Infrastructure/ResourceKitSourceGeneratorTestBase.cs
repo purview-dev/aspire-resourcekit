@@ -16,7 +16,7 @@ public sealed record ResourceKitSourceGeneratorTestOptions : SourceGeneratorTest
 
 	public static ResourceKitSourceGeneratorTestOptions NoValidation { get; } = new()
 	{
-		ThrowOnGenerationException  =false
+		ThrowOnGenerationException = false
 	};
 }
 

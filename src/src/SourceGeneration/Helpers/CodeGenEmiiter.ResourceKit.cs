@@ -65,9 +65,7 @@ partial class CodeGenEmiiter
 							body =>
 							{
 								if (context.HostKit.ShouldGenerateOptions)
-								{
 									body.WriteLine("Options = options;").WriteLine("IsEnabled = options.IsEnabled;");
-								}
 							}
 						);
 
