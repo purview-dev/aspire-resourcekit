@@ -217,17 +217,19 @@ static class SourceGenLibrary
 		cancellationToken.ThrowIfCancellationRequested();
 
 		var symbol = (INamedTypeSymbol)context.TargetSymbol;
-		var data = ResourceDefinitionAttributeData.FromAttributeData(context.Attributes, out var attribute);
+		var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
+		var allAttributes = ResourceDefinitionAttributeData.AllAttributeData(symbol.GetAttributes()).ToArray();
+		var matchedAttribute = allAttributes.FirstOrDefault();
 
-		var resourceName = data.Name ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes);
+		var resourceName = matchedAttribute.Instance.Name ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes);
 		var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(symbol);
 		var isDerivedFromExpectedBase =
 			hasExplicitBaseType && TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.ResourceKitBase);
-		var isGenericResourceDefinition = attribute!.AttributeClass!.IsGenericType;
-		var propertyName = data.PropertyName ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes)!;
+		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
+		var propertyName = matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes)!;
 
-		var aspireResourceTypeSymbol = data.AspireResourceType;
-		if (data.AspireResourceType is null)
+		var aspireResourceTypeSymbol = matchedAttribute.Instance.AspireResourceType;
+		if (matchedAttribute.Instance.AspireResourceType is null)
 			aspireResourceTypeSymbol = ResolveAspireResourceTypeFromBaseClass(symbol, aspireResourceTypeSymbol);
 
 		TypeIdentity resourceKitType = new(symbol);
@@ -235,6 +237,13 @@ static class SourceGenLibrary
 		var aspireResourceType = aspireResourceTypeSymbol is null ? TypeIdentity.Empty : new(aspireResourceTypeSymbol);
 
 		var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
+		if (allAttributes.Length > 1)
+		{
+			diagnostics.Add(
+				DiagnosticInfo.Create(DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported, symbol)
+			);
+		}
+
 		if (isGenericResourceDefinition && hasExplicitBaseType)
 		{
 			diagnostics.Add(
@@ -276,6 +285,17 @@ static class SourceGenLibrary
 		if (aspireResourceType == TypeIdentity.Empty)
 		{
 			diagnostics.Add(DiagnosticInfo.Create(DiagnosticLibrary.NoAspireResourceFound, symbol));
+		}
+
+		if (HasNonEmptyConstructors(classDeclaration, symbol.Name))
+		{
+			diagnostics.Add(
+				DiagnosticInfo.Create(
+					DiagnosticLibrary.NonEmptyConstructorsNotSupported,
+					classDeclaration.Identifier.GetLocation(),
+					symbol.Name
+				)
+			);
 		}
 
 		return GeneratorResult<ResourceKitModel>.Ok(

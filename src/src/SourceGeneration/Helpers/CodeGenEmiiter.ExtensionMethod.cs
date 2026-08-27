@@ -34,7 +34,8 @@ partial class CodeGenEmiiter
 	{
 		writer.XmlSummary($"Adds and configures <see cref=\"{context.HostKit.HostKitType}\"/>.");
 		writer
-			.XmlParam("builder",
+			.XmlParam(
+				"builder",
 				$"The <see cref=\"{TypeLibrary.IDistributedApplicationBuilder}\"/> to add the host kit to."
 			)
 			.XmlParam(
@@ -63,9 +64,7 @@ partial class CodeGenEmiiter
 
 		List<ParameterDeclarationOptions> parameters =
 		[
-			new("builder", TypeLibrary.IDistributedApplicationBuilder) {
-				IsThis = true
-			},
+			new("builder", TypeLibrary.IDistributedApplicationBuilder) { IsThis = true },
 			new(
 				"onBuilt",
 				TypeLibrary

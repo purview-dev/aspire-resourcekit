@@ -116,6 +116,7 @@ partial class CodeGenEmiiter
 				.WriteProperty(
 					new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
+						IsInitOnly = true,
 						Initializer = GeneratedText.QuoteLiteral(resourceKit.ResourceName),
 						Attributes =
 						[
@@ -132,6 +133,7 @@ partial class CodeGenEmiiter
 				.WriteProperty(
 					new("IsEnabled", PurviewTypeLibrary.System.Boolean, TypeDeclarationAccessibility.Public)
 					{
+						IsInitOnly = true,
 						Initializer = "true",
 					}
 				);

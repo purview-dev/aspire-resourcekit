@@ -1,6 +1,6 @@
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-namespace Purview.Aspire.ResourceKit.SourceGeneration;
+namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
 
 static class TestHelper
 {
@@ -12,12 +12,40 @@ static class TestHelper
 
 	public const string DefaultResourceKitNamespace = "Testing.ResourceKitNamespace";
 
-	public static TypeIdentity DefaultAspireResource = new(
-		nameof(DefaultAspireResource),
-		"Testing.AspireResourceNamespace"
-	);
+	public static TypeIdentity DefaultAspireResource = TypeIdentity.Create<DefaultAspireResource>();
 
-	public static string GenerateBuildResource(TypeIdentity? aspireResource = null) =>
+	public static string GenerateAspireResource(TypeIdentity? typeIdentity = null)
+	{
+		var resourceIdentity =
+			typeIdentity == null || typeIdentity == TypeIdentity.Empty ? DefaultAspireResource : typeIdentity.Value;
+
+		var writer = CodeWriter.CreateTestWriter();
+
+		using (writer.WriteBlockNamespaceScope(typeIdentity))
+		{
+			writer.WriteClass(
+				new(resourceIdentity, TypeDeclarationAccessibility.Public) { Interfaces = [TypeLibrary.IResource] },
+				bodyWriter =>
+					bodyWriter
+						.WriteProperty(
+							new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
+							{
+								ExpressionBody = $"\"{resourceIdentity.Name}\"",
+							}
+						)
+						.WriteProperty(
+							new("Annotations", TypeLibrary.ResourceAnnotations, TypeDeclarationAccessibility.Public)
+							{
+								ExpressionBody = "[]",
+							}
+						)
+			);
+		}
+
+		return writer.ToString();
+	}
+
+	public static string GenerateBuildResourceMethod(TypeIdentity? aspireResource = null) =>
 		$"protected override IResourceBuilder<{aspireResource ?? DefaultAspireResource}> BuildResource({TypeLibrary.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
 
 	public static IEnumerable<string> GenerateSources(
@@ -108,7 +136,7 @@ static class TestHelper
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},
-				bodyWriter => bodyWriter.WriteLine(GenerateBuildResource(aspireResource))
+				bodyWriter => bodyWriter.WriteLine(GenerateBuildResourceMethod(aspireResource))
 			);
 
 		return writer.ToString();

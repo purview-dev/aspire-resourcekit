@@ -1,7 +1,11 @@
+using Purview.Aspire.ResourceKit.Models;
+
 namespace Purview.Aspire.ResourceKit;
 
 public sealed class OptionsHelperTests
 {
+	readonly string _aTestingValue = $"This is a test value - {Guid.NewGuid()}";
+
 	[Test]
 	public async Task For_GivenExplicitSectionName_UsesSectionOverride()
 	{
@@ -17,6 +21,47 @@ public sealed class OptionsHelperTests
 		await Assert.That(args.Length).IsEqualTo(2);
 		await Assert.That(args[0]).IsEqualTo("--SectionNameGoesHere:Redis:IsEnabled=false");
 		await Assert.That(args[1]).IsEqualTo("--SectionNameGoesHere:Redis:Name=PIES");
+	}
+
+	[Test]
+	public async Task ForSet_WithNestedClasses_GeneratesCorrectSet()
+	{
+		// Act
+		var args = OptionsHelper
+			.ForSet<AContainerForNestedClasses.TestOptionsSettings>(
+				c => c.EnableFeatureA = false,
+				c => c.MoreOptions.EnableFeatureZ = false,
+				c => c.MoreOptions.EvenMore.EndOfTheLine = "PIES"
+			)
+			.Build();
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(3);
+		await Assert.That(args[0]).IsEqualTo("--TestOptions:EnableFeatureA=false");
+		await Assert.That(args[1]).IsEqualTo("--TestOptions:MoreOptions:EnableFeatureZ=false");
+		await Assert.That(args[2]).IsEqualTo("--TestOptions:MoreOptions:EvenMore:EndOfTheLine=PIES");
+	}
+
+	[Test]
+	public async Task ForSet_WithVariables_GeneratesCorrectSet()
+	{
+		// Arrange
+		const bool featureAEnabled = false;
+
+		// Act
+		var args = OptionsHelper
+			.ForSet<AContainerForNestedClasses.TestOptionsSettings>(
+				c => c.EnableFeatureA = featureAEnabled,
+				c => c.MoreOptions.EnableFeatureZ = false,
+				c => c.MoreOptions.EvenMore.EndOfTheLine = _aTestingValue
+			)
+			.Build();
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(3);
+		await Assert.That(args[0]).IsEqualTo("--TestOptions:EnableFeatureA=false");
+		await Assert.That(args[1]).IsEqualTo("--TestOptions:MoreOptions:EnableFeatureZ=false");
+		await Assert.That(args[2]).IsEqualTo($"--TestOptions:MoreOptions:EvenMore:EndOfTheLine={_aTestingValue}");
 	}
 
 	[Test]
@@ -310,101 +355,5 @@ public sealed class OptionsHelperTests
 		// Assert
 		await Assert.That(envVars).ContainsKey("CustomSection__Redis__Name");
 		await Assert.That(envVars["CustomSection__Redis__Name"]).IsEqualTo("PIES");
-	}
-
-	sealed class HostKitOptions
-	{
-		public RedisOptions Redis { get; set; } = new();
-
-		public ApiOptions Api { get; set; } = new();
-	}
-
-	sealed class ApiOptions
-	{
-		public string Name { get; set; } = string.Empty;
-	}
-
-	sealed class ServiceOptions
-	{
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class ServiceSettings
-	{
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class ServiceConfiguration
-	{
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class ServiceConfig
-	{
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class PrivateSectionOptions
-	{
-#pragma warning disable CA1823 // Avoid unused field warning; this const is intentionally discovered via reflection.
-#pragma warning disable IDE0040 // Keep explicit accessibility for clarity in reflection-focused test type.
-#pragma warning disable IDE0051 // Remove unused private members
-		private const string SectionName = "PrivateSection";
-#pragma warning restore IDE0051 // Remove unused private members
-#pragma warning restore IDE0040
-#pragma warning restore CA1823
-
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class Options
-	{
-		public RedisOptions Redis { get; set; } = new();
-	}
-
-	sealed class DeepOptions
-	{
-		public Level1Options Level1 { get; set; } = new();
-	}
-
-	sealed class Level1Options
-	{
-		public Level2Options Level2 { get; set; } = new();
-	}
-
-	sealed class Level2Options
-	{
-		public Level3Options Level3 { get; set; } = new();
-	}
-
-	sealed class Level3Options
-	{
-		public Level4Options Level4 { get; set; } = new();
-	}
-
-	sealed class Level4Options
-	{
-		public string Name { get; set; } = string.Empty;
-	}
-
-	sealed class RedisOptions
-	{
-		public string Name { get; set; } = string.Empty;
-
-		public bool IsEnabled { get; set; }
-	}
-
-	sealed class SampleStoreOptions
-	{
-		public string CurrentKey { get; set; } = "default-key";
-
-		public int Count { get; set; } = 42;
-
-		public NestedSampleOptions Nested { get; set; } = new();
-	}
-
-	sealed class NestedSampleOptions
-	{
-		public string Value { get; set; } = "nested-default";
 	}
 }

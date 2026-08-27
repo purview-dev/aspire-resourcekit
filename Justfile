@@ -32,7 +32,7 @@ lint-fix *args:
     dotnet csharpier format . {{ args }}
 
 # Displays the current version from package.json
-current_version:
+version:
     echo "Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
 
 # Open the solution in Visual Studio/ Registered application

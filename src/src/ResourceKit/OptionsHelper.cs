@@ -573,10 +573,13 @@ public static class OptionsHelper
 				.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 		)
 		{
-			if (!property.CanRead)
+			if (!property.CanRead || property.GetIndexParameters().Length != 0)
 				continue;
 
 			var propertyType = property.PropertyType;
+			if (typeof(IEnumerable).IsAssignableFrom(propertyType) && propertyType != typeof(string))
+				continue;
+
 			if (TryGetScalarSentinel(propertyType, seed, out var scalarValue))
 			{
 				if (property.SetMethod is not null)
@@ -624,8 +627,16 @@ public static class OptionsHelper
 				.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
 		)
 		{
-			if (!property.CanRead)
+			if (!property.CanRead || property.GetIndexParameters().Length != 0)
 				continue;
+
+			var propertyType = property.PropertyType;
+
+			// Collections are not ordinary configuration-object branches.
+			if (typeof(IEnumerable).IsAssignableFrom(propertyType) && propertyType != typeof(string))
+			{
+				continue;
+			}
 
 			var segment = string.IsNullOrEmpty(prefix) ? property.Name : $"{prefix}:{property.Name}";
 			var av = property.GetValue(a);

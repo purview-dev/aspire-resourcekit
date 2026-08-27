@@ -54,6 +54,11 @@ static class TypeLibrary
 	// Aspire types.
 	public static readonly TypeIdentity IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
 
+	public static readonly TypeIdentity ResourceAnnotations = new(
+		nameof(ResourceAnnotations),
+		"Aspire.Hosting.ApplicationModel"
+	);
+
 	public static readonly TypeIdentity IDistributedApplicationBuilder = new(
 		nameof(IDistributedApplicationBuilder),
 		"Aspire.Hosting"

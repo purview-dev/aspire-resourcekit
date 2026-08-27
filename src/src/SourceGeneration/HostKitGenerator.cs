@@ -41,7 +41,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				var validResourceKits = generationModel
 					.ResourceKits.Select(m => new KeyValuePair<string, ImmutableArray<ResourceKitModel>>(
 						m.Key,
-						[.. m.Value.Where(m => m.IsSuccess).Select(m => m.Value)]
+						[.. m.Value.Where(m => m.ShouldProcess).Select(m => m.Value)]
 					))
 					.ToImmutableDictionary();
 

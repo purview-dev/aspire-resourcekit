@@ -71,7 +71,7 @@ namespace Testing
 	[ResourceDefinition<{TestHelper.DefaultAspireResource}>]
 	public partial class RedisResourceKit
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -95,7 +95,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var buildResourceMethod = TestHelper.GenerateBuildResource();
+		var buildResourceMethod = TestHelper.GenerateBuildResourceMethod();
 		var source =
 			@$"
 using {TypeLibrary.HostKitAttribute.Namespace};
@@ -148,7 +148,7 @@ namespace Testing
 	[ResourceDefinition(""my-redis"")]
 	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -178,7 +178,7 @@ namespace Testing
 	[ResourceDefinition(PropertyName = ""MyRedis"")]
 	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -210,13 +210,13 @@ namespace Testing
 	[ResourceDefinition]
 	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
 	[ResourceDefinition]
 	public partial class SqlServerResource : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -249,7 +249,7 @@ namespace Testing
 	[ResourceDefinition(""azure-storage"")]
 	public partial class AzureStorageResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -279,13 +279,13 @@ namespace Testing
 	[ResourceDefinition]
 	public partial class CacheResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
 	[ResourceDefinition]
 	public partial class SecretsKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -322,7 +322,7 @@ namespace Testing
 	[ResourceDefinition(""keyvault"")]
 	public partial class KeyVaultResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
 	{{
-		 {TestHelper.GenerateBuildResource()}
+		 {TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -354,7 +354,7 @@ namespace Testing.Resources
 	[ResourceDefinition(""redis"")]
 	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
 	{{
-		 {TestHelper.GenerateBuildResource()}
+		 {TestHelper.GenerateBuildResourceMethod()}
 	}}
 }}
 ";
@@ -389,7 +389,7 @@ namespace Testing
 	[ResourceDefinition(""redis"")]
 	public partial class RedisResourceKit : CustomResourceBase<{TestHelper.DefaultAspireResource}>
 	{{
-		{TestHelper.GenerateBuildResource()}
+		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
 	public abstract class CustomResourceBase<TResource> : {TypeLibrary.ResourceKitBase}<TResource>

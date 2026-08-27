@@ -10,10 +10,9 @@ public class HostKitGeneratorTests : ResourceKitSourceGeneratorTestBase<HostKitG
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	public class Empty { }
-}
+namespace Testing;
+
+public class Empty { }
 ";
 
 		// Act
@@ -29,13 +28,10 @@ namespace Testing
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	[HostKit]
-	partial class TestingHostKit
-	{
-	}
-}
+namespace Testing;
+
+[HostKit]
+partial class TestingHostKit;
 ";
 
 		// Act
@@ -53,18 +49,13 @@ namespace Testing
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	[HostKit]
-	partial class TestingHostKit1
-	{
-	}
+namespace Testing;
 
-	[HostKit]
-	partial class TestingHostKit2
-	{
-	}
-}
+[HostKit]
+partial class TestingHostKit1;
+
+[HostKit]
+partial class TestingHostKit2;
 ";
 
 		// Act
@@ -85,9 +76,7 @@ namespace Testing
 namespace Testing;
 
 [HostKit]
-class TestingHostKit
-{
-}
+class TestingHostKit;
 ";
 
 		// Act
@@ -169,7 +158,7 @@ partial class TestingHostKit;
 [ResourceDefinition]
 partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.Name}_INVALID<TestingHostKit, {TestHelper.DefaultAspireResource}>
 {{
-	{TestHelper.GenerateBuildResource()}
+	{TestHelper.GenerateBuildResourceMethod()}
 }}
 ";
 
@@ -217,8 +206,8 @@ namespace Testing;
 [HostKit]
 partial class TestingHostKit;
 
-[ResourceDefinition<TestResource>]
-partial class RedisResourceKit : ResourceKitBase<TestResource>;
+[ResourceDefinition<DefaultAspireResource>]
+partial class RedisResourceKit : ResourceKitBase<DefaultAspireResource>;
 ";
 
 		// Act
@@ -251,5 +240,20 @@ partial class RedisResourceKit;
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported);
+	}
+
+	protected override ResourceKitSourceGeneratorTestOptions OnBeforeRun(
+		IEnumerable<string> sources,
+		ResourceKitSourceGeneratorTestOptions options,
+		CancellationToken cancellationToken
+	)
+	{
+		return base.OnBeforeRun(
+			sources,
+			options
+				.WithAdditionalAssemblyTypes(typeof(DefaultAspireResource))
+				.WithAdditionalNamespaces(TestHelper.DefaultAspireResource),
+			cancellationToken
+		);
 	}
 }

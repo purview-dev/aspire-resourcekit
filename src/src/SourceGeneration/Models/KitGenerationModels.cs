@@ -33,8 +33,8 @@ sealed record KitGenerationModel(
 					.Concat(ResourceKits.SelectMany(r => r.Value.SelectMany(d => d.Diagnostics)))
 			)
 			.ToImmutableArray();
-		var isFatal = HostKits.Any(h => h.IsFatal) || ResourceKits.Any(r => r.Value.Any(d => d.IsFatal));
 
+		var isFatal = HostKits.Any(h => !h.ShouldProcess) || ResourceKits.Any(r => r.Value.Any(d => !d.ShouldProcess));
 		if (ResourceKits.IsEmpty && HasHostKit)
 		{
 			allDiagnostics = allDiagnostics.Add(

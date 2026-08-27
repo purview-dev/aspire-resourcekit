@@ -27,9 +27,7 @@ partial class CodeGenEmiiter
 		);
 
 		if (context.HostKit.ShouldGenerateOptions)
-		{
 			primaryConstructorParameters.Add(new("options", context.HostKit.OptionsType.MakeNullable()));
-		}
 
 		using (
 			context
@@ -54,6 +52,7 @@ partial class CodeGenEmiiter
 						new("Options", context.HostKit.OptionsType, TypeDeclarationAccessibility.Public)
 						{
 							HasGetter = true,
+							IsInitOnly = true,
 							Initializer = "options",
 						}
 					);
@@ -142,7 +141,7 @@ partial class CodeGenEmiiter
 		foreach (
 			var resourceKit in context
 				.Model.ResourceKits.SelectMany(r => r.Value)
-				.Where(m => m.IsSuccess)
+				.Where(m => m.ShouldProcess)
 				.Select(m => m.Value)
 		)
 		{
@@ -323,6 +322,7 @@ partial class CodeGenEmiiter
 							new(resourceKit.PropertyName, resourceKit.OptionsType, TypeDeclarationAccessibility.Public)
 							{
 								HasGetter = true,
+								IsInitOnly = true,
 								Initializer = "new()",
 							}
 						);
