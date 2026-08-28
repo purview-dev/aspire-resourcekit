@@ -25,10 +25,8 @@
 *.xaml      text
 *.cshtml    text diff=html
 *.razor     text diff=html
-
-# Visual Studio rewrites solution files with CRLF -- match it to avoid churn.
-*.sln       text eol=crlf
-*.slnx      text eol=crlf
+*.sln       text eol=lf
+*.slnx      text eol=lf
 
 # ---------------------------------------------------------------------------
 # Data, config and docs
