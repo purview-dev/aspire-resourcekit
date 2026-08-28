@@ -7,9 +7,5 @@ public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.
 	public const string AzureStorageName = "custom-options-azure-storage-example";
 
 	protected override string[] Args =>
-		[
-			.. base.Args,
-			"--ExampleHostKit:Redis:IsEnabled=false",
-			$"--ExampleHostKit:AzureStorage:Name={AzureStorageName}",
-		];
+		["--ExampleHostKit:Redis:IsEnabled=false", $"--ExampleHostKit:AzureStorage:Name={AzureStorageName}"];
 }

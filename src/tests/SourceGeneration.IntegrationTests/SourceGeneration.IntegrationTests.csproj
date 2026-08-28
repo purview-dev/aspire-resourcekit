@@ -13,6 +13,7 @@
 		<PackageReference Include="Purview.SourceGeneratorFramework" />
 		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\ResourceKit\ResourceKit.csproj" />
 		<!-- Reference the analyzer output as a normal reference so the test code can use HostKitGenerator. -->

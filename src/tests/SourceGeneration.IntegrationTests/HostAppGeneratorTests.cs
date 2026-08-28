@@ -1,9 +1,8 @@
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
-using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
-public class HostKitGeneratorTests : SourceGeneratorTestBase<HostKitGenerator>
+public class HostKitGeneratorTests : ResourceKitSourceGeneratorTestBase<HostKitGenerator>
 {
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(CancellationToken cancellationToken)
@@ -11,17 +10,16 @@ public class HostKitGeneratorTests : SourceGeneratorTestBase<HostKitGenerator>
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	public class Empty { }
-}
+namespace Testing;
+
+public class Empty { }
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(result.GeneratedTrees.Count()).IsEqualTo(ExpectedGeneratedFileCount);
+		await Assert.That(result.DriverResult.GeneratedTrees.Length).IsEqualTo(ExpectedGeneratedFileCount);
 	}
 
 	[Test]
@@ -30,20 +28,17 @@ namespace Testing
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	[HostKit]
-	partial class TestingHostKit
-	{
-	}
-}
+namespace Testing;
+
+[HostKit]
+partial class TestingHostKit;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, cancellationToken);
+		var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert — attribute files + 1 generated host app
-		await Assert.That(result.GeneratedTrees.Count()).IsEqualTo(ExpectedFileCountPlusGen);
+		await Assert.That(result.DriverResult.GeneratedTrees.Length).IsEqualTo(ExpectedFileCountPlusGen);
 	}
 
 	[Test]
@@ -54,25 +49,20 @@ namespace Testing
 		// Arrange
 		const string source =
 			@"
-namespace Testing
-{
-	[HostKit]
-	partial class TestingHostKit1
-	{
-	}
+namespace Testing;
 
-	[HostKit]
-	partial class TestingHostKit2
-	{
-	}
-}
+[HostKit]
+partial class TestingHostKit1;
+
+[HostKit]
+partial class TestingHostKit2;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MultipleHostKitsFoundInfo);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.MultipleHostKitsFoundInfo);
 	}
 
 	[Test]
@@ -86,16 +76,14 @@ namespace Testing
 namespace Testing;
 
 [HostKit]
-class TestingHostKit
-{
-}
+class TestingHostKit;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.ClassMustBePartial);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ClassMustBePartial);
 	}
 
 	[Test]
@@ -118,10 +106,10 @@ partial class TestingHostKit
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonEmptyConstructorsNotSupported);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonEmptyConstructorsNotSupported);
 	}
 
 	[Test]
@@ -148,10 +136,10 @@ partial class RedisResourceKit : ResourceKitBase<TestResource>
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonEmptyConstructorsNotSupported);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonEmptyConstructorsNotSupported);
 	}
 
 	[Test]
@@ -168,17 +156,17 @@ namespace Testing;
 partial class TestingHostKit;
 
 [ResourceDefinition]
-partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.TypeName}_INVALID<TestingHostKit, {TestHelper.DefaultAspireResource}>
+partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.Name}_INVALID<TestingHostKit, {TestHelper.DefaultAspireResource}>
 {{
-	{TestHelper.GenerateBuildResource()}
+	{TestHelper.GenerateBuildResourceMethod()}
 }}
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.ResourceMustDeriveFromBase);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourceMustDeriveFromResourceKitBase);
 	}
 
 	[Test]
@@ -199,10 +187,10 @@ partial class RedisResourceKit;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.NonGenericResourceDefinitionRequiresExplicitBase);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonGenericResourceDefinitionRequiresExplicitBase);
 	}
 
 	[Test]
@@ -218,15 +206,15 @@ namespace Testing;
 [HostKit]
 partial class TestingHostKit;
 
-[ResourceDefinition<TestResource>]
-partial class RedisResourceKit : ResourceKitBase<TestResource>;
+[ResourceDefinition<DefaultAspireResource>]
+partial class RedisResourceKit : ResourceKitBase<DefaultAspireResource>;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.GenericResourceDefinitionCannotHaveExplicitBase);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.GenericResourceDefinitionCannotHaveExplicitBase);
 	}
 
 	[Test]
@@ -248,9 +236,24 @@ partial class RedisResourceKit;
 ";
 
 		// Act
-		var result = await ResourceKitGenerateAsync(source, GenerationDriverContext.DoNotValidate, cancellationToken);
+		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
 
 		// Assert
-		await Assert.That(result).HasDiagnostic(GeneratorDiagnostics.MixedResourceDefinitionAttributesNotSupported);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported);
+	}
+
+	protected override ResourceKitSourceGeneratorTestOptions OnBeforeRun(
+		IEnumerable<string> sources,
+		ResourceKitSourceGeneratorTestOptions options,
+		CancellationToken cancellationToken
+	)
+	{
+		return base.OnBeforeRun(
+			sources,
+			options
+				.WithAdditionalAssemblyTypes(typeof(DefaultAspireResource))
+				.WithAdditionalNamespaces(TestHelper.DefaultAspireResource),
+			cancellationToken
+		);
 	}
 }
