@@ -26,6 +26,11 @@ public class PublishNuGetModule(
 						"Release publishing is disabled. Set Release__ShouldPublish=true to publish packages."
 					)
 			)
+			.WithSkipWhen(_ =>
+				string.IsNullOrWhiteSpace(nugetSettings.Value.APIKey)
+					? SkipDecision.Skip("NuGet API key is not set. Set NuGet__APIKey to publish packages.")
+					: SkipDecision.DoNotSkip
+			)
 			.Build();
 
 	protected override async Task<CommandResult[]?> ExecuteAsync(
