@@ -21,7 +21,7 @@
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
 		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
 		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
 		<!-- Keep Roslyn pinned only for netstandard2.0 because the generator must not pull System.Collections.Immutable 10.x into net8+ consumer and test builds. -->
 		<PackageVersion
@@ -44,6 +44,7 @@
 			Version="[4.13.0]"
 			Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0' Or '$(TargetFramework)' == 'net10.0'"
 		/>
+		<PackageVersion Include="NuGet.Versioning" Version="7.9.0" />
 		<PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="10.0.0" />
 		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="10.8.0" />
 		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="4.4.0" />

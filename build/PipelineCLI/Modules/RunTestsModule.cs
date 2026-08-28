@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Configuration;
 using ModularPipelines.Context;
@@ -6,10 +5,8 @@ using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using Purview.Aspire.ResourceKit.Pipeline.Helpers;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
 
-namespace Purview.Aspire.ResourceKit.Pipeline.Modules;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 
 [ModuleCategory("Build")]
 [DependsOn<BuildModule>]
@@ -39,9 +36,9 @@ public class RunTestsModule(IOptions<BuildSettings> settings) : Module<CommandRe
 			return [];
 		}
 
-		var testFilter = TestHelpers.BuildFilter(
-			assembly: context.Environment.BuildSystem.IsBuildServer ? "*UnitTests" : null
-		);
+		var testFilter = settings.Value.RunIntegrationTests
+			? settings.Value.IntegrationTestFilter
+			: settings.Value.UnitTestFilter;
 
 		var tasks = testProjects.Select(project =>
 			context

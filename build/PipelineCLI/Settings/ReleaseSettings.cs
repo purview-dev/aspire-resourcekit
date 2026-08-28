@@ -1,4 +1,4 @@
-namespace Purview.Aspire.ResourceKit.Pipeline.Settings;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Settings;
 
 public sealed record ReleaseSettings
 {

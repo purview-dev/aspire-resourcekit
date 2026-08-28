@@ -1,13 +1,11 @@
-using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
 
-namespace Purview.Aspire.ResourceKit.Pipeline.Modules;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 
 [ModuleCategory("Build")]
 [DependsOn<BuildModule>]
@@ -20,12 +18,13 @@ public class PackModule(IOptions<BuildSettings> settings) : Module<CommandResult
 	)
 	{
 		var versionResult = await context.GetModule<VersionModule>();
-		var version =
+		var nugetVersion =
 			versionResult.ValueOrDefault
 			?? throw new InvalidOperationException("The version was not produced by the version module.");
 
 		Directory.CreateDirectory(settings.Value.ArtifactsFolder);
 
+		var version = nugetVersion.ToString();
 		return await context
 			.DotNet()
 			.Pack(

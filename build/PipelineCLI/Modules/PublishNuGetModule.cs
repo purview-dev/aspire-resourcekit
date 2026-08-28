@@ -1,14 +1,11 @@
-using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Configuration;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
-using ModularPipelines.DotNet.Options;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
 
-namespace Purview.Aspire.ResourceKit.Pipeline.Modules;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 
 [ModuleCategory("Release")]
 [DependsOn<PackModule>]
@@ -49,11 +46,11 @@ public class PublishNuGetModule(
 			context
 				.DotNet()
 				.Nuget.Push(
-					new DotNetNugetPushOptions
+					new()
 					{
 						Path = package,
 						Source = nugetSettings.Value.FeedUrl,
-						ApiKey = nugetSettings.Value.ApiKey,
+						ApiKey = nugetSettings.Value.APIKey,
 						SkipDuplicate = true,
 					},
 					cancellationToken: cancellationToken

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Purview.Aspire.ResourceKit.Pipeline;
+namespace Purview.Aspire.ResourceKit.PipelineCLI;
 
 static class PipelineProjectDirectory
 {

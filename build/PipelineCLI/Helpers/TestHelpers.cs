@@ -1,12 +1,12 @@
-﻿namespace Purview.Aspire.ResourceKit.Pipeline.Helpers;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Helpers;
 
 static class TestHelpers
 {
-	public static string BuildFilter(
+	public static string BuildTUnitTreeNodeFilter(
 		string? assembly = null,
 		string? @namespace = null,
 		string? className = null,
-		string? testName = null
+		string? testNameQuery = null
 	)
 	{
 		var filter = "/";
@@ -28,10 +28,10 @@ static class TestHelpers
 			_ => className,
 		};
 
-		filter += testName switch
+		filter += testNameQuery switch
 		{
 			null => "*",
-			_ => testName,
+			_ => testNameQuery,
 		};
 
 		return filter;

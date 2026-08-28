@@ -1,13 +1,11 @@
-using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
 
-namespace Purview.Aspire.ResourceKit.Pipeline.Modules;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 
 [ModuleCategory("Build")]
 public class RestoreModule(IOptions<BuildSettings> settings) : Module<CommandResult>

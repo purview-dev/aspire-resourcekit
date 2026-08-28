@@ -4,7 +4,8 @@ solution := "src/ResourceKit.slnx"
 build_configuration := "Release"
 artifacts_folder := "./artifacts"
 default_test_filter := "/*/*/*/*/"
-pipeline_project := "build/Pipeline/Pipeline.csproj"
+pipeline_solution := "build/Pipeline.slnx"
+pipeline_project := "build/PipelineCLI/PipelineCLI.csproj"
 
 current_version := `node -p "require('./package.json').version"`
 
@@ -41,7 +42,7 @@ vs:
 
 # Open the solution in Visual Studio/ Registered application
 vs-pipeline:
-    open {{ pipeline_project }}
+    open {{ pipeline_solution }}
 
 #------- These are all pre-moving to Modular Pipelines --------
 

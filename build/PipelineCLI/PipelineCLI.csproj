@@ -1,18 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<OutputType>Exe</OutputType>
-		<TargetFramework>net10.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AssemblyName>Purview.Aspire.ResourceKit.Pipeline</AssemblyName>
-		<RootNamespace>Purview.Aspire.ResourceKit.Pipeline</RootNamespace>
-	</PropertyGroup>
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 		<PackageReference Include="ModularPipelines" />
 		<PackageReference Include="ModularPipelines.DotNet" />
 		<PackageReference Include="ModularPipelines.Git" />
 		<PackageReference Include="ModularPipelines.GitHub" />
+		<PackageReference Include="NuGet.Versioning" />
 	</ItemGroup>
 
 	<ItemGroup>

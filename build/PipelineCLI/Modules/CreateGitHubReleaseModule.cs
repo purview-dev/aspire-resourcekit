@@ -1,14 +1,11 @@
-using Microsoft.Extensions.Options;
 using ModularPipelines.Attributes;
 using ModularPipelines.Configuration;
 using ModularPipelines.Context;
 using ModularPipelines.GitHub.Extensions;
 using ModularPipelines.Models;
 using ModularPipelines.Modules;
-using Octokit;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
 
-namespace Purview.Aspire.ResourceKit.Pipeline.Modules;
+namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 
 [ModuleCategory("Release")]
 [DependsOn<PublishNuGetModule>]
@@ -44,6 +41,7 @@ public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings
 			);
 		}
 
+		// Create a new release on GitHub with the specified tag and generate release notes
 		return await context
 			.GitHub()
 			.Client.Repository.Release.Create(

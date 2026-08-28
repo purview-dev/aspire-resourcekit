@@ -1,33 +1,5 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using ModularPipelines;
-using ModularPipelines.Extensions;
-using Octokit;
-using Octokit.Internal;
-using Purview.Aspire.ResourceKit.Pipeline;
-using Purview.Aspire.ResourceKit.Pipeline.Modules;
-using Purview.Aspire.ResourceKit.Pipeline.Settings;
-
 var pipelineDirectory = PipelineProjectDirectory.Find();
-var repositoryRoot = FindRepositoryRoot(pipelineDirectory);
-
-static string FindRepositoryRoot(string startDirectory)
-{
-	var directory = new DirectoryInfo(startDirectory);
-	while (directory is not null)
-	{
-		if (File.Exists(Path.Combine(directory.FullName, "package.json")))
-		{
-			return directory.FullName;
-		}
-
-		directory = directory.Parent;
-	}
-
-	throw new InvalidOperationException("Could not locate the repository root (no package.json found).");
-}
+var repositoryRoot = PathHelpers.FindRepositoryRoot(pipelineDirectory);
 
 var builder = Pipeline.CreateBuilder(args);
 
