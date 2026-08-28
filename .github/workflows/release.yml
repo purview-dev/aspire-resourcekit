@@ -47,4 +47,4 @@ jobs:
         env:
           Release__ShouldPublish: true
           NuGet__ApiKey: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet run --project build/Pipeline/Pipeline.csproj --configuration Release
+        run: dotnet run --project build/PipelineCLI/PipelineCLI.csproj --configuration Release

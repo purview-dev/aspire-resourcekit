@@ -25,4 +25,4 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Run PR pipeline
-        run: dotnet run --project build/Pipeline/Pipeline.csproj --configuration Release
+        run: dotnet run --project build/PipelineCLI/PipelineCLI.csproj --configuration Release
