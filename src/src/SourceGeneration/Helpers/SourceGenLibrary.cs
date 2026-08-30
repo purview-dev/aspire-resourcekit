@@ -9,9 +9,14 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class SourceGenLibrary
 {
-	public static IncrementalValueProvider<KitGenerationModel> GetGeneratorValueProviders(
-		IncrementalGeneratorInitializationContext context
-	)
+	// The aggregate generation model (value-equatable) and the per-compilation execution context,
+	// kept separate so the context never participates in incremental output caching.
+	internal sealed record GeneratorPipelines(
+		IncrementalValueProvider<KitGenerationModel> Outputs,
+		IncrementalValueProvider<GenerationContext<KitGenerationCapabilities>> Context
+	);
+
+	public static GeneratorPipelines GetGeneratorValueProviders(IncrementalGeneratorInitializationContext context)
 	{
 		var generationContext = IncrementalPipeline.GenerationContextValueProvider<
 			KitGenerationCapabilities,
@@ -35,21 +40,15 @@ static class SourceGenLibrary
 		var provider = generationContext
 			.CollectWith(
 				hostKits,
-				static (context, hostKits, ct) =>
+				static (_, hostKits, _) =>
 				{
 					var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 					if (hostKits.Length > 1)
 					{
-						diagnostics.Add(
-							DiagnosticInfo.Create(
-								DiagnosticLibrary.MultipleHostKitsFoundInfo,
-								hostKits.Where(m => !m.IsEmpty).Select(m => m.Value.SyntaxRef),
-								ct
-							)
-						);
+						diagnostics.AddRange(hostKits.Where(m => !m.IsEmpty).Select(m => m.Value.Location));
 					}
 
-					return new KitGenerationModel(context, hostKits, diagnostics.ToImmutable())
+					return new KitGenerationModel(hostKits, diagnostics.ToImmutable())
 					{
 						HostKit = hostKits.FirstOrDefault(),
 					};
@@ -62,7 +61,7 @@ static class SourceGenLibrary
 				GeneratorTrackingNames.CollectResourceKits
 			);
 
-		return provider;
+		return new(provider, generationContext);
 	}
 
 	static Func<
@@ -75,11 +74,9 @@ static class SourceGenLibrary
 		{
 			ConcurrentDictionary<string, int> seenPropertyNames = new(StringComparer.Ordinal);
 			var groupedResourceKits = resourceKits
+				.Where(r => !r.IsEmpty)
 				.GroupBy(r =>
 				{
-					if (r.IsEmpty)
-						return "<<missing-value>>";
-
 					if (r.Value.ResourceKitType.IsGlobalNamespace)
 						return "<<global-namespace>>";
 
@@ -89,7 +86,12 @@ static class SourceGenLibrary
 					// Use the namespace of the target type as the key for grouping
 					return r.Value.ResourceKitType.Namespace!;
 				})
-				.ToImmutableDictionary(static g => g.Key, static g => g.ToImmutableArray());
+				.OrderBy(g => g.Key, StringComparer.Ordinal)
+				.Select(g => new ResourceKitGroup(
+					g.Key,
+					EquatableArray<GeneratorResult<ResourceKitModel>>.Create([.. g])
+				))
+				.ToArray();
 
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -114,7 +116,7 @@ static class SourceGenLibrary
 
 			return outputContext with
 			{
-				ResourceKits = groupedResourceKits,
+				ResourceKits = EquatableArray<ResourceKitGroup>.Create(groupedResourceKits),
 			};
 		};
 
@@ -196,14 +198,17 @@ static class SourceGenLibrary
 		TypeIdentity hostKitType = new(symbol);
 		var optionsType = data.GenerateOptions ? hostKitType.Nested(hostKitType.Name + "Options") : TypeIdentity.Empty;
 
-		return GeneratorResult<HostKitModel>.Ok(
+		return GeneratorResult<HostKitModel>.Create(
 			new(
 				HostKitType: hostKitType,
 				OptionsType: optionsType,
 				ResourceKitBaseType: TypeLibrary.ResourceKitBase,
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName,
-				SyntaxRef: classDeclaration.GetReference()
+				Location: DiagnosticInfo.Create(
+					DiagnosticLibrary.MultipleHostKitsFoundInfo,
+					classDeclaration.GetLocation()
+				)
 			),
 			diagnostics.ToImmutable()
 		);
@@ -227,14 +232,12 @@ static class SourceGenLibrary
 			hasExplicitBaseType && TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.ResourceKitBase);
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
 		var propertyName = matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes)!;
-
-		var aspireResourceTypeSymbol = matchedAttribute.Instance.AspireResourceType;
-		if (matchedAttribute.Instance.AspireResourceType is null)
-			aspireResourceTypeSymbol = ResolveAspireResourceTypeFromBaseClass(symbol, aspireResourceTypeSymbol);
+		var aspireResourceType = matchedAttribute.Instance.AspireResourceType;
+		if (aspireResourceType == TypeIdentity.Empty)
+			aspireResourceType = ResolveAspireResourceTypeFromBaseClass(symbol, aspireResourceType);
 
 		TypeIdentity resourceKitType = new(symbol);
 		var optionsType = resourceKitType.Nested(symbol.Name + "Options");
-		var aspireResourceType = aspireResourceTypeSymbol is null ? TypeIdentity.Empty : new(aspireResourceTypeSymbol);
 
 		var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 		if (allAttributes.Length > 1)
@@ -298,7 +301,7 @@ static class SourceGenLibrary
 			);
 		}
 
-		return GeneratorResult<ResourceKitModel>.Ok(
+		return GeneratorResult<ResourceKitModel>.Create(
 			new(
 				ResourceKitType: resourceKitType,
 				OptionsType: optionsType,
@@ -306,16 +309,15 @@ static class SourceGenLibrary
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				PropertyName: propertyName,
 				ResourceName: resourceName ?? "<unknown>",
-				HasExplicitBaseType: hasExplicitBaseType,
-				SyntaxRef: context.TargetNode.GetReference()
+				HasExplicitBaseType: hasExplicitBaseType
 			),
 			diagnostics.ToImmutable()
 		);
 	}
 
-	static INamedTypeSymbol? ResolveAspireResourceTypeFromBaseClass(
+	static TypeIdentity ResolveAspireResourceTypeFromBaseClass(
 		INamedTypeSymbol symbol,
-		INamedTypeSymbol? aspireResourceTypeSymbol
+		TypeIdentity aspireResourceTypeSymbol
 	)
 	{
 		if (symbol.BaseType is null || symbol.BaseType.TypeParameters.Length == 0)
@@ -327,7 +329,7 @@ static class SourceGenLibrary
 			{
 				var t = new TypeIdentity(@interface);
 				if (t == TypeLibrary.IResource)
-					return (INamedTypeSymbol)param;
+					return new(param);
 			}
 		}
 

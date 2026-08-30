@@ -1,4 +1,5 @@
 using ModularPipelines.Attributes;
+using ModularPipelines.Configuration;
 using ModularPipelines.Context;
 using ModularPipelines.DotNet.Extensions;
 using ModularPipelines.DotNet.Options;
@@ -10,8 +11,21 @@ namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 [ModuleCategory("Build")]
 [DependsOn<BuildModule>]
 [DependsOn<VersionModule>]
-public class PackModule(IOptions<BuildSettings> settings) : Module<CommandResult>
+public sealed class PackModule(IOptions<BuildSettings> settings, IOptions<ReleaseSettings> releaseSettings)
+	: Module<CommandResult>
 {
+	protected override ModuleConfiguration Configure() =>
+		ModuleConfiguration
+			.Create()
+			.WithSkipWhen(_ =>
+				releaseSettings.Value.Mode != ReleaseMode.None
+					? SkipDecision.DoNotSkip
+					: SkipDecision.Skip(
+						"Packing is disabled. Set Release__Mode to something other than None to enable it."
+					)
+			)
+			.Build();
+
 	protected override async Task<CommandResult?> ExecuteAsync(
 		IModuleContext context,
 		CancellationToken cancellationToken

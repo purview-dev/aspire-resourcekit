@@ -9,5 +9,14 @@ public sealed record GitHubSettings
 	[SecretValue]
 	public string? AccessToken { get; init; }
 
-	public string ProductHeader { get; init; } = "Purview.Aspire.ResourceKit.Pipeline";
+	[SecretValue]
+	[ConfigurationKeyName("GITHUB_TOKEN")]
+	public string? EnvAccessToken { get; init; }
+
+	public string ProductHeader { get; init; } = "Purview.SourceGeneratorFramework.Pipeline";
+
+	public string? GetGitHubToken() =>
+		!string.IsNullOrWhiteSpace(AccessToken) ? AccessToken
+		: !string.IsNullOrWhiteSpace(EnvAccessToken) ? EnvAccessToken
+		: null;
 }

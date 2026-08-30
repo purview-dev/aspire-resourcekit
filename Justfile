@@ -13,20 +13,32 @@ current_version := `node -p "require('./package.json').version"`
 default:
     just --list
 
-# Run the PR pipeline (restore, build, lint, unit tests)
+# Run the PR pipeline (restore, build, lint, tests)
+[group('Pipeline')]
 pipeline-pr *args:
     echo "Running PR pipeline..."
     dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} {{ args }}
 
+# Run the build pipeline (restore, build, lint)
+[group('Pipeline')]
+pipeline-build *args:
+    echo "Running build pipeline..."
+    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Build:RunTests=false --Release:Mode=None {{ args }} 
+
 # Run the release pipeline (restore, build, lint, tests, pack, publish, GitHub release)
+[group('Pipeline')]
 pipeline-release *args:
     echo "Running release pipeline..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Release__ShouldPublish=true {{ args }}
+    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Release:Mode=NuGet {{ args }}
 
-# Run the pipeline with integration tests enabled
-pipeline-integration *args:
-    echo "Running pipeline with integration tests..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Build__RunIntegrationTests=true {{ args }}
+# Run the release pipeline (restore, build, lint, tests, pack, local nuget publish)
+# Note: `just` runs recipes through the shell, which strips backslashes from unquoted arguments.
+# Always use forward slashes for the feed path, e.g.
+# just pipeline-local-release --PublishLocalNuGet:LocalFeedPath=p:/_sync-projects/.local-nuget/
+[group('Pipeline')]
+pipeline-local-release *args:
+    echo "Running local release pipeline..."
+    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Release:Mode=LocalNuGet {{ args }}
 
 # Fix code formatting issues using CSharpier
 lint-fix *args:

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Local-NuGet": {
+      "commandName": "Project",
+      "commandLineArgs": "--Release:Mode=LocalNuGet\r\n--PublishLocalNuGet:LocalFeedPath=p:\\_sync-projects\\.local-nuget\\"
+    }
+  }
+}

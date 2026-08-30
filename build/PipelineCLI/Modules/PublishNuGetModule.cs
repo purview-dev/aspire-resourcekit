@@ -20,15 +20,17 @@ public class PublishNuGetModule(
 		ModuleConfiguration
 			.Create()
 			.WithSkipWhen(_ =>
-				releaseSettings.Value.ShouldPublish
+				releaseSettings.Value.Mode == ReleaseMode.NuGet
 					? SkipDecision.DoNotSkip
 					: SkipDecision.Skip(
-						"Release publishing is disabled. Set Release__ShouldPublish=true to publish packages."
+						"Release publishing is disabled. Set Release__Mode=NuGet to publish packages to nuget.org."
 					)
 			)
 			.WithSkipWhen(_ =>
-				string.IsNullOrWhiteSpace(nugetSettings.Value.APIKey)
-					? SkipDecision.Skip("NuGet API key is not set. Set NuGet__APIKey to publish packages.")
+				string.IsNullOrWhiteSpace(nugetSettings.Value.GetNuGetAPIKey())
+					? SkipDecision.Skip(
+						"NuGet API key is not set. Set NuGet__APIKey or NUGET_APIKEY to publish packages."
+					)
 					: SkipDecision.DoNotSkip
 			)
 			.Build();
@@ -55,7 +57,7 @@ public class PublishNuGetModule(
 					{
 						Path = package,
 						Source = nugetSettings.Value.FeedUrl,
-						ApiKey = nugetSettings.Value.APIKey,
+						ApiKey = nugetSettings.Value.GetNuGetAPIKey(),
 						SkipDuplicate = true,
 					},
 					cancellationToken: cancellationToken

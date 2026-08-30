@@ -73,6 +73,7 @@ public abstract class ResourceKitSourceGeneratorTestBase<TGenerator>
 
 		var opts = options with
 		{
+			CompileToAssembly = true,
 			AdditionalNamespaces = [.. additionalNamespaces],
 			AdditionalAssemblyTypes = [.. additionalTypes],
 			AdditionalReferences = AspireReferences(),

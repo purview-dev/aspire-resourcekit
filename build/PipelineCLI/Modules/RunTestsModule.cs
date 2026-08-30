@@ -27,18 +27,15 @@ public class RunTestsModule(IOptions<BuildSettings> settings) : Module<CommandRe
 		CancellationToken cancellationToken
 	)
 	{
-		var testProjects = Directory
-			.EnumerateFiles("src/tests", "*.Tests.csproj", SearchOption.AllDirectories)
-			.ToList();
-
+		var testProjects = Directory.EnumerateFiles("src/tests", "*Tests.csproj", SearchOption.AllDirectories).ToList();
 		if (testProjects.Count == 0)
 		{
+			context.Logger.LogWarning(
+				"No test projects found in 'src/tests', despite tests being enabled. Skipping test execution."
+			);
+
 			return [];
 		}
-
-		var testFilter = settings.Value.RunIntegrationTests
-			? settings.Value.IntegrationTestFilter
-			: settings.Value.UnitTestFilter;
 
 		var tasks = testProjects.Select(project =>
 			context
@@ -50,7 +47,7 @@ public class RunTestsModule(IOptions<BuildSettings> settings) : Module<CommandRe
 						Configuration = settings.Value.Configuration,
 						NoBuild = true,
 						NoRestore = true,
-						Arguments = ["--ignore-exit-code", "8", "--treenode-filter", testFilter],
+						Arguments = ["--ignore-exit-code", "8", "--treenode-filter", settings.Value.TestFilter],
 					},
 					cancellationToken: cancellationToken
 				)
