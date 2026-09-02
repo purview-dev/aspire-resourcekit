@@ -45,6 +45,7 @@ jobs:
       - name: Run release pipeline
         if: steps.version.outputs.should_publish == 'true'
         env:
-          Release__ShouldPublish: true
+          Release__Mode: NuGet
+          Build__TestFilter: "/*/*/*/*[Category=Unit]"
           NuGet__ApiKey: ${{ secrets.NUGET_API_KEY }}
         run: dotnet run --project build/PipelineCLI/PipelineCLI.csproj --configuration Release
