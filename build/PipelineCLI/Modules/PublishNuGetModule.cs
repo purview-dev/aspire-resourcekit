@@ -21,9 +21,8 @@ public class PublishNuGetModule(
 			.Create()
 			.WithSkipWhen(_ =>
 				releaseSettings.Value.Mode != ReleaseMode.NuGet
-				|| string.IsNullOrWhiteSpace(nugetSettings.Value.GetNuGetAPIKey())
 					? SkipDecision.Skip(
-						"NuGet publishing is disabled. Set Release__Mode=NuGet and NuGet__ApiKey (or NUGET_APIKEY) to publish packages to nuget.org."
+						"NuGet publishing is disabled. Set Release__Mode=NuGet to publish packages to nuget.org."
 					)
 					: SkipDecision.DoNotSkip
 			)
@@ -34,6 +33,15 @@ public class PublishNuGetModule(
 		CancellationToken cancellationToken
 	)
 	{
+		var apiKey = nugetSettings.Value.GetNuGetAPIKey();
+		if (string.IsNullOrWhiteSpace(apiKey))
+		{
+			throw new InvalidOperationException(
+				"NuGet publishing is enabled (Release__Mode=NuGet) but no API key is configured. "
+					+ "Set NuGet__ApiKey (or NuGet__NUGET_APIKEY), or configure the NUGET__APIKEY secret in CI."
+			);
+		}
+
 		var artifactsFolder = buildSettings.Value.ArtifactsFolder;
 		if (!Directory.Exists(artifactsFolder))
 		{
@@ -58,7 +66,7 @@ public class PublishNuGetModule(
 					{
 						Path = package,
 						Source = nugetSettings.Value.FeedUrl,
-						ApiKey = nugetSettings.Value.GetNuGetAPIKey(),
+						ApiKey = apiKey,
 						SkipDuplicate = true,
 					},
 					cancellationToken: cancellationToken
