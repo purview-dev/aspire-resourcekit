@@ -140,7 +140,8 @@ partial class CodeGenEmiiter
 
 		foreach (
 			var resourceKit in context
-				.Model.ResourceKits.SelectMany(r => r.Value)
+				.Model.ResourceKits.AsImmutableArray()
+				.SelectMany(r => r.Items.AsImmutableArray())
 				.Where(m => m.ShouldProcess)
 				.Select(m => m.Value)
 		)
@@ -205,7 +206,9 @@ partial class CodeGenEmiiter
 		{
 			context.Writer.WriteLine(TypeLibrary.ArgumentNullException.StaticMember("ThrowIfNull(builder);")).NewLine();
 
-			foreach (var resourceKit in context.ResourceKits.SelectMany(r => r.Value))
+			foreach (
+				var resourceKit in context.ResourceKits.AsImmutableArray().SelectMany(r => r.Items.AsImmutableArray())
+			)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
@@ -233,7 +236,11 @@ partial class CodeGenEmiiter
 			else
 			{
 				context.Writer.Comment("Register the discovered app resources with the base class.");
-				foreach (var resourceKit in context.ResourceKits.SelectMany(r => r.Value))
+				foreach (
+					var resourceKit in context
+						.ResourceKits.AsImmutableArray()
+						.SelectMany(r => r.Items.AsImmutableArray())
+				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 					context.Writer.WriteInvocationLine("AddResource", [$"{resourceKit.PropertyName}"]);
@@ -308,7 +315,11 @@ partial class CodeGenEmiiter
 
 			if (context.HasResourceKits)
 			{
-				foreach (var resourceKit in context.ResourceKits.SelectMany(r => r.Value))
+				foreach (
+					var resourceKit in context
+						.ResourceKits.AsImmutableArray()
+						.SelectMany(r => r.Items.AsImmutableArray())
+				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 

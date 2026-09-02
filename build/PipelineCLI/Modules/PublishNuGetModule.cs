@@ -20,15 +20,11 @@ public class PublishNuGetModule(
 		ModuleConfiguration
 			.Create()
 			.WithSkipWhen(_ =>
-				releaseSettings.Value.ShouldPublish
-					? SkipDecision.DoNotSkip
-					: SkipDecision.Skip(
-						"Release publishing is disabled. Set Release__ShouldPublish=true to publish packages."
+				releaseSettings.Value.Mode != ReleaseMode.NuGet
+				|| string.IsNullOrWhiteSpace(nugetSettings.Value.GetNuGetAPIKey())
+					? SkipDecision.Skip(
+						"NuGet publishing is disabled. Set Release__Mode=NuGet and NuGet__ApiKey (or NUGET_APIKEY) to publish packages to nuget.org."
 					)
-			)
-			.WithSkipWhen(_ =>
-				string.IsNullOrWhiteSpace(nugetSettings.Value.APIKey)
-					? SkipDecision.Skip("NuGet API key is not set. Set NuGet__APIKey to publish packages.")
 					: SkipDecision.DoNotSkip
 			)
 			.Build();
@@ -38,9 +34,16 @@ public class PublishNuGetModule(
 		CancellationToken cancellationToken
 	)
 	{
-		var packages = Directory
-			.EnumerateFiles(buildSettings.Value.ArtifactsFolder, "*.nupkg", SearchOption.TopDirectoryOnly)
-			.ToList();
+		var artifactsFolder = buildSettings.Value.ArtifactsFolder;
+		if (!Directory.Exists(artifactsFolder))
+		{
+			throw new InvalidOperationException(
+				$"The artifacts folder '{artifactsFolder}' does not exist. "
+					+ "Ensure the pack step ran (Release__Mode must not be None) before publishing."
+			);
+		}
+
+		var packages = Directory.EnumerateFiles(artifactsFolder, "*.nupkg", SearchOption.TopDirectoryOnly).ToList();
 
 		if (packages.Count == 0)
 		{
@@ -55,7 +58,7 @@ public class PublishNuGetModule(
 					{
 						Path = package,
 						Source = nugetSettings.Value.FeedUrl,
-						ApiKey = nugetSettings.Value.APIKey,
+						ApiKey = nugetSettings.Value.GetNuGetAPIKey(),
 						SkipDuplicate = true,
 					},
 					cancellationToken: cancellationToken

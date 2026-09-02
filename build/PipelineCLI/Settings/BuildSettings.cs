@@ -6,6 +6,8 @@ public sealed class BuildSettings
 {
 	public const string SectionName = "Build";
 
+	public LogLevel LogLevel { get; init; } = LogLevel.Warning;
+
 	[Required(AllowEmptyStrings = false)]
 	public string Solution { get; init; } = "src/ResourceKit.slnx";
 
@@ -17,11 +19,16 @@ public sealed class BuildSettings
 
 	public bool RunTests { get; init; } = true;
 
-	public bool RunIntegrationTests { get; init; }
-
 	[Required(AllowEmptyStrings = false)]
-	public string IntegrationTestFilter { get; init; } = "/*/*/*/*[Category=Integration]";
+	public string TestFilter { get; init; } = "/*/*/*/*/";
 
-	[Required(AllowEmptyStrings = false)]
-	public string UnitTestFilter { get; init; } = "/*/*/*/*[Category=Unit]";
+	/// <summary>
+	/// Comma-separated list of test project file names (or glob patterns) to run.
+	/// Empty or "*" runs every test project under <c>src/tests</c>.
+	/// </summary>
+	public string TestProjects { get; init; } = "*";
+
+	public bool RunLint { get; init; } = true;
+
+	public bool RunPack { get; init; } = true;
 }

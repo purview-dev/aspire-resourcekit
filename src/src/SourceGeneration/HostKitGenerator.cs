@@ -23,13 +23,18 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				}
 			});
 
-		var valueProvider = SourceGenLibrary.GetGeneratorValueProviders(context);
+		var pipelines = SourceGenLibrary.GetGeneratorValueProviders(context);
+
+		var outputProvider = pipelines
+			.Outputs.Combine(pipelines.Context)
+			.WithComparer(KitGenerationModelComparer.Instance);
 
 		context.RegisterSourceOutput(
-			valueProvider,
-			(sourceProductionContext, generationModel) =>
+			outputProvider,
+			(sourceProductionContext, combined) =>
 			{
-				if (generationModel.Context.Settings.IsSourceGeneratorDisabled)
+				var (generationModel, generationContext) = combined;
+				if (generationContext.Settings.IsSourceGeneratorDisabled)
 					return;
 
 				// If there are any fatal diagnostics, report them and skip generation
@@ -39,14 +44,17 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					return;
 
 				var validResourceKits = generationModel
-					.ResourceKits.Select(m => new KeyValuePair<string, ImmutableArray<ResourceKitModel>>(
-						m.Key,
-						[.. m.Value.Where(m => m.ShouldProcess).Select(m => m.Value)]
+					.ResourceKits.AsImmutableArray()
+					.Select(m => new ResourceKitModelGroup(
+						m.Namespace,
+						EquatableArray<ResourceKitModel>.Create([
+							.. m.Items.AsImmutableArray().Where(m => m.ShouldProcess).Select(m => m.Value),
+						])
 					))
-					.ToImmutableDictionary();
+					.ToImmutableArray();
 
 				var writer = CodeGenEmiiter.Emit(
-					new(generationModel, validResourceKits),
+					new(generationModel, validResourceKits, generationContext),
 					sourceProductionContext.CancellationToken
 				);
 				var hintName = HintNameHelper.ForHost(generationModel.HostKit.Value.HostKitType.MetadataFullName);

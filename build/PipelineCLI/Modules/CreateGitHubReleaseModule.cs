@@ -10,17 +10,19 @@ namespace Purview.Aspire.ResourceKit.PipelineCLI.Modules;
 [ModuleCategory("Release")]
 [DependsOn<PublishNuGetModule>]
 [DependsOn<VersionModule>]
-public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings) : Module<Release?>
+public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings, IOptions<GitHubSettings> gitSettings)
+	: Module<Release?>
 {
 	protected override ModuleConfiguration Configure() =>
 		ModuleConfiguration
 			.Create()
 			.WithSkipWhen(_ =>
-				releaseSettings.Value.ShouldPublish
-					? SkipDecision.DoNotSkip
-					: SkipDecision.Skip(
-						"Release publishing is disabled. Set Release__ShouldPublish=true to create a GitHub release."
+				releaseSettings.Value.Mode is not (ReleaseMode.NuGet or ReleaseMode.GitHubRelease)
+				|| string.IsNullOrWhiteSpace(gitSettings.Value.GetGitHubToken())
+					? SkipDecision.Skip(
+						"GitHub release creation is disabled. Set Release__Mode=NuGet (or GitHubRelease) and GITHUB_TOKEN to create a GitHub release."
 					)
+					: SkipDecision.DoNotSkip
 			)
 			.Build();
 

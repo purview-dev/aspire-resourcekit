@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 [Generate("Purview.Aspire.ResourceKit.HostKitAttribute")]
@@ -27,5 +25,5 @@ readonly partial record struct ResourceDefinitionAttributeData(
 	// For the ctor
 	[Argument("propertyName")]
 		string? PropertyName,
-	[GenericTypeArgument] INamedTypeSymbol? AspireResourceType
+	[GenericTypeArgument] TypeIdentity AspireResourceType
 );

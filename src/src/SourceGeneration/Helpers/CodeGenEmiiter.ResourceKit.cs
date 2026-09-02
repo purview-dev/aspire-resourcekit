@@ -14,13 +14,16 @@ partial class CodeGenEmiiter
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
-			if (resourceKitGroup.Value.IsDefaultOrEmpty)
+			if (resourceKitGroup.Items.IsEmpty)
 			{
-				context.Info("No resource kits found for group: {0}", resourceKitGroup.Key ?? "<global-namespace>");
+				context.Info(
+					"No resource kits found for group: {0}",
+					resourceKitGroup.Namespace ?? "<global-namespace>"
+				);
 				continue;
 			}
 
-			var resourceKitForNS = resourceKitGroup.Value.FirstOrDefault();
+			var resourceKitForNS = resourceKitGroup.Items.AsImmutableArray().FirstOrDefault();
 
 			using var resourceNs = context.Writer.WriteBlockNamespaceScope(resourceKitForNS.ResourceKitType);
 			context.Debug(
@@ -28,7 +31,7 @@ partial class CodeGenEmiiter
 				1
 			);
 
-			foreach (var resourceKit in resourceKitGroup.Value)
+			foreach (var resourceKit in resourceKitGroup.Items)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
