@@ -47,5 +47,6 @@ jobs:
         env:
           Release__Mode: NuGet
           Build__TestFilter: "/*/*/*/*[Category=Unit]"
-          NuGet__ApiKey: ${{ secrets.NUGET_API_KEY }}
+          NuGet__ApiKey: ${{ secrets.NUGET__APIKEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: dotnet run --project build/PipelineCLI/PipelineCLI.csproj --configuration Release

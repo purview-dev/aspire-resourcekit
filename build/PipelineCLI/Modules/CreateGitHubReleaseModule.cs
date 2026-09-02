@@ -18,9 +18,8 @@ public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings
 			.Create()
 			.WithSkipWhen(_ =>
 				releaseSettings.Value.Mode is not (ReleaseMode.NuGet or ReleaseMode.GitHubRelease)
-				|| string.IsNullOrWhiteSpace(gitSettings.Value.GetGitHubToken())
 					? SkipDecision.Skip(
-						"GitHub release creation is disabled. Set Release__Mode=NuGet (or GitHubRelease) and GITHUB_TOKEN to create a GitHub release."
+						"GitHub release creation is disabled. Set Release__Mode=NuGet or Release__Mode=GitHubRelease to create a GitHub release."
 					)
 					: SkipDecision.DoNotSkip
 			)
@@ -28,6 +27,14 @@ public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings
 
 	protected override async Task<Release?> ExecuteAsync(IModuleContext context, CancellationToken cancellationToken)
 	{
+		if (string.IsNullOrWhiteSpace(gitSettings.Value.GetGitHubToken()))
+		{
+			throw new InvalidOperationException(
+				"GitHub release creation is enabled (Release__Mode=NuGet or GitHubRelease) but no token is configured. "
+					+ "Set GitHub__AccessToken or GITHUB_TOKEN to create a GitHub release."
+			);
+		}
+
 		var versionResult = await context.GetModule<VersionModule>();
 		var version =
 			versionResult.ValueOrDefault
