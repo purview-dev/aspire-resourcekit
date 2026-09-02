@@ -3,10 +3,9 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>[1.65.63,)</TUnitVersion>
 		<ModularPipelinesVersion>[3.2.8,)</ModularPipelinesVersion>
-		<PurviewSourceGeneratorFrameworkVersion>[1.0.0-prerelease.26,)</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSourceGeneratorFrameworkVersion>[1.0.0-prerelease.27,)</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageVersion Include="NuGet.Packaging" Version="[7.9.0,)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="[5.9.0,)" />
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.4.6" />

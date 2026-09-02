@@ -13,10 +13,20 @@ public sealed record GitHubSettings
 	[ConfigurationKeyName("GITHUB_TOKEN")]
 	public string? EnvAccessToken { get; init; }
 
-	public string ProductHeader { get; init; } = "Purview.SourceGeneratorFramework.Pipeline";
+	public string ProductHeader { get; init; } = "Purview.Aspire.ResourceKit.Pipeline";
 
-	public string? GetGitHubToken() =>
-		!string.IsNullOrWhiteSpace(AccessToken) ? AccessToken
-		: !string.IsNullOrWhiteSpace(EnvAccessToken) ? EnvAccessToken
-		: null;
+	public string? GetGitHubToken()
+	{
+		if (!string.IsNullOrWhiteSpace(AccessToken))
+			return AccessToken;
+
+		if (!string.IsNullOrWhiteSpace(EnvAccessToken))
+			return EnvAccessToken;
+
+		// GitHub Actions provisions the automatic GITHUB_TOKEN as a plain environment variable.
+		// The config binder keys it under the "GitHub" section (GitHub:GITHUB_TOKEN), which the
+		// standard GITHUB_TOKEN env var does not map to, so read it directly as a fallback.
+		var processToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+		return string.IsNullOrWhiteSpace(processToken) ? null : processToken;
+	}
 }

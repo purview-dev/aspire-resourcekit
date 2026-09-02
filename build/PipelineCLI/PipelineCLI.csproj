@@ -6,8 +6,6 @@
 		<PackageReference Include="ModularPipelines.GitHub" />
 		<PackageReference Include="NuGet.Packaging" />
 		<PackageReference Include="NuGet.Versioning" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 	</ItemGroup>
 
 	<ItemGroup>

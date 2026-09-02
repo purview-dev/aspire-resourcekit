@@ -17,16 +17,10 @@ public class CreateGitHubReleaseModule(IOptions<ReleaseSettings> releaseSettings
 		ModuleConfiguration
 			.Create()
 			.WithSkipWhen(_ =>
-				releaseSettings.Value.Mode is ReleaseMode.NuGet or ReleaseMode.GitHubRelease
-					? SkipDecision.DoNotSkip
-					: SkipDecision.Skip(
-						"Release publishing is disabled. Set Release__Mode=GitHubRelease or Release__Mode=NuGet to create a GitHub release."
-					)
-			)
-			.WithSkipWhen(_ =>
-				string.IsNullOrWhiteSpace(gitSettings.Value.GetGitHubToken())
+				releaseSettings.Value.Mode is not (ReleaseMode.NuGet or ReleaseMode.GitHubRelease)
+				|| string.IsNullOrWhiteSpace(gitSettings.Value.GetGitHubToken())
 					? SkipDecision.Skip(
-						"GitHub access token is not configured. Set GitHub__AccessToken or GITHUB_TOKEN to create a GitHub release."
+						"GitHub release creation is disabled. Set Release__Mode=NuGet (or GitHubRelease) and GITHUB_TOKEN to create a GitHub release."
 					)
 					: SkipDecision.DoNotSkip
 			)
