@@ -1,0 +1,11 @@
+{
+	"Build": {
+		"Solution": "src/ResourceKit.slnx",
+		"TestRoot": "src/tests",
+		"TestPatterns": "*Tests.csproj",
+		"TestFilter": "/*/*/*/*[Category=Unit]"
+	},
+	"Release": {
+		"Mode": "None"
+	}
+}

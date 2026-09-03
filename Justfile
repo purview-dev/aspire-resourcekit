@@ -4,8 +4,9 @@ solution := "src/ResourceKit.slnx"
 build_configuration := "Release"
 artifacts_folder := "./artifacts"
 default_test_filter := "/*/*/*/*/"
-pipeline_solution := "build/Pipeline.slnx"
-pipeline_project := "build/PipelineCLI/PipelineCLI.csproj"
+pipeline_version := "0.2.1"
+pipeline_feed := "https://api.nuget.org/v3/index.json"
+pipeline_tool := ".tools/purview-build/purview-build"
 
 current_version := `node -p "require('./package.json').version"`
 
@@ -13,32 +14,43 @@ current_version := `node -p "require('./package.json').version"`
 default:
     just --list
 
+# Install the shared Purview.Build tool (authenticated to the Purview-Dev feed) if not present
+[private]
+ensure-pipeline-tool:
+    if [ ! -x "{{ pipeline_tool }}" ]; then \
+        dotnet tool install Purview.Build --tool-path .tools/purview-build --add-source "{{ pipeline_feed }}" --version "{{ pipeline_version }}"; \
+    fi
+
 # Run the PR pipeline (restore, build, lint, tests)
 [group('Pipeline')]
 pipeline-pr *args:
+    just ensure-pipeline-tool
     echo "Running PR pipeline..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} {{ args }}
+    "{{ pipeline_tool }}" {{ args }}
 
 # Run the build pipeline (restore, build, lint)
 [group('Pipeline')]
 pipeline-build *args:
+    just ensure-pipeline-tool
     echo "Running build pipeline..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Build:RunTests=false --Release:Mode=None {{ args }} 
+    "{{ pipeline_tool }}" --Build:RunTests=false --Release:Mode=None {{ args }}
 
 # Run the release pipeline (restore, build, lint, tests, pack, publish, GitHub release)
 [group('Pipeline')]
 pipeline-release *args:
+    just ensure-pipeline-tool
     echo "Running release pipeline..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Release:Mode=NuGet {{ args }}
+    "{{ pipeline_tool }}" --Release:Mode=NuGet {{ args }}
 
 # Run the release pipeline (restore, build, lint, tests, pack, local nuget publish)
 # Note: `just` runs recipes through the shell, which strips backslashes from unquoted arguments.
-# Always use forward slashes for the feed path, e.g.
+# Use the LOCAL_NUGET_FEED_PATH environment variable or forward slashes, e.g.
 # just pipeline-local-release --PublishLocalNuGet:LocalFeedPath=p:/_sync-projects/.local-nuget/
 [group('Pipeline')]
 pipeline-local-release *args:
+    just ensure-pipeline-tool
     echo "Running local release pipeline..."
-    dotnet run --project {{ pipeline_project }} --configuration {{ build_configuration }} -- --Release:Mode=LocalNuGet {{ args }}
+    "{{ pipeline_tool }}" --Release:Mode=LocalNuGet {{ args }}
 
 # Fix code formatting issues using CSharpier
 lint-fix *args:
@@ -51,10 +63,6 @@ version:
 # Open the solution in Visual Studio/ Registered application
 vs:
     open {{ solution }}
-
-# Open the solution in Visual Studio/ Registered application
-vs-pipeline:
-    open {{ pipeline_solution }}
 
 #------- These are all pre-moving to Modular Pipelines --------
 

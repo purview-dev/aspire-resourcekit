@@ -2,7 +2,6 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>[1.65.63,)</TUnitVersion>
-		<ModularPipelinesVersion>[3.2.8,)</ModularPipelinesVersion>
 		<PurviewSourceGeneratorFrameworkVersion>[1.0.0-prerelease.30,)</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
@@ -36,8 +35,6 @@
 			Version="[4.13.0]"
 			Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0' Or '$(TargetFramework)' == 'net10.0'"
 		/>
-		<PackageVersion Include="NuGet.Packaging" Version="[7.9.0,)" />
-		<PackageVersion Include="NuGet.Versioning" Version="[7.9.0,)" />
 		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="[10.8.0,)" />
 		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="[4.4.0,)" />
 		<PackageVersion
@@ -48,10 +45,6 @@
 			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
 			Version="$(PurviewSourceGeneratorFrameworkVersion)"
 		/>
-		<PackageVersion Include="ModularPipelines" Version="$(ModularPipelinesVersion)" />
-		<PackageVersion Include="ModularPipelines.DotNet" Version="$(ModularPipelinesVersion)" />
-		<PackageVersion Include="ModularPipelines.Git" Version="$(ModularPipelinesVersion)" />
-		<PackageVersion Include="ModularPipelines.GitHub" Version="$(ModularPipelinesVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
