@@ -59,7 +59,7 @@ partial class CodeGenEmiiter
 									new("hostKit", context.HostKit.HostKitType),
 									context.HostKit.ShouldGenerateOptions
 										? new("options", resourceKit.OptionsType)
-										: new("name", PurviewTypeLibrary.System.String.MakeNullable()),
+										: new("name", PurviewTypeLibrary.System.String.MakeNullable(context.Writer)),
 								],
 								Initializer = context.HostKit.ShouldGenerateOptions
 									? "base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"

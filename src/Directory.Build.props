@@ -25,6 +25,5 @@
 	<ItemGroup Label="NuGet package assets" Condition="'$(IsPackable)' == 'true'">
 		<None Include="$(MSBuildThisFileDirectory)/../LICENSE.md" Link="Sdk/LICENSE.md" />
 		<None Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo.jpg" Link="Sdk/purview-logo.jpg" />
-		<None Include="$(MSBuildThisFileDirectory)/../README.md" Link="Sdk/README.md" />
 	</ItemGroup>
 </Project>

@@ -19,15 +19,18 @@ partial class CodeGenEmiiter
 				"onBuilt",
 				TypeLibrary
 					.Action.MakeGeneric(context.HostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)
-					.MakeNullable()
+					.MakeNullable(context.Writer)
 			)
 		);
 		primaryConstructorParameters.Add(
-			new("onConfigured", TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable())
+			new(
+				"onConfigured",
+				TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable(context.Writer)
+			)
 		);
 
 		if (context.HostKit.ShouldGenerateOptions)
-			primaryConstructorParameters.Add(new("options", context.HostKit.OptionsType.MakeNullable()));
+			primaryConstructorParameters.Add(new("options", context.HostKit.OptionsType.MakeNullable(context.Writer)));
 
 		using (
 			context
@@ -121,7 +124,7 @@ partial class CodeGenEmiiter
 									Parameters =
 									[
 										new("hostKit", context.Model.HostKit.Value.HostKitType),
-										new("name", PurviewTypeLibrary.System.String.MakeNullable()),
+										new("name", PurviewTypeLibrary.System.String.MakeNullable(context.Writer)),
 									],
 									Initializer = $"base(hostKit, name)",
 								},

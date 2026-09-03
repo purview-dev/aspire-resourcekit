@@ -69,12 +69,12 @@ partial class CodeGenEmiiter
 				"onBuilt",
 				TypeLibrary
 					.Action.MakeGeneric(context.HostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)
-					.MakeNullable()
+					.MakeNullable(writer)
 			)
 			{
 				DefaultValue = "null",
 			},
-			new("onConfigured", TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable())
+			new("onConfigured", TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable(writer))
 			{
 				DefaultValue = "null",
 			},
@@ -87,7 +87,7 @@ partial class CodeGenEmiiter
 					"configureOptions",
 					TypeLibrary
 						.Action.MakeGeneric(TypeLibrary.OptionsBuilder.MakeGeneric(context.HostKit.OptionsType))
-						.MakeNullable()
+						.MakeNullable(writer)
 				)
 				{
 					DefaultValue = "null",
