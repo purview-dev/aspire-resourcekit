@@ -667,3 +667,5 @@ sketch
 !Build/
 
 *.binlog
+
+.tools/
