@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<TUnitVersion>1.65.63</TUnitVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.34</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.35</PurviewSourceGeneratorFrameworkVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />

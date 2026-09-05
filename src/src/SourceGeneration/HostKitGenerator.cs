@@ -1,7 +1,7 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+using System.Collections.Immutable;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
@@ -44,7 +44,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 					return;
 
 				var validResourceKits = generationModel
-					.ResourceKits.AsImmutableArray()
+					.ResourceKits
 					.Select(m => new ResourceKitModelGroup(
 						m.Namespace,
 						EquatableArray<ResourceKitModel>.Create([

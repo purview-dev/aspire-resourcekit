@@ -1,9 +1,9 @@
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 

@@ -23,7 +23,7 @@ static class TestHelper
 
 		using (writer.BlockNamespaceScope(typeIdentity))
 		{
-			writer.CLass(
+			writer.Class(
 				new(resourceIdentity, TypeDeclarationAccessibility.Public) { Interfaces = [TypeLibrary.IResource] },
 				bodyWriter =>
 					bodyWriter
@@ -93,8 +93,8 @@ static class TestHelper
 #pragma warning restore CA1308 // Normalize strings to uppercase
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.CLass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(hostKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
@@ -128,15 +128,15 @@ static class TestHelper
 		);
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.CLass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(resourceKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseType,
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},
-				bodyWriter => bodyWriter.WriteLine(GenerateBuildResourceMethod(aspireResource))
+				bodyWriter => bodyWriter.Line(GenerateBuildResourceMethod(aspireResource))
 			);
 
 		return writer.ToString();
