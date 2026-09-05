@@ -21,19 +21,19 @@ static class TestHelper
 
 		var writer = CodeWriter.CreateTestWriter();
 
-		using (writer.WriteBlockNamespaceScope(typeIdentity))
+		using (writer.BlockNamespaceScope(typeIdentity))
 		{
-			writer.WriteClass(
+			writer.CLass(
 				new(resourceIdentity, TypeDeclarationAccessibility.Public) { Interfaces = [TypeLibrary.IResource] },
 				bodyWriter =>
 					bodyWriter
-						.WriteProperty(
+						.Property(
 							new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = $"\"{resourceIdentity.Name}\"",
 							}
 						)
-						.WriteProperty(
+						.Property(
 							new("Annotations", TypeLibrary.ResourceAnnotations, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = "[]",
@@ -94,7 +94,7 @@ static class TestHelper
 
 		writer
 			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.CLass(
 				new(hostKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
@@ -129,7 +129,7 @@ static class TestHelper
 
 		writer
 			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.CLass(
 				new(resourceKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseType,

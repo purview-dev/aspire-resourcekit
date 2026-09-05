@@ -25,7 +25,7 @@ partial class CodeGenEmiiter
 
 			var resourceKitForNS = resourceKitGroup.Items.AsImmutableArray().FirstOrDefault();
 
-			using var resourceNs = context.Writer.WriteBlockNamespaceScope(resourceKitForNS.ResourceKitType);
+			using var resourceNs = context.Writer.BlockNamespaceScope(resourceKitForNS.ResourceKitType);
 			context.Debug(
 				$"Processing resource kit group: {resourceKitForNS.ResourceKitType.Namespace ?? "<global-namespace>"}",
 				1
@@ -43,7 +43,7 @@ partial class CodeGenEmiiter
 
 				// Generate the resource kit class
 				using (
-					context.Writer.WriteClassScope(
+					context.Writer.ClassScope(
 						new(resourceKit.ResourceKitType) { IsPartial = true, BaseType = baseClass }
 					)
 				)
@@ -51,7 +51,7 @@ partial class CodeGenEmiiter
 					// Write the constructor
 					context
 						.Writer.XmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
-						.WriteConstructor(
+						.Constructor(
 							new(resourceKit.ResourceKitType, TypeDeclarationAccessibility.Public)
 							{
 								Parameters =
@@ -68,7 +68,10 @@ partial class CodeGenEmiiter
 							body =>
 							{
 								if (context.HostKit.ShouldGenerateOptions)
-									body.WriteLine("Options = options;").WriteLine("IsEnabled = options.IsEnabled;");
+								{
+									body.Assignment("Options", "options")
+									.Assignment("IsEnabled", "options.IsEnabled");
+								}
 							}
 						);
 
@@ -77,9 +80,9 @@ partial class CodeGenEmiiter
 					{
 						context
 							.Writer.XmlSummary("Gets the Resource Kit options.")
-							.WriteProperty(
-								new("Options", resourceKit.OptionsType, TypeDeclarationAccessibility.Public)
-							);
+							.Property(
+								"Options", resourceKit.OptionsType, TypeDeclarationAccessibility.Public)
+							;
 					}
 
 					if (context.HostKit.ShouldGenerateOptions)
@@ -109,14 +112,14 @@ partial class CodeGenEmiiter
 		);
 
 		using (
-			context.Writer.WriteClassScope(
+			context.Writer.ClassScope(
 				new(resourceKit.OptionsType, TypeDeclarationAccessibility.Public) { IsSealed = true, IsPartial = true }
 			)
 		)
 		{
 			context
 				.Writer.XmlSummary("Gets or sets the logical name used to register the resource.")
-				.WriteProperty(
+				.Property(
 					new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
 						IsInitOnly = true,
@@ -133,7 +136,7 @@ partial class CodeGenEmiiter
 
 			context
 				.Writer.XmlSummary("Gets or sets whether the resource is enabled.")
-				.WriteProperty(
+				.Property(
 					new("IsEnabled", PurviewTypeLibrary.System.Boolean, TypeDeclarationAccessibility.Public)
 					{
 						IsInitOnly = true,
