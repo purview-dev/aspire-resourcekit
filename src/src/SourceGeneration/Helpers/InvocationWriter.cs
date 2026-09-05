@@ -29,7 +29,7 @@ static class InvocationWriter
 		}
 		else
 		{
-			writer.WriteLine("(");
+			writer.Line("(");
 			writer.Indented(indented =>
 			{
 				for (var index = 0; index < arguments.Count; index++)

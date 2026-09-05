@@ -10,7 +10,7 @@ partial class CodeGenEmiiter
 
 		context.Debug($"Generating extension class for host kit: {context.HostKit.HostKitType.Name}");
 
-		using (context.Writer.WriteBlockNamespaceScope(TypeLibrary.IDistributedApplicationBuilder))
+		using (context.Writer.BlockNamespaceScope(TypeLibrary.IDistributedApplicationBuilder))
 		{
 			AttributeDeclarationOptions editorBrowsable = new(TypeLibrary.EditorBrowsableAttribute)
 			{
@@ -19,7 +19,7 @@ partial class CodeGenEmiiter
 
 			context
 				.Writer.XmlSummary($"Extension methods for {CodeWriter.XmlSee(context.HostKit.HostKitType)}.")
-				.WriteClass(
+				.Class(
 					new($"{context.HostKit.HostKitType.Name}BuilderExtensions", context.HostKit.Accessibility)
 					{
 						IsStatic = true,
@@ -96,7 +96,7 @@ partial class CodeGenEmiiter
 		}
 
 		using (
-			writer.WriteMethodScope(
+			writer.MethodScope(
 				new(
 					context.HostKit.ExtensionMethodName,
 					TypeLibrary.IDistributedApplicationBuilder,
@@ -134,11 +134,9 @@ partial class CodeGenEmiiter
 						terminate: false
 					)
 					.NewLine()
-					.Indented(w =>
-						w.WriteInvocation($".Get<{context.HostKit.OptionsType}>", [], terminate: false)
+						.WriteInvocation($".Get<{context.HostKit.OptionsType}>", [], terminate: false)
 							.Write(" ?? new();")
-							.NewLine()
-					);
+							.NewLine();
 			}
 
 			writer.Comment("Create an instance of the generated host kit and configure it.");
@@ -150,17 +148,15 @@ partial class CodeGenEmiiter
 					: ["onBuilt", "onConfigured"],
 				terminate: false
 			);
-			writer.WriteLine(";");
+			writer.Line(";");
 
 			writer
 				.NewLine()
-				.WriteInvocationLine("hostKit.Build", ["builder"])
-				.WriteInvocationLine("hostKit.Configure", [])
-				.NewLine()
-				.WriteInvocationLine("builder.Services.AddSingleton", ["hostKit"])
-				.NewLine();
+				.MethodCallOn("hostKit", "Build", ["builder"])
+				.MethodCallOn("hostKit", "Configure")
+				.MethodCallOn("builder.Services", "AddSingleton", ["hostKit"]);
 
-			writer.WriteLine("return builder;");
+			writer.Return("builder");
 		}
 	}
 }

@@ -21,19 +21,19 @@ static class TestHelper
 
 		var writer = CodeWriter.CreateTestWriter();
 
-		using (writer.WriteBlockNamespaceScope(typeIdentity))
+		using (writer.BlockNamespaceScope(typeIdentity))
 		{
-			writer.WriteClass(
+			writer.Class(
 				new(resourceIdentity, TypeDeclarationAccessibility.Public) { Interfaces = [TypeLibrary.IResource] },
 				bodyWriter =>
 					bodyWriter
-						.WriteProperty(
+						.Property(
 							new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = $"\"{resourceIdentity.Name}\"",
 							}
 						)
-						.WriteProperty(
+						.Property(
 							new("Annotations", TypeLibrary.ResourceAnnotations, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = "[]",
@@ -93,8 +93,8 @@ static class TestHelper
 #pragma warning restore CA1308 // Normalize strings to uppercase
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(hostKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
@@ -128,15 +128,15 @@ static class TestHelper
 		);
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(resourceKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseType,
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},
-				bodyWriter => bodyWriter.WriteLine(GenerateBuildResourceMethod(aspireResource))
+				bodyWriter => bodyWriter.Line(GenerateBuildResourceMethod(aspireResource))
 			);
 
 		return writer.ToString();
