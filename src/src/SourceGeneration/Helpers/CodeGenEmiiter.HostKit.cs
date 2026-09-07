@@ -11,21 +11,24 @@ partial class CodeGenEmiiter
 
 		context.Info($"Generating {context.HostKit.HostKitType.MetadataFullName}...");
 
-		using var nsScope = context.Writer.WriteBlockNamespaceScope(context.HostKit.HostKitType.Namespace);
+		using var nsScope = context.Writer.BlockNamespaceScope(context.HostKit.HostKitType.Namespace);
 
 		var primaryConstructorParameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>();
 		primaryConstructorParameters.Add(
 			new(
 				"onBuilt",
 				TypeLibrary
-					.Action.MakeGeneric(context.HostKit.HostKitType, TypeLibrary.IDistributedApplicationBuilder)
+					.System.Action.MakeGeneric(
+						context.HostKit.HostKitType,
+						TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder
+					)
 					.MakeNullable(context.Writer)
 			)
 		);
 		primaryConstructorParameters.Add(
 			new(
 				"onConfigured",
-				TypeLibrary.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable(context.Writer)
+				TypeLibrary.System.Action.MakeGeneric(context.HostKit.HostKitType).MakeNullable(context.Writer)
 			)
 		);
 
@@ -35,11 +38,13 @@ partial class CodeGenEmiiter
 		using (
 			context
 				.Writer.XmlSummary("Represents the generated Host Kit and composes all discovered Resources Kits")
-				.WriteClassScope(
+				.ClassScope(
 					new(context.HostKit.HostKitType)
 					{
 						IsPartial = true,
-						BaseType = TypeLibrary.HostKitBase.MakeGeneric(context.HostKit.HostKitType),
+						BaseType = TypeLibrary.Purview.Aspire.ResourceKit.HostKitBase.MakeGeneric(
+							context.HostKit.HostKitType
+						),
 						PrimaryConstructorParameters = primaryConstructorParameters.ToImmutable(),
 						ConstructorParametersOnSeparateLines = true,
 					}
@@ -51,7 +56,7 @@ partial class CodeGenEmiiter
 			{
 				context
 					.Writer.XmlSummary($"Gets the Host Kit options <see cref=\"{context.HostKit.OptionsType}\"/>.")
-					.WriteProperty(
+					.Property(
 						new("Options", context.HostKit.OptionsType, TypeDeclarationAccessibility.Public)
 						{
 							HasGetter = true,
@@ -95,27 +100,33 @@ partial class CodeGenEmiiter
 			$"Generating Resource Kit base class for host kit: {context.Model.HostKit.Value.HostKitType.Name}"
 		);
 
-		using (context.Writer.WriteBlockNamespaceScope(context.Model.HostKit.Value.ResourceKitBaseType.Namespace))
+		using (context.Writer.BlockNamespaceScope(context.Model.HostKit.Value.ResourceKitBaseType.Namespace))
 		{
 			context
 				.Writer.XmlSummary("Represents a typed base class for all generated Resource Kits for the Host Kit.")
-				.WriteClass(
+				.Class(
 					new(context.Model.HostKit.Value.ResourceKitBaseType.Name, context.Model.HostKit.Value.Accessibility)
 					{
 						IsPartial = true,
 						IsAbstract = true,
-						BaseType = TypeLibrary.ResourceKitBase.MakeGeneric(
+						BaseType = TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MakeGeneric(
 							context.Model.HostKit.Value.HostKitType,
 							"TResource"
 						),
 						GenericTypes =
 						[
-							new("TResource") { Constraints = [.. new[] { $"class, {TypeLibrary.IResource}" }] },
+							new("TResource")
+							{
+								Constraints =
+								[
+									.. new[] { $"class, {TypeLibrary.Aspire.Hosting.ApplicationModel.IResource}" },
+								],
+							},
 						],
 					},
 					body =>
 						body.XmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
-							.WriteConstructor(
+							.Constructor(
 								new(
 									context.Model.HostKit.Value.ResourceKitBaseType,
 									TypeDeclarationAccessibility.Protected
@@ -156,12 +167,12 @@ partial class CodeGenEmiiter
 			context
 				.Writer.XmlSummary($"Gets the <see cref=\"{resourceKit.ResourceKitType}\" /> resource instance.")
 				.XmlException(
-					TypeLibrary.InvalidOperationException,
+					TypeLibrary.System.InvalidOperationException,
 					"Thrown if the resource has not been initialized on get, or if the resource has already been initialized on set."
 				)
-				.XmlException(TypeLibrary.ArgumentNullException, "Thrown if the resource is set to null.");
+				.XmlException(TypeLibrary.System.ArgumentNullException, "Thrown if the resource is set to null.");
 
-			context.Writer.WriteProperty(
+			context.Writer.Property(
 				new(resourceKit.PropertyName, resourceKit.ResourceKitType, TypeDeclarationAccessibility.Public)
 				{
 					HasGetter = true,
@@ -169,22 +180,26 @@ partial class CodeGenEmiiter
 					SetterAccessibility = TypeDeclarationAccessibility.Private,
 				},
 				writeGetterBody =>
-					writeGetterBody.WriteLine(
-						$"return field ?? throw new {TypeLibrary.InvalidOperationException}(\"The '{resourceKit.PropertyName}' resource has not been initialized. Call Build first.\");"
-					),
+				{
+					var message =
+						$"The '{resourceKit.PropertyName}' resource has not been initialized. Call Build first.";
+					writeGetterBody.Return(
+						$"field ?? throw new {TypeLibrary.System.InvalidOperationException}({message.StringLiteral()})"
+					);
+				},
 				writeSetterBody =>
 				{
 					writeSetterBody
-						.WriteLine(TypeLibrary.ArgumentNullException.StaticMember("ThrowIfNull(value);"))
+						.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["value"])
 						.NewLine();
 
-					using (writeSetterBody.OpenBlockScope("if (field is not null)"))
-						writeSetterBody.WriteThrow(
-							TypeLibrary.InvalidOperationException,
+					using (writeSetterBody.IfBlockScope("field is not null"))
+						writeSetterBody.Throw(
+							TypeLibrary.System.InvalidOperationException,
 							$"The '{resourceKit.PropertyName}' resource has already been initialized."
 						);
 
-					writeSetterBody.NewLine().WriteAssignment("field", "value");
+					writeSetterBody.NewLine().Assignment("field", "value");
 				}
 			);
 		}
@@ -198,16 +213,16 @@ partial class CodeGenEmiiter
 
 		context.Writer.XmlInheritDoc();
 		using (
-			context.Writer.WriteMethodScope(
+			context.Writer.MethodScope(
 				new("Build", TypeDeclarationAccessibility.Public)
 				{
 					IsOverride = true,
-					Parameters = [new("builder", TypeLibrary.IDistributedApplicationBuilder)],
+					Parameters = [new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder)],
 				}
 			)
 		)
 		{
-			context.Writer.WriteLine(TypeLibrary.ArgumentNullException.StaticMember("ThrowIfNull(builder);")).NewLine();
+			context.Writer.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["builder"]).NewLine();
 
 			foreach (
 				var resourceKit in context.ResourceKits.AsImmutableArray().SelectMany(r => r.Items.AsImmutableArray())
@@ -218,16 +233,16 @@ partial class CodeGenEmiiter
 				context.Writer.Comment($"Creating {resourceKit.ResourceKitType.Name} Resource Kit.");
 				if (context.HostKit.ShouldGenerateOptions)
 				{
-					context.Writer.WriteInvocationLine(
-						$"{resourceKit.PropertyName} = new",
-						[$"this", $"Options.{resourceKit.PropertyName}"]
+					context.Writer.Assignment(
+						resourceKit.PropertyName,
+						new ObjectCreationOptions(["this", $"Options.{resourceKit.PropertyName}"])
 					);
 				}
 				else
 				{
-					context.Writer.WriteInvocationLine(
-						$"{resourceKit.PropertyName} = new",
-						[$"this", GeneratedText.QuoteLiteral(resourceKit.ResourceName)]
+					context.Writer.Assignment(
+						resourceKit.PropertyName,
+						new ObjectCreationOptions(["this", resourceKit.ResourceName.StringLiteral()])
 					);
 				}
 
@@ -246,14 +261,14 @@ partial class CodeGenEmiiter
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					context.Writer.WriteInvocationLine("AddResource", [$"{resourceKit.PropertyName}"]);
+					context.Writer.MethodCall("AddResource", resourceKit.PropertyName);
 				}
 			}
 
 			context
 				.Writer.NewLine()
 				.Comment("Now the additional post-build func builder")
-				.WriteInvocationLine("onBuilt?.Invoke", ["this", "builder"]);
+				.MethodCallOn("onBuilt", "Invoke", ["this", "builder"], nullConditional: true);
 
 			context
 				.Writer.NewLine()
@@ -261,7 +276,7 @@ partial class CodeGenEmiiter
 					"Now that we've populated all of the resources, call the base classes",
 					"Build method to register the app resources with the builder."
 				)
-				.WriteInvocationLine("base.Build", ["builder"]);
+				.MethodCallOn("base", "Build", ["builder"]);
 		}
 	}
 
@@ -272,19 +287,17 @@ partial class CodeGenEmiiter
 		context.Debug($"Generating Configure method for host kit: {context.HostKit.HostKitType.Name}");
 
 		context.Writer.XmlInheritDoc();
-		using (
-			context.Writer.WriteMethodScope(new("Configure", TypeDeclarationAccessibility.Public) { IsOverride = true })
-		)
+		using (context.Writer.MethodScope(new("Configure", TypeDeclarationAccessibility.Public) { IsOverride = true }))
 		{
 			context
 				.Writer.NewLine()
 				.Comment("Call the base classes Configure method first...")
-				.WriteInvocationLine("base.Configure", []);
+				.MethodCallOn("base", "Configure", [], nullConditional: false);
 
 			context
 				.Writer.NewLine()
 				.Comment("Now the additional post-configure func builder")
-				.WriteInvocationLine("onConfigured?.Invoke", ["this"]);
+				.MethodCallOn("onConfigured", "Invoke", ["this"], nullConditional: true);
 		}
 	}
 
@@ -297,7 +310,7 @@ partial class CodeGenEmiiter
 		context.Writer.NewLine().XmlSummary($"Typed settings for ${CodeWriter.XmlSee(context.HostKit.OptionsType)}.");
 
 		using (
-			context.Writer.WriteClassScope(
+			context.Writer.ClassScope(
 				new(context.HostKit.OptionsType.Name, TypeDeclarationAccessibility.Public)
 				{
 					IsSealed = true,
@@ -308,7 +321,7 @@ partial class CodeGenEmiiter
 		{
 			context
 				.Writer.XmlSummary("Configuration section name for host kit options.")
-				.WriteField(
+				.Field(
 					new("SectionName", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
 						IsConst = true,
@@ -332,7 +345,7 @@ partial class CodeGenEmiiter
 							$"Gets or sets options for {CodeWriter.XmlSee(resourceKit.ResourceKitType)}.",
 							$"{CodeWriter.XmlSee(resourceKit.OptionsType)} for specific configuration options."
 						)
-						.WriteProperty(
+						.Property(
 							new(resourceKit.PropertyName, resourceKit.OptionsType, TypeDeclarationAccessibility.Public)
 							{
 								HasGetter = true,

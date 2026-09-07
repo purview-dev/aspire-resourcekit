@@ -23,6 +23,11 @@
 	<Folder Name="/tests/">
 		<Project Path="tests/ResourceKit.IntegrationTests/ResourceKit.IntegrationTests.csproj" />
 		<Project Path="tests/ResourceKit.UnitTests/ResourceKit.UnitTests.csproj" />
+		<Project Path="tests/SharedTestingInfra/SharedTestingInfra.csproj" Id="efa17d25-af88-4ca4-ba22-a7f0b783d334" />
 		<Project Path="tests/SourceGeneration.IntegrationTests/SourceGeneration.IntegrationTests.csproj" />
+		<Project
+			Path="tests/SourceGeneration.UnitTests/SourceGeneration.UnitTests.csproj"
+			Id="ccc1709a-4fdb-42bc-8fd6-8d37a36022b9"
+		/>
 	</Folder>
 </Solution>

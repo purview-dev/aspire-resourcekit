@@ -14,11 +14,11 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			.RegisterEmbeddedAttribute<HostKitGenerator>()
 			.RegisterPostInitializationOutput(postInitContext =>
 			{
-				foreach (var resourceType in TypeLibrary.GeneratedTypes)
+				foreach (var resourceType in TypeLibrary.Purview.Aspire.ResourceKit.GetTypes())
 				{
 					postInitContext.AddSource(
-						resourceType.MetadataFullName + ".g.cs",
-						EmbeddedResourceHelper.Load(resourceType.Name)
+						resourceType.Identity.MetadataFullName + ".g.cs",
+						EmbeddedResourceHelper.Load(resourceType.Identity.Name)
 					);
 				}
 			});

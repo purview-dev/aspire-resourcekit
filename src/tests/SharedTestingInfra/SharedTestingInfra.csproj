@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting" />
+		<PackageReference Include="Purview.SourceGeneratorFramework" />
+		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\SourceGeneration\SourceGeneration.csproj" />
+	</ItemGroup>
+</Project>

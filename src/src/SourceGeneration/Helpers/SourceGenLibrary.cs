@@ -25,8 +25,14 @@ static class SourceGenLibrary
 			context,
 			static (compilation, generatorName, logger, _) =>
 			{
-				var hasIServivceCollection = TypeHelpers.HasType(compilation, TypeLibrary.IServiceCollection);
-				var hasConfigurationBinder = TypeHelpers.HasType(compilation, TypeLibrary.ConfigurationBinder);
+				var hasIServivceCollection = TypeHelpers.HasType(
+					compilation,
+					TypeLibrary.Microsoft.Extensions.DependencyInjection.IServiceCollection
+				);
+				var hasConfigurationBinder = TypeHelpers.HasType(
+					compilation,
+					TypeLibrary.Microsoft.Extensions.Configuration.ConfigurationBinder
+				);
 
 				return new(hasIServivceCollection, hasConfigurationBinder);
 			},
@@ -138,7 +144,7 @@ static class SourceGenLibrary
 	) =>
 		IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
-			TypeLibrary.GenericResourceDefinitionAttribute,
+			TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
 			transform: static (ctx, ct) => GetResourceKitModel(ctx, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.GenericResourceDefinitionTargets
@@ -149,7 +155,7 @@ static class SourceGenLibrary
 	) =>
 		IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
-			TypeLibrary.ResourceDefinitionAttribute,
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
 			transform: static (ctx, ct) => GetResourceKitModel(ctx, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.ResourceDefinitionTargets
@@ -161,7 +167,7 @@ static class SourceGenLibrary
 		// Get all classes decorated with the HostKitAttribute, ResourceDefinitionAttribute, or GenericResourceDefinitionAttribute
 		IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
-			TypeLibrary.HostKitAttribute,
+			TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
 			transform: static (ctx, ct) => GetHostKitModel(ctx, ct),
 			predicate: (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.HostKitTargets
@@ -202,7 +208,7 @@ static class SourceGenLibrary
 			new(
 				HostKitType: hostKitType,
 				OptionsType: optionsType,
-				ResourceKitBaseType: TypeLibrary.ResourceKitBase,
+				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase,
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName,
 				Location: DiagnosticInfo.Create(
@@ -229,7 +235,8 @@ static class SourceGenLibrary
 		var resourceName = matchedAttribute.Instance.Name ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes);
 		var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(symbol);
 		var isDerivedFromExpectedBase =
-			hasExplicitBaseType && TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.ResourceKitBase);
+			hasExplicitBaseType
+			&& TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase);
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
 		var propertyName = matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes)!;
 		var aspireResourceType = matchedAttribute.Instance.AspireResourceType;
@@ -259,7 +266,7 @@ static class SourceGenLibrary
 				DiagnosticInfo.Create(
 					DiagnosticLibrary.NonGenericResourceDefinitionRequiresExplicitBase,
 					symbol,
-					TypeLibrary.ResourceKitBase.MetadataFullName
+					TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MetadataFullName
 				)
 			);
 		}
@@ -280,7 +287,7 @@ static class SourceGenLibrary
 				DiagnosticInfo.Create(
 					DiagnosticLibrary.ResourceMustDeriveFromResourceKitBase,
 					symbol,
-					TypeLibrary.ResourceKitBase.MetadataFullName
+					TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MetadataFullName
 				)
 			);
 		}
@@ -328,7 +335,7 @@ static class SourceGenLibrary
 			foreach (var @interface in param.AllInterfaces)
 			{
 				var t = new TypeIdentity(@interface);
-				if (t == TypeLibrary.IResource)
+				if (t == TypeLibrary.Aspire.Hosting.ApplicationModel.IResource)
 					return new(param);
 			}
 		}

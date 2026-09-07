@@ -1,5 +1,3 @@
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
-
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
@@ -37,7 +35,9 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
-		await Assert.That(generated).Contains($"{TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>");
+		await Assert
+			.That(generated)
+			.Contains($"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>");
 	}
 
 	[Test]
@@ -46,7 +46,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		// Arrange
 		var sources = TestHelper.GenerateSources(
 			resourceKitName: "RedisResourceKit",
-			resourceKitBaseClass: TypeLibrary.ResourceKitBase
+			resourceKitBaseClass: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase
 		);
 
 		// Act
@@ -68,7 +68,7 @@ namespace Testing
 	[HostKit]
 	public partial class TestingHostKit;
 
-	[ResourceDefinition<{TestHelper.DefaultAspireResource}>]
+	[ResourceDefinition<{TypeLibrary.DefaultAspireResource}>]
 	public partial class RedisResourceKit
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
@@ -86,7 +86,7 @@ namespace Testing
 		await Assert
 			.That(generated)
 			.Contains(
-				$"partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>"
+				$"partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>"
 			);
 	}
 
@@ -98,8 +98,8 @@ namespace Testing
 		var buildResourceMethod = TestHelper.GenerateBuildResourceMethod();
 		var source =
 			@$"
-using {TypeLibrary.HostKitAttribute.Namespace};
-using {TypeLibrary.ResourceKitBase.Namespace};
+using {TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.Namespace};
+using {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Namespace};
 
 namespace Testing
 {{
@@ -107,13 +107,13 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""redis"")]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{buildResourceMethod}
 	}}
 
 	[ResourceDefinition(""sql"")]
-	public partial class SqlServerResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
+	public partial class SqlServerResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{buildResourceMethod}
 	}}
@@ -146,7 +146,7 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""my-redis"")]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -176,7 +176,7 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(PropertyName = ""MyRedis"")]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -208,13 +208,13 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
 	[ResourceDefinition]
-	public partial class SqlServerResource : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class SqlServerResource : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -247,7 +247,7 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""azure-storage"")]
-	public partial class AzureStorageResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class AzureStorageResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -277,13 +277,13 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition]
-	public partial class CacheResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class CacheResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
 	[ResourceDefinition]
-	public partial class SecretsKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class SecretsKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -320,7 +320,7 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""keyvault"")]
-	public partial class KeyVaultResourceKit : {TypeLibrary.ResourceKitBase.Name}<{TestHelper.DefaultAspireResource}>
+	public partial class KeyVaultResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		 {TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -352,7 +352,7 @@ namespace Testing.Host
 namespace Testing.Resources
 {{
 	[ResourceDefinition(""redis"")]
-	public partial class RedisResourceKit : {TypeLibrary.ResourceKitBase}<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.DefaultAspireResource}>
 	{{
 		 {TestHelper.GenerateBuildResourceMethod()}
 	}}
@@ -387,12 +387,12 @@ namespace Testing
 	public partial class TestingHostKit;
 
 	[ResourceDefinition(""redis"")]
-	public partial class RedisResourceKit : CustomResourceBase<{TestHelper.DefaultAspireResource}>
+	public partial class RedisResourceKit : CustomResourceBase<{TypeLibrary.DefaultAspireResource}>
 	{{
 		{TestHelper.GenerateBuildResourceMethod()}
 	}}
 
-	public abstract class CustomResourceBase<TResource> : {TypeLibrary.ResourceKitBase}<TResource>
+	public abstract class CustomResourceBase<TResource> : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<TResource>
 		where TResource : class, IResource
 	{{
 		protected CustomResourceBase(TestingHostKit hostKit, string? name) : base(hostKit, name)

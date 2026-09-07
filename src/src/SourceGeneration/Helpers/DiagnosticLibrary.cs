@@ -55,7 +55,7 @@ static class DiagnosticLibrary
 
 	public static readonly DiagnosticDescriptor ResourceMustDeriveFromResourceKitBase = new(
 		id: "SG0006",
-		title: $"Resource Kit must derive from {TypeLibrary.ResourceKitBase.Name}<TResource> or {TypeLibrary.ResourceKitBase.Name}<THostKit, TResource>",
+		title: $"Resource Kit must derive from {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}<TResource> or {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}<THostKit, TResource>",
 		messageFormat: "'{0}' must derive from a valid Resource Kit Base",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,

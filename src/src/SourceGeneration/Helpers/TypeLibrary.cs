@@ -1,6 +1,7 @@
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
-static class TypeLibrary
+[GenerateTypeLibrary]
+static partial class TypeLibrary
 {
 	// Generated type information...
 	public static readonly string[] TrimSuffixes = ["ResourceKit", "Resource", "Kit"];
@@ -9,83 +10,59 @@ static class TypeLibrary
 
 	public const string PurviewAspireResourceKitNamespace = "Purview.Aspire.ResourceKit";
 
-	public static readonly TypeIdentity HostKitAttribute = new(
-		nameof(HostKitAttribute),
-		PurviewAspireResourceKitNamespace
-	);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity HostKitAttribute = default;
 
-	public static readonly TypeIdentity ResourceDefinitionAttribute = new(
-		nameof(ResourceDefinitionAttribute),
-		PurviewAspireResourceKitNamespace
-	);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceDefinitionAttribute = default;
 
-	public static readonly TypeIdentity GenericResourceDefinitionAttribute = new(
-		"ResourceDefinitionAttribute`1",
-		PurviewAspireResourceKitNamespace
-	);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity GenericResourceDefinitionAttribute = default;
 
 	// Library types
-	public static readonly TypeIdentity IHostKit = new(nameof(IHostKit), PurviewAspireResourceKitNamespace);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity IHostKit = default;
 
-	public static readonly TypeIdentity HostKitBase = new(nameof(HostKitBase), PurviewAspireResourceKitNamespace);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity HostKitBase = default;
 
-	public static readonly TypeIdentity ResourceKitBase = new(
-		nameof(ResourceKitBase),
-		PurviewAspireResourceKitNamespace
-	);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceKitBase = default;
 
-	public static readonly TypeIdentity IResourceKit = new(nameof(IResourceKit), PurviewAspireResourceKitNamespace);
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity IResourceKit = default;
 
 	// Other required types
-	// Required for DI
-	public static readonly TypeIdentity IServiceCollection = new(
-		nameof(IServiceCollection),
-		"Microsoft.Extensions.DependencyInjection"
-	);
-
-	public static readonly TypeIdentity ConfigurationBinder = new(
-		nameof(ConfigurationBinder),
-		"Microsoft.Extensions.Configuration"
-	);
+	[TypeRef("Microsoft.Extensions.Configuration")]
+	static readonly TypeIdentity ConfigurationBinder = default;
 
 	// Required for Options
-	public static readonly TypeIdentity OptionsBuilder = new(nameof(OptionsBuilder), "Microsoft.Extensions.Options");
+	[TypeRef("Microsoft.Extensions.Options")]
+	static readonly TypeIdentity OptionsBuilder = default;
 
 	// Aspire types.
-	public static readonly TypeIdentity IResource = new(nameof(IResource), "Aspire.Hosting.ApplicationModel");
+	[TypeRef("Aspire.Hosting.ApplicationModel")]
+	static readonly TypeIdentity IResource = default;
 
-	public static readonly TypeIdentity ResourceAnnotations = new(
-		nameof(ResourceAnnotations),
-		"Aspire.Hosting.ApplicationModel"
-	);
+	[TypeRef("Aspire.Hosting.ApplicationModel")]
+	static readonly TypeIdentity ResourceAnnotations = default;
 
-	public static readonly TypeIdentity IDistributedApplicationBuilder = new(
-		nameof(IDistributedApplicationBuilder),
-		"Aspire.Hosting"
-	);
+	[TypeRef("Aspire.Hosting")]
+	static readonly TypeIdentity IDistributedApplicationBuilder = default;
 
 	// Other useful types
-	public static readonly TypeIdentity RequiredAttribute = new(
-		nameof(RequiredAttribute),
-		"System.ComponentModel.DataAnnotations"
-	);
+	[TypeRef("System.ComponentModel.DataAnnotations")]
+	static readonly TypeIdentity RequiredAttribute = default;
 
-	public static readonly TypeIdentity EditorBrowsableState = new(
-		nameof(EditorBrowsableState),
-		"System.ComponentModel"
-	);
+	[TypeRef("System.ComponentModel")]
+	static readonly TypeIdentity EditorBrowsableState = default;
 
-	public static readonly TypeIdentity EditorBrowsableAttribute = new(
-		nameof(EditorBrowsableAttribute),
-		"System.ComponentModel"
-	);
+	[TypeRef("System.ComponentModel")]
+	static readonly TypeIdentity EditorBrowsableAttribute = default;
 
-	public static readonly TypeIdentity InvalidOperationException = TypeIdentity.Create<InvalidOperationException>();
+	[TypeRef("System")]
+	static readonly TypeIdentity InvalidOperationException = default;
 
-	public static readonly TypeIdentity ArgumentNullException = TypeIdentity.Create<ArgumentNullException>();
-
-	public static readonly TypeIdentity Action = new(nameof(Action), "System");
-
-	// Generated attributes (make sure this is after they're all initialized!)
-	public static readonly TypeIdentity[] GeneratedTypes = [HostKitAttribute, ResourceDefinitionAttribute];
+	[TypeRef("System")]
+	static readonly TypeIdentity ArgumentNullException = default;
 }

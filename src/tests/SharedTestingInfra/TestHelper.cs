@@ -1,8 +1,6 @@
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
+namespace Purview.Aspire.ResourceKit;
 
-namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
-
-static class TestHelper
+public static class TestHelper
 {
 	public const string DefaultHostKitType = "TestingHostKit";
 
@@ -12,29 +10,36 @@ static class TestHelper
 
 	public const string DefaultResourceKitNamespace = "Testing.ResourceKitNamespace";
 
-	public static TypeIdentity DefaultAspireResource = TypeIdentity.Create<DefaultAspireResource>();
-
 	public static string GenerateAspireResource(TypeIdentity? typeIdentity = null)
 	{
 		var resourceIdentity =
-			typeIdentity == null || typeIdentity == TypeIdentity.Empty ? DefaultAspireResource : typeIdentity.Value;
+			typeIdentity == null || typeIdentity == TypeIdentity.Empty
+				? TypeLibrary.DefaultAspireResource
+				: typeIdentity.Value;
 
 		var writer = CodeWriter.CreateTestWriter();
 
-		using (writer.WriteBlockNamespaceScope(typeIdentity))
+		using (writer.BlockNamespaceScope(typeIdentity))
 		{
-			writer.WriteClass(
-				new(resourceIdentity, TypeDeclarationAccessibility.Public) { Interfaces = [TypeLibrary.IResource] },
+			writer.Class(
+				new(resourceIdentity, TypeDeclarationAccessibility.Public)
+				{
+					Interfaces = [TypeLibrary.Aspire.Hosting.ApplicationModel.IResource],
+				},
 				bodyWriter =>
 					bodyWriter
-						.WriteProperty(
+						.Property(
 							new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = $"\"{resourceIdentity.Name}\"",
 							}
 						)
-						.WriteProperty(
-							new("Annotations", TypeLibrary.ResourceAnnotations, TypeDeclarationAccessibility.Public)
+						.Property(
+							new(
+								"Annotations",
+								TypeLibrary.Aspire.Hosting.ApplicationModel.ResourceAnnotations,
+								TypeDeclarationAccessibility.Public
+							)
 							{
 								ExpressionBody = "[]",
 							}
@@ -46,7 +51,7 @@ static class TestHelper
 	}
 
 	public static string GenerateBuildResourceMethod(TypeIdentity? aspireResource = null) =>
-		$"protected override IResourceBuilder<{aspireResource ?? DefaultAspireResource}> BuildResource({TypeLibrary.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
+		$"protected override IResourceBuilder<{aspireResource ?? TypeLibrary.DefaultAspireResource}> BuildResource({TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
 
 	public static IEnumerable<string> GenerateSources(
 		string hostKitName = DefaultHostKitType,
@@ -83,7 +88,7 @@ static class TestHelper
 		var writer = CodeWriter.CreateTestWriter();
 
 #pragma warning disable CA1308 // Normalize strings to uppercase
-		AttributeDeclarationOptions hostKitAttribute = new(TypeLibrary.HostKitAttribute)
+		AttributeDeclarationOptions hostKitAttribute = new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
 		{
 			Arguments =
 			[
@@ -93,8 +98,8 @@ static class TestHelper
 #pragma warning restore CA1308 // Normalize strings to uppercase
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(hostKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
@@ -114,7 +119,7 @@ static class TestHelper
 		string? namespaceName = DefaultHostKitNamespace
 	)
 	{
-		aspireResource ??= DefaultAspireResource;
+		aspireResource ??= TypeLibrary.DefaultAspireResource;
 
 		var writer = CodeWriter.CreateTestWriter();
 
@@ -123,20 +128,35 @@ static class TestHelper
 			: new TypeIdentity(baseClass, null).MakeGeneric(aspireResource.Value).AsTypeReference();
 		AttributeDeclarationOptions resourceDefinitionAttribute = new(
 			baseClass is null
-				? TypeLibrary.ResourceDefinitionAttribute.MakeGeneric(aspireResource.Value)
-				: TypeLibrary.ResourceDefinitionAttribute
+				? TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MakeGeneric(aspireResource.Value)
+				: TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute
 		);
 
 		writer
-			.WriteFileScopedNamespace(namespaceName)
-			.WriteClass(
+			.FileScopedNamespace(namespaceName)
+			.Class(
 				new(resourceKitName, TypeDeclarationAccessibility.Public)
 				{
 					BaseType = baseType,
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},
-				bodyWriter => bodyWriter.WriteLine(GenerateBuildResourceMethod(aspireResource))
+				bodyWriter =>
+					bodyWriter.Method(
+						"BuildResource",
+						TypeLibrary.IResourceBuilder.MakeGeneric(aspireResource.Value),
+						TypeDeclarationAccessibility.Protected,
+						methodWriter =>
+							methodWriter with
+							{
+								IsOverride = true,
+								Parameters =
+								[
+									new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder),
+								],
+							},
+						writer => writer.Throw("System.NotImplementedException")
+					)
 			);
 
 		return writer.ToString();

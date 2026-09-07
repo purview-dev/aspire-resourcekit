@@ -1,5 +1,4 @@
 using System.Reflection;
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
@@ -83,19 +82,27 @@ namespace Testing
 		var result = await GenerateAsync(EmptySource, cancellationToken);
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
-		await Assert.That(assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName)).IsNotNull();
-		await Assert.That(assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName)).IsNotNull();
 		await Assert
-			.That(assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName))
+			.That(assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName))
+			.IsNotNull();
+		await Assert
+			.That(assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName))
+			.IsNotNull();
+		await Assert
+			.That(
+				assembly.GetType(
+					TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName
+				)
+			)
 			.IsNotNull();
 	}
 
 	[Test]
 	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
-		var type = assembly.GetType(TypeLibrary.HostKitAttribute.MetadataFullName)!;
+		var type = assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName)!;
 
 		var nameProp = type.GetProperty("Name");
 		await Assert.That(nameProp).IsNotNull();
@@ -107,14 +114,18 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
-		var type = assembly.GetType(TypeLibrary.ResourceDefinitionAttribute.MetadataFullName)!;
+		var type = assembly.GetType(
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName
+		)!;
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 
-		var genericType = assembly.GetType(TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName)!;
+		var genericType = assembly.GetType(
+			TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName
+		)!;
 		await Assert.That(genericType.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert
 			.That(genericType.GetProperty("PropertyName")!.PropertyType.FullName)
@@ -124,15 +135,15 @@ namespace Testing
 	[Test]
 	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
 		foreach (
 			var fullName in new[]
 			{
-				TypeLibrary.HostKitAttribute.MetadataFullName,
-				TypeLibrary.ResourceDefinitionAttribute.MetadataFullName,
-				TypeLibrary.GenericResourceDefinitionAttribute.MetadataFullName,
+				TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName,
+				TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName,
+				TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName,
 			}
 		)
 		{
