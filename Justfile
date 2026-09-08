@@ -1,10 +1,11 @@
 set quiet
 
 solution := "src/ResourceKit.slnx"
-build_configuration := "Release"
+build_configuration := "Debug"
+
 artifacts_folder := "./artifacts"
 default_test_filter := "/*/*/*/*/"
-pipeline_version := "0.2.1"
+
 pipeline_feed := "https://api.nuget.org/v3/index.json"
 pipeline_tool := ".tools/purview-build/purview-build"
 
@@ -18,7 +19,7 @@ default:
 [private]
 ensure-pipeline-tool:
     if [ ! -x "{{ pipeline_tool }}" ]; then \
-        dotnet tool install Purview.Build --tool-path .tools/purview-build --add-source "{{ pipeline_feed }}" --version "{{ pipeline_version }}"; \
+        dotnet tool install Purview.Build --tool-path .tools/purview-build --add-source "{{ pipeline_feed }}"; \
     fi
 
 # Run the PR pipeline (restore, build, lint, tests)
@@ -52,46 +53,60 @@ pipeline-local-release *args:
     echo "Running local release pipeline..."
     "{{ pipeline_tool }}" --Release:Mode=LocalNuGet {{ args }}
 
-# Fix code formatting issues using CSharpier
-lint-fix *args:
-    dotnet csharpier format . {{ args }}
-
 # Displays the current version from package.json
+[group('Build and Test')]
 version:
     echo "Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
 
-# Open the solution in Visual Studio/ Registered application
-vs:
-    open {{ solution }}
-
-#------- These are all pre-moving to Modular Pipelines --------
-
-# [legacy] Build and test with the specified configuration, defaulting to "Release"
+# Build and test with the specified configuration, defaulting to "Debug"
+[group('Build and Test')]
 build *args:
     echo "Building {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
     dotnet build {{ solution }} -c {{ build_configuration }} {{ args }}
 
-# [legacy] Build and test with the specified configuration, defaulting to "Release"
+# Build and test with the specified configuration, defaulting to "Debug"
+[group('Build and Test')]
 clean *args:
     echo "Cleaning {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
     dotnet clean {{ solution }} -c {{ build_configuration }} {{ args }}
 
-# [legacy] Run tests with the specified configuration, defaulting to "Release"
+# Run tests with the specified configuration, defaulting to "Debug"
+[group('Build and Test')]
 test filter=default_test_filter *args:
     echo "Running tests for {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} and filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
     dotnet test {{ solution }} -c {{ build_configuration }} --ignore-exit-code 8 --treenode-filter "{{ filter }}" -- {{ args }}
 
-# [legacy] Restore dependencies for the solution
+# Restore dependencies for the solution
+[group('Build and Test')]
 restore *args:
     echo "Restoring dependencies for {{ BLUE }}{{ solution }}{{ NORMAL }}"
     dotnet restore {{ solution }} {{ args }}
 
-# [legacy] Create NuGet package for the project
+# Create NuGet package for the project
+[group('Build and Test')]
 pack publish_folder=artifacts_folder *args:
     echo "Packing {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} to {{ GREEN }}{{ publish_folder }}{{ NORMAL }}"
     echo "  Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
     dotnet pack {{ solution }} -c {{ build_configuration }} -o {{ publish_folder }} {{ args }}
 
-# [legacy] Check code formatting using CSharpier
+# Open the solution in Visual Studio/ Registered application
+[group('Utilities')]
+vs:
+    open {{ solution }}
+
+# Fix code formatting issues using CSharpier
+[group('Utilities')]
+lint-fix *args:
+    dotnet csharpier format . {{ args }}
+# Check code formatting using CSharpier
+[group('Utilities')]
 lint-check *args:
     dotnet csharpier check . {{ args }}
+
+# Clean up the repository by removing build artifacts, bin/obj folders etc, and shutting down the build server
+[group('Utilities')]
+scrub:
+    find . -type d \( -name bin -o -name obj \) -exec rm -rf {} +
+    just clean
+    just restore --force-evaluate
+    dotnet build-server shutdown

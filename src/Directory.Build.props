@@ -5,7 +5,7 @@
 		<TargetFramework Condition="'$(TargetFrameworks)' == ''">$(DefaultTargetFramework)</TargetFramework>
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<IsPackable>false</IsPackable>
-		<RepositoryUrl>https://github.com/purview-dev/purview-aspire-resourcekit</RepositoryUrl>
+		<RepositoryUrl>https://github.com/purview-dev/aspire-resourcekit</RepositoryUrl>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />

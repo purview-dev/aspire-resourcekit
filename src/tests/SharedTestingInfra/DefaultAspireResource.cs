@@ -1,6 +1,6 @@
 using Aspire.Hosting.ApplicationModel;
 
-namespace Purview.Aspire.ResourceKit.SourceGeneration.Infrastructure;
+namespace Purview.Aspire.ResourceKit;
 
 public sealed class DefaultAspireResource : IResource
 {

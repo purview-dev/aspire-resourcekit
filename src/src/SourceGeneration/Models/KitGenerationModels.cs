@@ -80,24 +80,6 @@ sealed record OutputContext(
 		Context.Log(level, indentation, message, args);
 }
 
-// Compares combined (model, context) values by the model only, so output caching is keyed on the
-// value-equatable model rather than the per-compilation execution context.
-sealed class KitGenerationModelComparer
-	: IEqualityComparer<(KitGenerationModel, GenerationContext<KitGenerationCapabilities>)>
-{
-	public static readonly KitGenerationModelComparer Instance = new();
-
-	KitGenerationModelComparer() { }
-
-	public bool Equals(
-		(KitGenerationModel, GenerationContext<KitGenerationCapabilities>) x,
-		(KitGenerationModel, GenerationContext<KitGenerationCapabilities>) y
-	) => EqualityComparer<KitGenerationModel>.Default.Equals(x.Item1, y.Item1);
-
-	public int GetHashCode((KitGenerationModel, GenerationContext<KitGenerationCapabilities>) obj) =>
-		EqualityComparer<KitGenerationModel>.Default.GetHashCode(obj.Item1);
-}
-
 readonly record struct HostKitModel(
 	TypeIdentity HostKitType,
 	TypeIdentity OptionsType,

@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 sealed partial class ExampleAPIKit
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddProject<Projects.Example_Service>(Name);
+		builder.AddProject<Projects.Example_Service>(Name).WithUrl("/health", "Health");
 
 	protected override void ConfigureResource()
 	{

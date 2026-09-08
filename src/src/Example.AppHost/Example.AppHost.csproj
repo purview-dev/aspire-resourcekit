@@ -3,6 +3,7 @@
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IsPackable>false</IsPackable>
+		<NoWarn>$(NoWarn);CA1034;CA1062;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />

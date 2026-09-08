@@ -14,20 +14,13 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			.RegisterEmbeddedAttribute<HostKitGenerator>()
 			.RegisterPostInitializationOutput(postInitContext =>
 			{
-				foreach (var resourceType in TypeLibrary.GeneratedTypes)
-				{
-					postInitContext.AddSource(
-						resourceType.MetadataFullName + ".g.cs",
-						EmbeddedResourceHelper.Load(resourceType.Name)
-					);
-				}
+				foreach (var (HintName, Source) in CodeGenEmiiter.EmitAttributes())
+					postInitContext.AddSource(HintName, Source);
 			});
 
 		var pipelines = SourceGenLibrary.GetGeneratorValueProviders(context);
 
-		var outputProvider = pipelines
-			.Outputs.Combine(pipelines.Context)
-			.WithComparer(KitGenerationModelComparer.Instance);
+		var outputProvider = pipelines.Outputs.Combine(pipelines.Context);
 
 		context.RegisterSourceOutput(
 			outputProvider,
