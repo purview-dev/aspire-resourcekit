@@ -26,7 +26,7 @@ static partial class TypeLibraryGenerator
 	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity HostKitBase = default;
 
-	[TypeRef(PurviewAspireResourceKitNamespace, 2, true)]
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
 	static readonly TypeIdentity ResourceKitBase = default;
 
 	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]

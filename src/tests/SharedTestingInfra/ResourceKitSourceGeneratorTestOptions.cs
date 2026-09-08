@@ -29,6 +29,7 @@ public sealed record ResourceKitSourceGeneratorTestOptions : SourceGeneratorTest
 		AdditionalNamespaces = [.. additionalNamespaces];
 		AdditionalAssemblyTypes = [.. additionalTypes];
 		//AdditionalReferences = AspireReferences();
+		CompileToAssembly = true;
 		ExcludeGeneratedSourceHintNames =
 		[
 			"EmbeddedAttribute",

@@ -54,9 +54,6 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var sources = TestHelper.GenerateSources(
 			resourceKit: resourceKit,
 			resourceKitBase: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MakeGeneric(
-				TypeLibrary.Purview.Aspire.ResourceKit.HostKitBase.MakeGeneric(
-					TestingTypeLibrary.Testing.HostKitNamespace.DefaultHostKitType
-				),
 				TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource
 			)
 		);
@@ -437,7 +434,9 @@ namespace Testing
 		var sources = TestHelper.GenerateSources(
 			hostKit: new(globalHostKitTypeName, null),
 			resourceKit: new(redisResourceKitTypeName, null),
-			resourceKitBase: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase
+			resourceKitBase: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MakeGeneric(
+				TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource
+			)
 		);
 
 		// Act

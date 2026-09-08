@@ -55,12 +55,7 @@ public static class TestHelper
 	)
 	{
 		yield return GenerateHostKit(hostKit, hostKitBase: hostKitBase, generateOptions: generateOptions);
-		yield return GenerateResourceKit(
-			resourceKit,
-			aspireResource: aspireResource,
-			resourceKitBase: resourceKitBase,
-			hostKit: hostKit
-		);
+		yield return GenerateResourceKit(resourceKit, aspireResource: aspireResource, resourceKitBase: resourceKitBase);
 	}
 
 	public static string GenerateHostKit(
@@ -96,16 +91,11 @@ public static class TestHelper
 	public static string GenerateResourceKit(
 		TypeIdentity? resourceKit = null,
 		TypeIdentity? aspireResource = null,
-		TypeIdentity? resourceKitBase = null,
-		TypeIdentity? hostKit = null
+		TypeIdentity? resourceKitBase = null
 	)
 	{
 		resourceKit ??= TestingTypeLibrary.Testing.ResourceKitNamespace.DefaultResourceKitType;
 		aspireResource ??= TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource;
-		resourceKitBase ??= TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MakeGeneric(
-			hostKit ?? TestingTypeLibrary.Testing.HostKitNamespace.DefaultHostKitType,
-			aspireResource.Value
-		);
 
 		var writer = CodeWriter.CreateTestWriter();
 		AttributeDeclarationOptions resourceDefinitionAttribute = new(

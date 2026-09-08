@@ -210,7 +210,7 @@ static class SourceGenLibrary
 			new(
 				HostKitType: hostKitType,
 				OptionsType: optionsType,
-				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.WithArity(1),
+				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase,
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName,
 				Location: DiagnosticInfo.Create(

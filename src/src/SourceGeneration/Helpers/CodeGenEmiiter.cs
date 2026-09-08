@@ -8,7 +8,7 @@ static partial class CodeGenEmiiter
 	public static IEnumerable<(string HintName, SourceText Source)> EmitAttributes()
 	{
 		yield return ($"{nameof(HostKitAttribute)}.g.cs", HostKitAttribute());
-		yield return ($"{nameof(ResourceKitDefinitionAttribute)}.g.cs", ResourceKitDefinitionAttribute());
+		yield return ("ResourceDefinitionAttribute.g.cs", ResourceKitDefinitionAttribute());
 	}
 
 	public static CodeWriter Emit(OutputContext outputContext, CancellationToken cancellationToken)

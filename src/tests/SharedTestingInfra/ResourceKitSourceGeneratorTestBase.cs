@@ -6,9 +6,8 @@ public abstract class ResourceKitSourceGeneratorTestBase<TGenerator>
 	: TUnitSourceGeneratorTestBase<TGenerator, ResourceKitSourceGeneratorTestOptions>
 	where TGenerator : class, IIncrementalGenerator, new()
 {
-	// +1 is for the EmbeddedAttribute
-	public static readonly int ExpectedGeneratedFileCount =
-		TypeLibrary.Purview.Aspire.ResourceKit.GetTypes().Length + 1;
+	// Generated attribute files: EmbeddedAttribute, HostKitAttribute, ResourceDefinitionAttribute.
+	public static readonly int ExpectedGeneratedFileCount = 3;
 
 	public static readonly int ExpectedFileCountPlusGen = ExpectedGeneratedFileCount + 1;
 }
