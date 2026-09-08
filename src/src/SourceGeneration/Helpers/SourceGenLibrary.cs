@@ -202,13 +202,15 @@ static class SourceGenLibrary
 
 		var data = HostKitAttributeData.FromAttributeData(context.Attributes);
 		TypeIdentity hostKitType = new(symbol);
-		var optionsType = data.GenerateOptions ? hostKitType.Nested(hostKitType.Name + "Options") : TypeIdentity.Empty;
+		var optionsType = data.GenerateOptions
+			? hostKitType.Nested(hostKitType.Name + TypeLibraryGenerator.OptionsBaseClassSuffix)
+			: TypeIdentity.Empty;
 
 		return GeneratorResult<HostKitModel>.Create(
 			new(
 				HostKitType: hostKitType,
 				OptionsType: optionsType,
-				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase,
+				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.WithArity(1),
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName,
 				Location: DiagnosticInfo.Create(
@@ -232,19 +234,20 @@ static class SourceGenLibrary
 		var allAttributes = ResourceDefinitionAttributeData.AllAttributeData(symbol.GetAttributes()).ToArray();
 		var matchedAttribute = allAttributes.FirstOrDefault();
 
-		var resourceName = matchedAttribute.Instance.Name ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes);
+		var resourceName = matchedAttribute.Instance.Name ?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes);
 		var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(symbol);
 		var isDerivedFromExpectedBase =
 			hasExplicitBaseType
 			&& TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase);
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
-		var propertyName = matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibrary.TrimSuffixes)!;
+		var propertyName =
+			matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
 		var aspireResourceType = matchedAttribute.Instance.AspireResourceType;
 		if (aspireResourceType == TypeIdentity.Empty)
 			aspireResourceType = ResolveAspireResourceTypeFromBaseClass(symbol, aspireResourceType);
 
 		TypeIdentity resourceKitType = new(symbol);
-		var optionsType = resourceKitType.Nested(symbol.Name + "Options");
+		var optionsType = resourceKitType.Nested(symbol.Name + TypeLibraryGenerator.OptionsBaseClassSuffix);
 
 		var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 		if (allAttributes.Length > 1)

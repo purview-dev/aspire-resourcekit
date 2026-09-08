@@ -11,7 +11,7 @@ partial class CodeGenEmiiter
 
 		context.Info($"Generating {context.HostKit.HostKitType.MetadataFullName}...");
 
-		using var nsScope = context.Writer.BlockNamespaceScope(context.HostKit.HostKitType.Namespace);
+		using var nsScope = context.Writer.BlockNamespaceScope(context.HostKit.HostKitType);
 
 		var primaryConstructorParameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>();
 		primaryConstructorParameters.Add(
@@ -39,7 +39,7 @@ partial class CodeGenEmiiter
 			context
 				.Writer.XmlSummary("Represents the generated Host Kit and composes all discovered Resources Kits")
 				.ClassScope(
-					new(context.HostKit.HostKitType)
+					new(context.HostKit.HostKitType, context.HostKit.Accessibility)
 					{
 						IsPartial = true,
 						BaseType = TypeLibrary.Purview.Aspire.ResourceKit.HostKitBase.MakeGeneric(
@@ -135,7 +135,7 @@ partial class CodeGenEmiiter
 									Parameters =
 									[
 										new("hostKit", context.Model.HostKit.Value.HostKitType),
-										new("name", PurviewTypeLibrary.System.String.MakeNullable(context.Writer)),
+										new("name", TypeLibrary.System.String.MakeNullable(context.Writer)),
 									],
 									Initializer = $"base(hostKit, name)",
 								},
@@ -322,7 +322,7 @@ partial class CodeGenEmiiter
 			context
 				.Writer.XmlSummary("Configuration section name for host kit options.")
 				.Field(
-					new("SectionName", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
+					new("SectionName", TypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
 						IsConst = true,
 						Initializer = GeneratedText.QuoteLiteral(context.HostKit.HostKitType.Name),

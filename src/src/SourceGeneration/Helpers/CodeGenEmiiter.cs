@@ -1,9 +1,16 @@
+using Microsoft.CodeAnalysis.Text;
 using Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static partial class CodeGenEmiiter
 {
+	public static IEnumerable<(string HintName, SourceText Source)> EmitAttributes()
+	{
+		yield return ($"{nameof(HostKitAttribute)}.g.cs", HostKitAttribute());
+		yield return ($"{nameof(ResourceKitDefinitionAttribute)}.g.cs", ResourceKitDefinitionAttribute());
+	}
+
 	public static CodeWriter Emit(OutputContext outputContext, CancellationToken cancellationToken)
 	{
 		var writer = outputContext.Writer;

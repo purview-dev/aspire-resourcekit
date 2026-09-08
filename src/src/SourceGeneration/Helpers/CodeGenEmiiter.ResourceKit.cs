@@ -43,9 +43,17 @@ partial class CodeGenEmiiter
 
 				// Generate the resource kit class
 				using (
-					context.Writer.ClassScope(
-						new(resourceKit.ResourceKitType) { IsPartial = true, BaseType = baseClass }
-					)
+					context
+						.Writer.XmlSummary(
+							$"Represents a resource kit for {XmlSee(resourceKit.AspireResourceType)} />."
+						)
+						.ClassScope(
+							new(resourceKit.ResourceKitType, resourceKit.Accessibility)
+							{
+								IsPartial = true,
+								BaseType = baseClass,
+							}
+						)
 				)
 				{
 					// Write the constructor
@@ -59,7 +67,7 @@ partial class CodeGenEmiiter
 									new("hostKit", context.HostKit.HostKitType),
 									context.HostKit.ShouldGenerateOptions
 										? new("options", resourceKit.OptionsType)
-										: new("name", PurviewTypeLibrary.System.String.MakeNullable(context.Writer)),
+										: new("name", TypeLibrary.System.String.MakeNullable(context.Writer)),
 								],
 								Initializer = context.HostKit.ShouldGenerateOptions
 									? "base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
@@ -115,7 +123,7 @@ partial class CodeGenEmiiter
 			context
 				.Writer.XmlSummary("Gets or sets the logical name used to register the resource.")
 				.Property(
-					new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
+					new("Name", TypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
 						IsInitOnly = true,
 						Initializer = GeneratedText.QuoteLiteral(resourceKit.ResourceName),
@@ -132,7 +140,7 @@ partial class CodeGenEmiiter
 			context
 				.Writer.XmlSummary("Gets or sets whether the resource is enabled.")
 				.Property(
-					new("IsEnabled", PurviewTypeLibrary.System.Boolean, TypeDeclarationAccessibility.Public)
+					new("IsEnabled", TypeLibrary.System.Boolean, TypeDeclarationAccessibility.Public)
 					{
 						IsInitOnly = true,
 						Initializer = "true",

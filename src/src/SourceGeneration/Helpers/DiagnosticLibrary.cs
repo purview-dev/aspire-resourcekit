@@ -4,7 +4,7 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 static class DiagnosticLibrary
 {
-	const string Category = TypeLibrary.PurviewAspireResourceKitNamespace + ".SourceGenerator";
+	const string Category = TypeLibraryGenerator.PurviewAspireResourceKitNamespace + ".SourceGenerator";
 
 	public static readonly DiagnosticDescriptor ClassMustBePartial = new(
 		id: "SG0001",

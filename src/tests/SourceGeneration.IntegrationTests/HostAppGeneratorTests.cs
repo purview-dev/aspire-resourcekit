@@ -156,7 +156,7 @@ namespace Testing;
 partial class TestingHostKit;
 
 [ResourceDefinition]
-partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}_INVALID<TestingHostKit, {TypeLibrary.DefaultAspireResource}>
+partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.Name}_INVALID<TestingHostKit, {TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource}>
 {{
 	{TestHelper.GenerateBuildResourceMethod()}
 }}
@@ -252,7 +252,7 @@ partial class RedisResourceKit;
 			sources,
 			options
 				.WithAdditionalAssemblyTypes(typeof(DefaultAspireResource))
-				.WithAdditionalNamespaces(TypeLibrary.DefaultAspireResource),
+				.WithAdditionalNamespaces(TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource),
 			cancellationToken
 		);
 	}

@@ -1,7 +1,7 @@
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 [GenerateTypeLibrary]
-static partial class TypeLibrary
+static partial class TypeLibraryGenerator
 {
 	// Generated type information...
 	public static readonly string[] TrimSuffixes = ["ResourceKit", "Resource", "Kit"];
@@ -16,20 +16,20 @@ static partial class TypeLibrary
 	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
 	static readonly TypeIdentity ResourceDefinitionAttribute = default;
 
-	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	[TypeRef(nameof(ResourceDefinitionAttribute), PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity GenericResourceDefinitionAttribute = default;
 
 	// Library types
 	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
 	static readonly TypeIdentity IHostKit = default;
 
-	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity HostKitBase = default;
 
-	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	[TypeRef(PurviewAspireResourceKitNamespace, 2, true)]
 	static readonly TypeIdentity ResourceKitBase = default;
 
-	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity IResourceKit = default;
 
 	// Other required types
@@ -59,10 +59,4 @@ static partial class TypeLibrary
 
 	[TypeRef("System.ComponentModel")]
 	static readonly TypeIdentity EditorBrowsableAttribute = default;
-
-	[TypeRef("System")]
-	static readonly TypeIdentity InvalidOperationException = default;
-
-	[TypeRef("System")]
-	static readonly TypeIdentity ArgumentNullException = default;
 }

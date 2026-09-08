@@ -2,19 +2,11 @@ namespace Purview.Aspire.ResourceKit;
 
 public static class TestHelper
 {
-	public const string DefaultHostKitType = "TestingHostKit";
-
-	public const string DefaultHostKitNamespace = "Testing.HostKitNamespace";
-
-	public const string DefaultResourceKitType = "TestingResourceKit";
-
-	public const string DefaultResourceKitNamespace = "Testing.ResourceKitNamespace";
-
 	public static string GenerateAspireResource(TypeIdentity? typeIdentity = null)
 	{
 		var resourceIdentity =
 			typeIdentity == null || typeIdentity == TypeIdentity.Empty
-				? TypeLibrary.DefaultAspireResource
+				? TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource
 				: typeIdentity.Value;
 
 		var writer = CodeWriter.CreateTestWriter();
@@ -29,7 +21,7 @@ public static class TestHelper
 				bodyWriter =>
 					bodyWriter
 						.Property(
-							new("Name", PurviewTypeLibrary.System.String, TypeDeclarationAccessibility.Public)
+							new("Name", TypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 							{
 								ExpressionBody = $"\"{resourceIdentity.Name}\"",
 							}
@@ -51,100 +43,92 @@ public static class TestHelper
 	}
 
 	public static string GenerateBuildResourceMethod(TypeIdentity? aspireResource = null) =>
-		$"protected override IResourceBuilder<{aspireResource ?? TypeLibrary.DefaultAspireResource}> BuildResource({TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
+		$"protected override IResourceBuilder<{aspireResource ?? TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource}> BuildResource({TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder} builder) => throw new global::System.NotImplementedException();";
 
 	public static IEnumerable<string> GenerateSources(
-		string hostKitName = DefaultHostKitType,
-		string? hostKitNamespace = DefaultHostKitNamespace,
-		string? hostKitBaseClass = null,
+		TypeIdentity? hostKit = null,
+		TypeIdentity? hostKitBase = null,
 		bool generateOptions = true,
-		string resourceKitName = DefaultResourceKitType,
-		string? resourceKitNamespace = DefaultResourceKitNamespace,
-		string? resourceKitBaseClass = null,
+		TypeIdentity? resourceKit = null,
+		TypeIdentity? resourceKitBase = null,
 		TypeIdentity? aspireResource = null
 	)
 	{
-		yield return GenerateHostKit(
-			hostKitName,
-			baseClass: hostKitBaseClass,
-			namespaceName: hostKitNamespace,
-			generateOptions: generateOptions
-		);
+		yield return GenerateHostKit(hostKit, hostKitBase: hostKitBase, generateOptions: generateOptions);
 		yield return GenerateResourceKit(
-			resourceKitName,
+			resourceKit,
 			aspireResource: aspireResource,
-			baseClass: resourceKitBaseClass,
-			namespaceName: resourceKitNamespace
+			resourceKitBase: resourceKitBase,
+			hostKit: hostKit
 		);
 	}
 
 	public static string GenerateHostKit(
-		string hostKitName = DefaultHostKitType,
-		string? baseClass = null,
-		string? namespaceName = DefaultHostKitNamespace,
+		TypeIdentity? hostKit = null,
+		TypeIdentity? hostKitBase = null,
 		bool generateOptions = true
 	)
 	{
+		hostKit ??= TestingTypeLibrary.Testing.HostKitNamespace.DefaultHostKitType;
+
 		var writer = CodeWriter.CreateTestWriter();
 
-#pragma warning disable CA1308 // Normalize strings to uppercase
-		AttributeDeclarationOptions hostKitAttribute = new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
-		{
-			Arguments =
-			[
-				new AttributeArgumentOptions(generateOptions) { Name = "GenerateOptions", IsPropertyAssignment = true },
-			],
-		};
-#pragma warning restore CA1308 // Normalize strings to uppercase
-
 		writer
-			.FileScopedNamespace(namespaceName)
+			.FileScopedNamespace(hostKit)
 			.Class(
-				new(hostKitName, TypeDeclarationAccessibility.Public)
+				new(hostKit, TypeDeclarationAccessibility.Public)
 				{
-					BaseType = baseClass is null ? null : new TypeIdentity(baseClass, null).AsTypeReference(),
+					BaseType = hostKitBase,
 					IsPartial = true,
-					Attributes = [hostKitAttribute],
-				},
-				bodyWriter => bodyWriter.Comment("Empty")
+					Attributes =
+					[
+						new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
+						{
+							Arguments = [new(generateOptions, "GenerateOptions", true)],
+						},
+					],
+				}
 			);
 
 		return writer.ToString();
 	}
 
 	public static string GenerateResourceKit(
-		string resourceKitName = DefaultResourceKitType,
+		TypeIdentity? resourceKit = null,
 		TypeIdentity? aspireResource = null,
-		string? baseClass = null,
-		string? namespaceName = DefaultHostKitNamespace
+		TypeIdentity? resourceKitBase = null,
+		TypeIdentity? hostKit = null
 	)
 	{
-		aspireResource ??= TypeLibrary.DefaultAspireResource;
+		resourceKit ??= TestingTypeLibrary.Testing.ResourceKitNamespace.DefaultResourceKitType;
+		aspireResource ??= TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource;
+		resourceKitBase ??= TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MakeGeneric(
+			hostKit ?? TestingTypeLibrary.Testing.HostKitNamespace.DefaultHostKitType,
+			aspireResource.Value
+		);
 
 		var writer = CodeWriter.CreateTestWriter();
-
-		var baseType = baseClass is null
-			? null
-			: new TypeIdentity(baseClass, null).MakeGeneric(aspireResource.Value).AsTypeReference();
 		AttributeDeclarationOptions resourceDefinitionAttribute = new(
-			baseClass is null
+			resourceKitBase is null
 				? TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MakeGeneric(aspireResource.Value)
 				: TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute
 		);
 
 		writer
-			.FileScopedNamespace(namespaceName)
+			.FileScopedNamespace(resourceKit)
 			.Class(
-				new(resourceKitName, TypeDeclarationAccessibility.Public)
+				new(resourceKit, TypeDeclarationAccessibility.Public)
 				{
-					BaseType = baseType,
+					BaseType = resourceKitBase,
 					IsPartial = true,
 					Attributes = [resourceDefinitionAttribute],
 				},
 				bodyWriter =>
 					bodyWriter.Method(
 						"BuildResource",
-						TypeLibrary.IResourceBuilder.MakeGeneric(aspireResource.Value),
+						TestingTypeLibrary.Aspire.Hosting.ApplicationModel.IResourceBuilder.MakeGeneric(
+							aspireResource.Value
+						),
 						TypeDeclarationAccessibility.Protected,
 						methodWriter =>
 							methodWriter with
@@ -155,7 +139,7 @@ public static class TestHelper
 									new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder),
 								],
 							},
-						writer => writer.Throw("System.NotImplementedException")
+						writer => writer.Throw(TypeIdentity.Create<NotImplementedException>())
 					)
 			);
 

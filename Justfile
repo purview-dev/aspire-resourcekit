@@ -106,7 +106,7 @@ lint-check *args:
 # Clean up the repository by removing build artifacts, bin/obj folders etc, and shutting down the build server
 [group('Utilities')]
 scrub:
-    find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
+    find . -type d \( -name bin -o -name obj \) -exec rm -rf {} +
     just clean
     just restore --force-evaluate
     dotnet build-server shutdown

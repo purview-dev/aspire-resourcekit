@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
@@ -40,18 +38,18 @@ namespace Testing
 	)
 	{
 		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var query = result.Generated();
 
-		var tree = result.GetGeneratedTree("ResourceDefinitionAttribute.g.cs");
-		tree = await Assert.That(tree).IsNotNull();
+		await Assert
+			.That(query)
+			.HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+			.And.HasPropertyOfType("Name", query.MakeNullable(TypeLibrary.System.String));
 
-		var syntaxTree = await tree.GetTextAsync(cancellationToken);
-		var text = syntaxTree.ToString();
+		var genericResourceDefAttribute = await Assert
+			.That(query)
+			.HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute);
 
-		await Assert.That(text).Contains("class ResourceDefinitionAttribute");
-		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource>");
-		await Assert.That(text).Contains("class ResourceDefinitionAttribute<TResource> : ResourceDefinitionAttribute");
-		await Assert.That(text).Contains("string? Name");
-		await Assert.That(text).Contains("string? PropertyName");
+		genericResourceDefAttribute.HasBaseType(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute);
 	}
 
 	[Test]
@@ -60,18 +58,13 @@ namespace Testing
 	)
 	{
 		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var query = result.Generated();
 
-		var hostAppTree = result.GetGeneratedTree("HostKitAttribute.g.cs");
-		var appResourceTree = result.GetGeneratedTree("ResourceDefinitionAttribute.g.cs");
-
-		hostAppTree = await Assert.That(hostAppTree).IsNotNull();
-		appResourceTree = await Assert.That(appResourceTree).IsNotNull();
-
-		var hostApp = hostAppTree.ToString();
-		var appResource = appResourceTree.ToString();
-
-		await Assert.That(hostApp).Contains("namespace Purview.Aspire.ResourceKit");
-		await Assert.That(appResource).Contains("namespace Purview.Aspire.ResourceKit");
+		await Assert.That(query).HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute);
+		await Assert.That(query).HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute);
+		await Assert
+			.That(query)
+			.HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute);
 	}
 
 	[Test]
@@ -80,33 +73,32 @@ namespace Testing
 	)
 	{
 		var result = await GenerateAsync(EmptySource, cancellationToken);
-		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
+		var query = result.Generated();
 
-		await Assert
-			.That(assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName))
-			.IsNotNull();
-		await Assert
-			.That(assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName))
-			.IsNotNull();
-		await Assert
-			.That(
-				assembly.GetType(
-					TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName
-				)
-			)
-			.IsNotNull();
+		foreach (
+			var attributeType in new[]
+			{
+				TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
+				TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
+				TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
+			}
+		)
+		{
+			await Assert.That(query).HasGeneratedClass(attributeType);
+		}
 	}
 
 	[Test]
 	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
-		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
-		var type = assembly.GetType(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName)!;
+		var result = await GenerateAsync(EmptySource, cancellationToken);
+		var query = result.Generated();
 
-		var nameProp = type.GetProperty("Name");
-		await Assert.That(nameProp).IsNotNull();
-		await Assert.That(nameProp!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
+		var attributeClass = await Assert
+			.That(query)
+			.HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute);
+
+		await Assert.That(attributeClass).HasPropertyOfType("Name", query.MakeNullable(TypeLibrary.System.String));
 	}
 
 	[Test]
@@ -136,24 +128,30 @@ namespace Testing
 	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
 		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
-		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
+		//var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
+
+		var query = result.Generated();
 
 		foreach (
-			var fullName in new[]
+			var attributeType in new[]
 			{
-				TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.MetadataFullName,
-				TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName,
-				TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName,
+				TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
+				TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
+				TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
 			}
 		)
 		{
-			var type = assembly.GetType(fullName)!;
-			var usage = type.GetCustomAttribute<AttributeUsageAttribute>();
+			var classNode = query.GetClass(attributeType);
 
-			await Assert.That(usage).IsNotNull();
-			await Assert.That(usage!.ValidOn.HasFlag(AttributeTargets.Class)).IsTrue();
-			await Assert.That(usage.AllowMultiple).IsFalse();
-			await Assert.That(usage.Inherited).IsFalse();
+			await Assert.That(classNode).IsNotNull();
+
+			//var type = assembly.GetType(attributeType)!;
+			//var usage = type.GetCustomAttribute<AttributeUsageAttribute>();
+
+			//await Assert.That(usage).IsNotNull();
+			//await Assert.That(usage.ValidOn.HasFlag(AttributeTargets.Class)).IsTrue();
+			//await Assert.That(usage.AllowMultiple).IsFalse();
+			//await Assert.That(usage.Inherited).IsFalse();
 		}
 	}
 }

@@ -9,9 +9,4 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
 		<PackageReference Include="Purview.SourceGeneratorFramework" PrivateAssets="all" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="Templates\**\*.cs" />
-		<Compile Remove="Templates\**\*.cs" />
-	</ItemGroup>
 </Project>
