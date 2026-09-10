@@ -1,6 +1,13 @@
 # Diagnostics and troubleshooting
 
-ResourceKit source generation reports diagnostics with `SGxxxx` IDs to help you fix model issues quickly.
+ResourceKit reports diagnostics with `SGxxxx` IDs to help you fix model issues quickly. The rules are
+evaluated by the bundled `ResourceKitDiagnosticAnalyzer` (and the source generator uses the same shared
+rule set to decide what can be generated).
+
+ResourceKit also ships `ResourceKitDiagnosticSuppressor`, which automatically suppresses `CS8618` for
+non-nullable `IResourceBuilder<T>` properties declared on resource kits — these are populated at runtime
+during the `BuildResource`/`ConfigureResource` lifecycle, so the "must contain a non-null value when
+exiting the constructor" warning does not apply.
 
 ## Diagnostic reference
 
@@ -22,6 +29,9 @@ ResourceKit source generation reports diagnostics with `SGxxxx` IDs to help you 
 | SG0014 | Error | Non-generic `ResourceDefinition` requires explicit compatible base type |
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` cannot declare explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
+| SG0017 | Warning | An `IResourceBuilder<T>` property is never assigned in `BuildResource` or `ConfigureResource` |
+| SG0018 | Error | A project resource kit does not add the declared project via `AddProject<T>()` |
+| SG0019 | Error | A project resource kit declares an explicit base class that does not use `ProjectResource` |
 
 ## Fast troubleshooting checklist
 
@@ -63,3 +73,23 @@ Do not apply both to the same class.
 
 - If you use non-generic `[ResourceDefinition("name")]`, declare an explicit compatible base.
 - If you use generic `[ResourceDefinition<TResource>("name")]`, do not declare an explicit base.
+
+### Unassigned `IResourceBuilder<T>` property (SG0017)
+
+Every `IResourceBuilder<T>` property on a resource kit (nullable or not) must be assigned in either
+`BuildResource` or `ConfigureResource`. `CS8618` is automatically suppressed for these properties because
+they are populated at runtime, so SG0017 is the signal that a property is never set:
+
+```csharp
+[ResourceDefinition<AzureSqlServerResource>("sql")]
+sealed partial class SqlServerKit
+{
+	public IResourceBuilder<AzureSqlDatabaseResource> Database { get; private set; }
+
+	protected override void ConfigureResource()
+	{
+		Database = ResourceBuilder.AddDatabase("changeops-db", "ChangeOps");
+		base.ConfigureResource();
+	}
+}
+```

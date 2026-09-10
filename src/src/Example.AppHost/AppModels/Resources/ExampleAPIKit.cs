@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
-[ResourceDefinition<ProjectResource>(Platform.ResourceKits.API)]
+[ResourceDefinition<Projects.Example_Service>(Platform.ResourceKits.API)]
 sealed partial class ExampleAPIKit
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>

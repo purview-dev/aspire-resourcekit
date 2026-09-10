@@ -60,7 +60,14 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 	{
 		var (IsFatal, Diagnostics) = outputContext.GetAllDiagnostics();
 		foreach (var diagnostic in Diagnostics)
+		{
+			// Rules owned by ResourceKitDiagnosticAnalyzer are reported by the analyzer; the source
+			// generator only raises diagnostics the analyzers cannot determine.
+			if (ResourceKitRules.IsAnalyzerOwned(diagnostic.Descriptor))
+				continue;
+
 			sourceProductionContext.ReportDiagnostic(diagnostic.ToDiagnostic());
+		}
 
 		return IsFatal;
 	}

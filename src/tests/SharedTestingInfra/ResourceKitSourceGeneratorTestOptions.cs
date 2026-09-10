@@ -36,6 +36,7 @@ public sealed record ResourceKitSourceGeneratorTestOptions : SourceGeneratorTest
 			TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.Name,
 			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.Name,
 		];
+		AnalyzerTypes = [typeof(SourceGeneration.ResourceKitDiagnosticAnalyzer)];
 	}
 
 	public static ResourceKitSourceGeneratorTestOptions NoValidation { get; } =

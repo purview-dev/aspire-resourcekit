@@ -37,13 +37,20 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Purview.Aspire.ResourceKit;
 
-[ResourceDefinition<ProjectResource>("api")]
+[ResourceDefinition<Projects.Example_Service>("api")]
 partial class ApiResourceKit
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);
 }
 ```
+
+> [!NOTE]
+> For a project resource you can use the Aspire-generated project reference type
+> (`Projects.Example_Service`, the type accepted by `AddProject<TProject>()`) instead of the concrete
+> `ProjectResource`. The generator maps it to `ProjectResource` for the generated base class, and the
+> analyzer validates that `BuildResource` adds the same project via `AddProject<T>()` (SG0018) and that an
+> explicit base, when used, resolves to `ProjectResource` (SG0019).
 
 ### Choose an attribute style
 

@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 sealed partial class AzureStorageKit(ExampleHostKit hostKit)
 	: ResourceKitBase<ExampleHostKit, AzureStorageResource>(hostKit, Platform.ResourceKits.AzureStorage)
 {
-	public IResourceBuilder<AzureBlobStorageResource> Blobs { get; private set; } = default!;
+	public IResourceBuilder<AzureBlobStorageResource> Blobs { get; private set; }
 
 	protected override IResourceBuilder<AzureStorageResource> BuildResource(IDistributedApplicationBuilder builder)
 	{

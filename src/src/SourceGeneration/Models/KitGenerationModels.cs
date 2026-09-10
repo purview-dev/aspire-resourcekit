@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
@@ -47,16 +46,6 @@ sealed record KitGenerationModel(
 		var isFatal =
 			HostKits.AsImmutableArray().Any(h => !h.ShouldProcess)
 			|| ResourceKits.AsImmutableArray().Any(r => r.Items.AsImmutableArray().Any(d => !d.ShouldProcess));
-		if (ResourceKits.IsEmpty && HasHostKit)
-		{
-			allDiagnostics = allDiagnostics.Add(
-				DiagnosticInfo.Create(
-					DiagnosticLibrary.NoResourceKitsDefined,
-					HostKit.Value.Location.ToDiagnostic().Location,
-					HostKit.Value.HostKitType.Name
-				)
-			);
-		}
 
 		return (isFatal, EquatableArray<DiagnosticInfo>.Create([.. allDiagnostics]));
 	}
@@ -85,8 +74,7 @@ readonly record struct HostKitModel(
 	TypeIdentity OptionsType,
 	TypeIdentity ResourceKitBaseType,
 	TypeDeclarationAccessibility? Accessibility,
-	string ExtensionMethodName,
-	DiagnosticInfo Location
+	string ExtensionMethodName
 )
 {
 	public bool ShouldGenerateOptions => OptionsType != TypeIdentity.Empty;
