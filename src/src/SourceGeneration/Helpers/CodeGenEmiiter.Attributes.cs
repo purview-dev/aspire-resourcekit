@@ -168,10 +168,7 @@ partial class CodeGenEmiiter
 			new TypeDeclarationOptions(TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute)
 			{
 				BaseType = TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
-				GenericTypes =
-				[
-					new("TResource") { Constraints = ["class", TypeLibrary.Aspire.Hosting.ApplicationModel.IResource] },
-				],
+				GenericTypes = [new("TResource") { Constraints = ["class"] }],
 			},
 			AttributeTargets.Class,
 			attributeBody =>

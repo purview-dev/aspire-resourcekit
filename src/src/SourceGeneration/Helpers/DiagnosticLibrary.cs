@@ -23,7 +23,8 @@ static class DiagnosticLibrary
 		messageFormat: "No Host Kit resources were defined for '{0}'",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Info,
-		isEnabledByDefault: true
+		isEnabledByDefault: true,
+		customTags: [WellKnownDiagnosticTags.CompilationEnd]
 	);
 
 	public static readonly DiagnosticDescriptor NoHostKitInfoDefined = new(
@@ -41,7 +42,8 @@ static class DiagnosticLibrary
 		messageFormat: "Multiple Host Kits were defined in the app, only a single one is permitted",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
+		isEnabledByDefault: true,
+		customTags: [WellKnownDiagnosticTags.CompilationEnd]
 	);
 
 	public static readonly DiagnosticDescriptor DuplicateResourcePropertyName = new(
@@ -50,7 +52,8 @@ static class DiagnosticLibrary
 		messageFormat: "The property name '{0}' is used by multiple app resources; property names must be unique",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
+		isEnabledByDefault: true,
+		customTags: [WellKnownDiagnosticTags.CompilationEnd]
 	);
 
 	public static readonly DiagnosticDescriptor ResourceMustDeriveFromResourceKitBase = new(
@@ -147,6 +150,33 @@ static class DiagnosticLibrary
 		id: "SG0016",
 		title: "No Aspire resource found",
 		messageFormat: "No Aspire resource, use the ResourceDefinition<TResource> or implement IResourceKit<TResource>, or inherit from ResourceKitBase<THostKit, TResource> or the generated ResourceKitBase<TResource>",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ResourcePropertyNeverSet = new(
+		id: "SG0017",
+		title: "Resource property is never set",
+		messageFormat: "The '{0}' property of type '{1}' is never assigned in BuildResource or ConfigureResource; resource kit properties must be populated during the build or configure lifecycle",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ProjectDefinitionMismatch = new(
+		id: "SG0018",
+		title: "Project resource definition mismatch",
+		messageFormat: "The '{0}' resource kit declares project '{1}' but BuildResource must add the same project via AddProject<T>()",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ProjectResourceKitBaseMismatch = new(
+		id: "SG0019",
+		title: "Project resource kit base must use ProjectResource",
+		messageFormat: "The '{0}' resource kit declares a project but its explicit base class '{1}' does not use ProjectResource",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true

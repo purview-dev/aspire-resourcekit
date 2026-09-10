@@ -44,6 +44,15 @@ static partial class TypeLibraryGenerator
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity IResource = default;
 
+	[TypeRef("Aspire.Hosting.ApplicationModel", 1)]
+	static readonly TypeIdentity IResourceBuilder = default;
+
+	[TypeRef("Aspire.Hosting.ApplicationModel")]
+	static readonly TypeIdentity ProjectResource = default;
+
+	[TypeRef("Aspire.Hosting")]
+	static readonly TypeIdentity IProjectMetadata = default;
+
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity ResourceAnnotations = default;
 
