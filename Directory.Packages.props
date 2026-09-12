@@ -23,9 +23,15 @@
 		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="13.4.6" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(DotNetRuntimeVersion)" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion
+			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+			Version="$(DotNetRuntimeVersion)"
+		/>
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="$(DotNetRuntimeVersion)" />
-		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion
+			Include="Microsoft.Extensions.Options.ConfigurationExtensions"
+			Version="$(DotNetRuntimeVersion)"
+		/>
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
 		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(DotNetRuntimeVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" />
