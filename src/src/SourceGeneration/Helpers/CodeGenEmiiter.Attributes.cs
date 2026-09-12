@@ -13,13 +13,13 @@ partial class CodeGenEmiiter
 			.AttributeClass(
 				new TypeDeclarationOptions(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute),
 				AttributeTargets.Class,
-				attributeBody =>
+				static attributeBody =>
 				{
 					attributeBody
 						.XmlSummary("Initializes a new instance of the HostKitAttribute class.")
 						.Constructor(
 							new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute),
-							ctor => ctor.Comment("Empty")
+							static ctor => ctor.Comment("Empty")
 						);
 
 					attributeBody
@@ -35,7 +35,8 @@ partial class CodeGenEmiiter
 									new("generateOptions", TypeLibrary.System.Boolean),
 								],
 							},
-							ctor => ctor.Assignment("Name", "name").Assignment("GenerateOptions", "generateOptions")
+							static ctor =>
+								ctor.Assignment("Name", "name").Assignment("GenerateOptions", "generateOptions")
 						);
 
 					attributeBody
@@ -46,7 +47,7 @@ partial class CodeGenEmiiter
 							{
 								Parameters = [new("generateOptions", TypeLibrary.System.Boolean)],
 							},
-							ctor => ctor.Assignment("GenerateOptions", "generateOptions")
+							static ctor => ctor.Assignment("GenerateOptions", "generateOptions")
 						);
 
 					attributeBody
@@ -102,13 +103,13 @@ partial class CodeGenEmiiter
 				IsSealed = false,
 			},
 			AttributeTargets.Class,
-			attributeBody =>
+			static attributeBody =>
 			{
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
 					.Constructor(
 						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute),
-						ctor => ctor.Comment("Empty")
+						static ctor => ctor.Comment("Empty")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
@@ -123,7 +124,7 @@ partial class CodeGenEmiiter
 								new("propertyName", TypeLibrary.System.String),
 							],
 						},
-						ctor => ctor.Assignment("Name", "name").Assignment("PropertyName", "propertyName")
+						static ctor => ctor.Assignment("Name", "name").Assignment("PropertyName", "propertyName")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
@@ -133,7 +134,7 @@ partial class CodeGenEmiiter
 						{
 							Parameters = [new("name", TypeLibrary.System.String)],
 						},
-						ctor => ctor.Assignment("Name", "name")
+						static ctor => ctor.Assignment("Name", "name")
 					);
 
 				attributeBody
@@ -171,13 +172,13 @@ partial class CodeGenEmiiter
 				GenericTypes = [new("TResource") { Constraints = ["class"] }],
 			},
 			AttributeTargets.Class,
-			attributeBody =>
+			static attributeBody =>
 			{
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
 					.Constructor(
 						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute),
-						ctor => ctor.Comment("Empty")
+						static ctor => ctor.Comment("Empty")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
@@ -193,7 +194,7 @@ partial class CodeGenEmiiter
 							],
 							Initializer = "base(name, propertyName)",
 						},
-						ctor => ctor.Comment("Empty")
+						static ctor => ctor.Comment("Empty")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
@@ -204,7 +205,7 @@ partial class CodeGenEmiiter
 							Parameters = [new("name", TypeLibrary.System.String)],
 							Initializer = "base(name)",
 						},
-						ctor => ctor.Comment("Empty")
+						static ctor => ctor.Comment("Empty")
 					);
 			}
 		);

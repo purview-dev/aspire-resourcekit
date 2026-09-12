@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -22,7 +22,7 @@ public static class HostApplicationBuilderExtensions
 
 			builder.Services.AddServiceDiscovery();
 
-			builder.Services.ConfigureHttpClientDefaults(http =>
+			builder.Services.ConfigureHttpClientDefaults(static http =>
 			{
 				// Turn on resilience by default
 				http.AddStandardResilienceHandler();
@@ -102,7 +102,7 @@ public static class HostApplicationBuilderExtensions
 			builder
 				.Services.AddHealthChecks()
 				// Add a default liveness check to ensure app is responsive
-				.AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
+				.AddCheck("self", static () => HealthCheckResult.Healthy(), ["live"]);
 
 			return builder;
 		}

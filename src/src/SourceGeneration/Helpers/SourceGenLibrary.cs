@@ -65,8 +65,8 @@ static class SourceGenLibrary
 		static (outputContext, resourceKits, cancellationToken) =>
 		{
 			var groupedResourceKits = resourceKits
-				.Where(r => !r.IsEmpty)
-				.GroupBy(r =>
+				.Where(static r => !r.IsEmpty)
+				.GroupBy(static r =>
 				{
 					if (r.Value.ResourceKitType.IsGlobalNamespace)
 						return "<<global-namespace>>";
@@ -74,8 +74,8 @@ static class SourceGenLibrary
 					// Use the namespace of the target type as the key for grouping
 					return r.Value.ResourceKitType.Namespace!;
 				})
-				.OrderBy(g => g.Key, StringComparer.Ordinal)
-				.Select(g => new ResourceKitGroup(
+				.OrderBy(static g => g.Key, StringComparer.Ordinal)
+				.Select(static g => new ResourceKitGroup(
 					g.Key,
 					EquatableArray<GeneratorResult<ResourceKitModel>>.Create([.. g])
 				))
@@ -109,7 +109,7 @@ static class SourceGenLibrary
 			context,
 			TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
 			transform: static (ctx, ct) => GetResourceKitModel(ctx, ct),
-			predicate: (s, _) => s is ClassDeclarationSyntax,
+			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.GenericResourceDefinitionTargets
 		);
 
@@ -120,7 +120,7 @@ static class SourceGenLibrary
 			context,
 			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
 			transform: static (ctx, ct) => GetResourceKitModel(ctx, ct),
-			predicate: (s, _) => s is ClassDeclarationSyntax,
+			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.ResourceDefinitionTargets
 		);
 
@@ -132,7 +132,7 @@ static class SourceGenLibrary
 			context,
 			TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
 			transform: static (ctx, ct) => GetHostKitModel(ctx, ct),
-			predicate: (s, _) => s is ClassDeclarationSyntax,
+			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.HostKitTargets
 		);
 

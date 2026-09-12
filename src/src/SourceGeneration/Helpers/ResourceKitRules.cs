@@ -11,6 +11,11 @@ namespace Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 /// resource kit should be generated) evaluate rules through this single set of helpers so the two never
 /// drift apart.
 /// </summary>
+/// <remarks>
+/// Rules split into two groups: generation-blocking rules (raised as errors, which stop generation via
+/// <see cref="GeneratorResult{T}.ShouldProcess"/>) and execution-only rules (see
+/// <see cref="ExecutionOnlyRuleIds"/>, raised as warnings so generation always proceeds).
+/// </remarks>
 static class ResourceKitRules
 {
 	/// <summary>
@@ -38,21 +43,41 @@ static class ResourceKitRules
 	);
 
 	/// <summary>
-	/// A neutral rule evaluation that can be converted into either a <see cref="SourceGeneratorFramework.DiagnosticInfo"/> (for the
+	/// A neutral rule evaluation that can be converted into either a <see cref="ReportableDiagnostic"/> (for the
 	/// generator's incremental model) or a Roslyn <see cref="Diagnostic"/> (for the analyzer).
 	/// </summary>
 	internal readonly record struct RuleEvaluation(
 		DiagnosticDescriptor Descriptor,
+		bool IsBlocking,
 		Location? Location,
 		ImmutableArray<object> MessageArgs
 	)
 	{
-		public DiagnosticInfo ToDiagnosticInfo() => DiagnosticInfo.Create(Descriptor, Location, [.. MessageArgs]);
+		public ReportableDiagnostic ToDiagnosticInfo() =>
+			ReportableDiagnostic.Create(Descriptor, IsBlocking, Location, [.. MessageArgs]);
 
 		public Diagnostic ToDiagnostic() => Diagnostic.Create(Descriptor, Location ?? Location.None, [.. MessageArgs]);
 	}
 
+	/// <summary>
+	/// The diagnostic IDs that report problems which prevent correct runtime execution but do not
+	/// prevent generation. These are raised as warnings so they never flip a <c>GeneratorResult</c>'s
+	/// <c>ShouldProcess</c> (and therefore never halt generation via <c>IsFatal</c>). A resource kit with
+	/// an incomplete or inconsistent <c>BuildResource</c>/<c>ConfigureResource</c> wiring (a project not
+	/// added via <c>AddProject&lt;T&gt;()</c>, or an <c>IResourceBuilder&lt;T&gt;</c> property never
+	/// assigned) must still be generated so the user can complete the override rather than lose the
+	/// whole host kit output.
+	/// </summary>
+	public static readonly ImmutableHashSet<string> ExecutionOnlyRuleIds = ImmutableHashSet.Create(
+		StringComparer.Ordinal,
+		DiagnosticLibrary.ResourcePropertyNeverSet.Id,
+		DiagnosticLibrary.ProjectDefinitionMismatch.Id,
+		DiagnosticLibrary.ProjectResourceKitBaseMismatch.Id
+	);
+
 	public static bool IsAnalyzerOwned(DiagnosticDescriptor descriptor) => AnalyzerOwnedRuleIds.Contains(descriptor.Id);
+
+	public static bool IsExecutionOnly(DiagnosticDescriptor descriptor) => ExecutionOnlyRuleIds.Contains(descriptor.Id);
 
 	public static ImmutableArray<RuleEvaluation> EvaluateHostKit(
 		INamedTypeSymbol symbol,
@@ -67,7 +92,12 @@ static class ResourceKitRules
 		if (!TypeHelpers.IsPartial(declaration))
 		{
 			diagnostics.Add(
-				new(DiagnosticLibrary.ClassMustBePartial, declaration.Identifier.GetLocation(), [symbol.Name])
+				new(
+					DiagnosticLibrary.ClassMustBePartial,
+					IsBlocking: true,
+					declaration.Identifier.GetLocation(),
+					[symbol.Name]
+				)
 			);
 		}
 
@@ -76,6 +106,7 @@ static class ResourceKitRules
 			diagnostics.Add(
 				new(
 					DiagnosticLibrary.NonEmptyConstructorsNotSupported,
+					IsBlocking: true,
 					declaration.Identifier.GetLocation(),
 					[symbol.Name]
 				)
@@ -100,7 +131,12 @@ static class ResourceKitRules
 		if (!TypeHelpers.IsPartial(declaration))
 		{
 			diagnostics.Add(
-				new(DiagnosticLibrary.ClassMustBePartial, declaration.Identifier.GetLocation(), [symbol.Name])
+				new(
+					DiagnosticLibrary.ClassMustBePartial,
+					IsBlocking: true,
+					declaration.Identifier.GetLocation(),
+					[symbol.Name]
+				)
 			);
 		}
 
@@ -109,6 +145,7 @@ static class ResourceKitRules
 			diagnostics.Add(
 				new(
 					DiagnosticLibrary.NonEmptyConstructorsNotSupported,
+					IsBlocking: true,
 					declaration.Identifier.GetLocation(),
 					[symbol.Name]
 				)
@@ -137,7 +174,12 @@ static class ResourceKitRules
 		if (allAttributes.Length > 1)
 		{
 			diagnostics.Add(
-				new(DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported, GetLocation(symbol), [symbol.Name])
+				new(
+					DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported,
+					IsBlocking: true,
+					GetLocation(symbol),
+					[symbol.Name]
+				)
 			);
 		}
 
@@ -146,6 +188,7 @@ static class ResourceKitRules
 			diagnostics.Add(
 				new(
 					DiagnosticLibrary.GenericResourceDefinitionCannotHaveExplicitBase,
+					IsBlocking: true,
 					GetLocation(symbol),
 					[symbol.Name]
 				)
@@ -156,6 +199,7 @@ static class ResourceKitRules
 			diagnostics.Add(
 				new(
 					DiagnosticLibrary.NonGenericResourceDefinitionRequiresExplicitBase,
+					IsBlocking: true,
 					GetLocation(symbol),
 					[symbol.Name, TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase.MetadataFullName]
 				)
@@ -164,24 +208,33 @@ static class ResourceKitRules
 
 		if (string.IsNullOrWhiteSpace(resourceName))
 		{
-			diagnostics.Add(new(DiagnosticLibrary.ResourceNameNotDerivable, GetLocation(symbol), [symbol.Name]));
+			diagnostics.Add(
+				new(DiagnosticLibrary.ResourceNameNotDerivable, IsBlocking: true, GetLocation(symbol), [symbol.Name])
+			);
 		}
 
 		if (!TypeHelpers.IsValidIdentifier(propertyName))
 		{
-			diagnostics.Add(new(DiagnosticLibrary.InvalidPropertyName, GetLocation(symbol), [propertyName]));
+			diagnostics.Add(
+				new(DiagnosticLibrary.InvalidPropertyName, IsBlocking: true, GetLocation(symbol), [propertyName])
+			);
 		}
 
 		if (hasExplicitBaseType && !isDerivedFromExpectedBase)
 		{
 			diagnostics.Add(
-				new(DiagnosticLibrary.ResourceMustDeriveFromResourceKitBase, GetLocation(symbol), [symbol.Name])
+				new(
+					DiagnosticLibrary.ResourceMustDeriveFromResourceKitBase,
+					IsBlocking: true,
+					GetLocation(symbol),
+					[symbol.Name]
+				)
 			);
 		}
 
 		if (!isValidResourceType)
 		{
-			diagnostics.Add(new(DiagnosticLibrary.NoAspireResourceFound, GetLocation(symbol), []));
+			diagnostics.Add(new(DiagnosticLibrary.NoAspireResourceFound, IsBlocking: true, GetLocation(symbol), []));
 		}
 
 		if (declaredProject is not null)
@@ -197,6 +250,7 @@ static class ResourceKitRules
 				diagnostics.Add(
 					new(
 						DiagnosticLibrary.ProjectDefinitionMismatch,
+						IsBlocking: false,
 						addProjectLocation ?? GetLocation(symbol),
 						[symbol.Name, declaredProject.Name]
 					)
@@ -214,6 +268,7 @@ static class ResourceKitRules
 					diagnostics.Add(
 						new(
 							DiagnosticLibrary.ProjectResourceKitBaseMismatch,
+							IsBlocking: false,
 							GetLocation(symbol),
 							[symbol.Name, baseResourceType.MetadataFullName]
 						)
@@ -253,6 +308,7 @@ static class ResourceKitRules
 			diagnostics.Add(
 				new(
 					DiagnosticLibrary.ResourcePropertyNeverSet,
+					IsBlocking: false,
 					property.Locations.FirstOrDefault(static location => location.IsInSource),
 					[property.Name, property.Type.ToDisplayString()]
 				)
@@ -385,7 +441,7 @@ static class ResourceKitRules
 		{
 			foreach (var @interface in param.AllInterfaces)
 			{
-				var t = new TypeIdentity(@interface);
+				TypeIdentity t = new(@interface);
 				if (t == TypeLibrary.Aspire.Hosting.ApplicationModel.IResource)
 					return new(param);
 			}

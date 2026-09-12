@@ -1,11 +1,15 @@
 <Project>
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-		<TUnitVersion>1.65.63</TUnitVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.37</PurviewSourceGeneratorFrameworkVersion>
+		<RoslynVersion>5.9.0</RoslynVersion>
+		<TUnitVersion>1.67.0</TUnitVersion>
+		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.39</PurviewSourceGeneratorFrameworkVersion>
+		<DotNetRuntimeVersion>10.0.12</DotNetRuntimeVersion>
+		<MSExtensionVersion>10.10.0</MSExtensionVersion>
+		<OTelVersion>1.18.0</OTelVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynVersion)" />
 		<PackageVersion Include="Aspire.Azure.Npgsql" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.4.6" />
@@ -18,18 +22,16 @@
 		<PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.4.6" />
 		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="13.4.6" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
-		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
-		<!-- Keep Roslyn pinned only for netstandard2.0 because the generator must not pull System.Collections.Immutable 10.x into net8+ consumer and test builds. -->
-		<!--<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0' Or '$(TargetFramework)' == 'net10.0'" />-->
-		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="10.8.0" />
-		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="5.0.0-prerelease.6" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
+		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(DotNetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.Telemetry.Abstractions" Version="$(MSExtensionVersion)" />
+		<PackageVersion Include="Purview.Telemetry.SourceGenerator" Version="5.0.0-prerelease.7" />
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework"
 			Version="$(PurviewSourceGeneratorFrameworkVersion)"
@@ -42,12 +44,12 @@
 		<PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
-		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
-		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0" />
-		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
-		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
-		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
-		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
-		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
+		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MSExtensionVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MSExtensionVersion)" />
+		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OTelVersion)" />
+		<PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="$(OTelVersion)" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="$(OTelVersion)" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="$(OTelVersion)" />
+		<PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="$(OTelVersion)" />
 	</ItemGroup>
 </Project>

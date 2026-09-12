@@ -50,6 +50,7 @@ pipeline-release *args:
 [group('Pipeline')]
 pipeline-local-release *args:
     just ensure-pipeline-tool
+    just lint-fix
     echo "Running local release pipeline..."
     "{{ pipeline_tool }}" --Release:Mode=LocalNuGet {{ args }}
 

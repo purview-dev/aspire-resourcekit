@@ -11,7 +11,7 @@ public static class HintNameHelper
 		if (metadataFullName is null)
 			throw new ArgumentNullException(nameof(metadataFullName));
 		var identity = metadataFullName;
-		var safeIdentity = new StringBuilder(identity.Length);
+		StringBuilder safeIdentity = new(identity.Length);
 		foreach (var character in identity)
 		{
 			if (char.IsLetterOrDigit(character) || character is '.' or '_' or '-')
@@ -24,7 +24,7 @@ public static class HintNameHelper
 		using (var sha256 = SHA256.Create())
 			digest = sha256.ComputeHash(Encoding.UTF8.GetBytes(identity));
 
-		var hash = new StringBuilder(12);
+		StringBuilder hash = new(12);
 		for (var index = 0; index < 6; index++)
 			hash.Append(digest[index].ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
 		return $"{safeIdentity}.AspireResourceKit.{hash}.g.cs";

@@ -225,7 +225,9 @@ partial class CodeGenEmiiter
 			context.Writer.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["builder"]).NewLine();
 
 			foreach (
-				var resourceKit in context.ResourceKits.AsImmutableArray().SelectMany(r => r.Items.AsImmutableArray())
+				var resourceKit in context
+					.ResourceKits.AsImmutableArray()
+					.SelectMany(static r => r.Items.AsImmutableArray())
 			)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
@@ -257,7 +259,7 @@ partial class CodeGenEmiiter
 				foreach (
 					var resourceKit in context
 						.ResourceKits.AsImmutableArray()
-						.SelectMany(r => r.Items.AsImmutableArray())
+						.SelectMany(static r => r.Items.AsImmutableArray())
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
@@ -334,7 +336,7 @@ partial class CodeGenEmiiter
 				foreach (
 					var resourceKit in context
 						.ResourceKits.AsImmutableArray()
-						.SelectMany(r => r.Items.AsImmutableArray())
+						.SelectMany(static r => r.Items.AsImmutableArray())
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();

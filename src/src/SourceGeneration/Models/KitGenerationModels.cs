@@ -17,7 +17,7 @@ sealed record ResourceKitModelGroup(string Namespace, EquatableArray<ResourceKit
 // value-equatable and the downstream source output can be cached across unrelated changes.
 sealed record KitGenerationModel(
 	EquatableArray<GeneratorResult<HostKitModel>> HostKits,
-	EquatableArray<DiagnosticInfo> Diagnostics
+	EquatableArray<ReportableDiagnostic> Diagnostics
 )
 {
 	public bool HasHostKit => !HostKit.IsEmpty;
@@ -28,26 +28,28 @@ sealed record KitGenerationModel(
 
 	public EquatableArray<ResourceKitGroup> ResourceKits { get; init; } = EquatableArray<ResourceKitGroup>.Empty;
 
-	public (bool IsFatal, EquatableArray<DiagnosticInfo> Diagnostics) GetAllDiagnostics()
+	public (bool IsFatal, EquatableArray<ReportableDiagnostic> Diagnostics) GetAllDiagnostics()
 	{
 		var allDiagnostics = Diagnostics
 			.Concat(
 				HostKits
 					.AsImmutableArray()
-					.SelectMany(m => m.Diagnostics)
+					.SelectMany(static m => m.Diagnostics)
 					.Concat(
 						ResourceKits
 							.AsImmutableArray()
-							.SelectMany(r => r.Items.AsImmutableArray().SelectMany(d => d.Diagnostics))
+							.SelectMany(static r => r.Items.AsImmutableArray().SelectMany(static d => d.Diagnostics))
 					)
 			)
 			.ToImmutableArray();
 
 		var isFatal =
-			HostKits.AsImmutableArray().Any(h => !h.ShouldProcess)
-			|| ResourceKits.AsImmutableArray().Any(r => r.Items.AsImmutableArray().Any(d => !d.ShouldProcess));
+			HostKits.AsImmutableArray().Any(static h => !h.ShouldProcess)
+			|| ResourceKits
+				.AsImmutableArray()
+				.Any(static r => r.Items.AsImmutableArray().Any(static d => !d.ShouldProcess));
 
-		return (isFatal, EquatableArray<DiagnosticInfo>.Create([.. allDiagnostics]));
+		return (isFatal, EquatableArray<ReportableDiagnostic>.Create([.. allDiagnostics]));
 	}
 }
 
@@ -59,7 +61,7 @@ sealed record OutputContext(
 {
 	public HostKitModel HostKit => Model.HostKit.Value;
 
-	public int ResourceKitCount => ResourceKits.AsImmutableArray().Sum(r => r.Items.Count);
+	public int ResourceKitCount => ResourceKits.AsImmutableArray().Sum(static r => r.Items.Count);
 
 	public bool HasResourceKits => ResourceKitCount > 0;
 
