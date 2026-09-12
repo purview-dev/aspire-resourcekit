@@ -115,7 +115,9 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 	static string FindHostKitHintName(GeneratorDriverRunResult runResult) =>
 		runResult
 			.Results[0]
-			.GeneratedSources.First(source => source.HintName.Contains("AspireResourceKit.", StringComparison.Ordinal))
+			.GeneratedSources.First(static source =>
+				source.HintName.Contains("AspireResourceKit.", StringComparison.Ordinal)
+			)
 			.HintName;
 
 	static string GetGeneratedSource(GeneratorDriverRunResult runResult, string hintName) =>
@@ -124,6 +126,6 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 	static IncrementalStepRunReason GetOutputReason(GeneratorDriverRunResult runResult) =>
 		// There is a single RegisterSourceOutput step; the host kit source is its only output.
 		runResult.Results[0].TrackedOutputSteps.TryGetValue("SourceOutput", out var steps)
-			? steps.SelectMany(step => step.Outputs).Select(output => output.Reason).FirstOrDefault()
+			? steps.SelectMany(static step => step.Outputs).Select(static output => output.Reason).FirstOrDefault()
 			: IncrementalStepRunReason.New;
 }

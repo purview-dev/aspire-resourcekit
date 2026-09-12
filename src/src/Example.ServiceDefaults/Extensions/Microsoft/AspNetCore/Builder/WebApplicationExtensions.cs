@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
@@ -21,7 +21,7 @@ public static class WebApplicationExtensions
 				// Only health checks tagged with the "live" tag must pass for app to be considered alive
 				app.MapHealthChecks(
 					Platform.EndpointsDefinitions.Aliveness,
-					new HealthCheckOptions { Predicate = r => r.Tags.Contains("live") }
+					new HealthCheckOptions { Predicate = static r => r.Tags.Contains("live") }
 				);
 			}
 

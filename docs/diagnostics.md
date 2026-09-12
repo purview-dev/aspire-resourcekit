@@ -30,8 +30,43 @@ exiting the constructor" warning does not apply.
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` cannot declare explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
 | SG0017 | Warning | An `IResourceBuilder<T>` property is never assigned in `BuildResource` or `ConfigureResource` |
-| SG0018 | Error | A project resource kit does not add the declared project via `AddProject<T>()` |
-| SG0019 | Error | A project resource kit declares an explicit base class that does not use `ProjectResource` |
+| SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` |
+| SG0019 | Warning | A project resource kit declares an explicit base class that does not use `ProjectResource` |
+| SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
+
+## Execution-only vs generation-blocking rules
+
+SG0017, SG0018, and SG0019 are **execution-only** rules. They report problems that break the resource at
+runtime (an unset builder property, a project that is never registered, or a base class that cannot build
+a project) but they do **not** prevent source generation. They are reported as warnings so generation
+always proceeds — for example, a resource kit whose `BuildResource` does not yet register its declared
+project via `AddProject<T>()` is still generated (and the host kit is still emitted) so the user can
+complete the override instead of losing the whole output. Only Error-severity rules (SG0001–SG0016) block
+generation.
+
+## `OptionsHelper.Assign` action with multiple property paths (SG0020)
+
+Each `OptionsHelper.Assign<TOptions>(...)` action must set exactly one property path. A block-bodied lambda
+such as the following is rejected at compile time:
+
+```csharp
+OptionsHelper.Assign<ShopHostKitOptions>(o =>
+{
+    o.API.IsEnabled = false;
+    o.API.Name = "api-test";
+});
+```
+
+Split each property into its own assignment argument instead:
+
+```csharp
+OptionsHelper.Assign<ShopHostKitOptions>(
+    o => o.API.IsEnabled = false,
+    o => o.API.Name = "api-test"
+);
+```
+
+Visual Studio offers a **"Split into separate assignments"** code fix that performs this conversion for you.
 
 ## Fast troubleshooting checklist
 

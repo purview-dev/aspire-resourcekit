@@ -184,16 +184,17 @@ Use these values through generated properties:
 `OptionsHelper` converts typed assignment expressions into command-line configuration args:
 
 ```csharp
-var args = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
+var args = OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false,
     c => c.Redis.Name = "dev-redis"
 ).Build();
 ```
 
-For a single value, use `ForOne` with a member selector and access the first element:
+Each assignment action must set exactly one property path. If you need a property path as a plain string (for example, for logging or string building), use `PathFor` with a member selector:
 
 ```csharp
-var arg = OptionsHelper.ForOne<ExampleHostKit.ExampleHostKitOptions>(f => f.Redis.Name).Build()[0];
+var path = OptionsHelper.PathFor<ExampleHostKit.ExampleHostKitOptions>(f => f.Redis.Name);
+// "Redis.Name"
 ```
 
 Produces values like:
@@ -204,7 +205,7 @@ Produces values like:
 Switch to environment variables with `AsEnvironmentVariables()`:
 
 ```csharp
-var envVars = OptionsHelper.ForSet<ExampleHostKit.ExampleHostKitOptions>(
+var envVars = OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
     c => c.Redis.IsEnabled = false
 ).AsEnvironmentVariables().Build();
 ```
@@ -231,5 +232,13 @@ Useful for integration-test fixtures and scenario toggles.
 | SG0014 | Error | Non-generic `ResourceDefinition` requires an explicit compatible base type |
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` must not declare an explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
+| SG0017 | Warning | `IResourceBuilder<T>` property never assigned in `BuildResource`/`ConfigureResource` (execution-only) |
+| SG0018 | Warning | Project resource kit does not add the declared project via `AddProject<T>()` (execution-only) |
+| SG0019 | Warning | Project resource kit explicit base does not use `ProjectResource` (execution-only) |
+| SG0020 | Error | `OptionsHelper.Assign` action sets more than one property path |
+
+SG0017–SG0019 are execution-only warnings: they indicate the resource will fail at runtime but never
+block generation, so a resource kit with incomplete wiring (for example a project not yet added via
+`AddProject<T>()`) is still generated and the host kit output is still emitted.
 
 For troubleshooting guidance, see [`/docs/diagnostics.md`](https://github.com/purview-dev/purview-aspire-resourcekit/blob/main/docs/diagnostics.md).

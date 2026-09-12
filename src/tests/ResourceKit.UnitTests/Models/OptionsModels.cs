@@ -45,10 +45,10 @@ sealed class HostKitOptions
 {
 	public RedisOptions Redis { get; set; } = new();
 
-	public ApiOptions Api { get; set; } = new();
+	public APIOptions API { get; set; } = new();
 }
 
-sealed class ApiOptions
+sealed class APIOptions
 {
 	public string Name { get; set; } = string.Empty;
 }

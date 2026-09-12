@@ -195,6 +195,52 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 		await Assert.That(result).HasNoErrorDiagnostics();
 	}
 
+	[Test]
+	public async Task Generate_GivenProjectResourceKitWithoutAddProject_StillGeneratesKit(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Projects
+			{
+				public class Example_Service : global::Aspire.Hosting.IProjectMetadata
+				{
+					public string ProjectPath => "";
+					public bool SuppressBuild => true;
+				}
+			}
+
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<Projects.Example_Service>]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						throw new global::System.NotImplementedException();
+				}
+			}
+			""";
+
+		// Act
+		var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert — SG0018 is an execution-only warning, so it is reported but generation still proceeds.
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"partial class ApiKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.Aspire.Hosting.ApplicationModel.ProjectResource}>"
+			);
+		await Assert.That(generated).Contains("AddAspireResourceKit");
+	}
+
 	protected override ResourceKitSourceGeneratorTestOptions OnBeforeRun(
 		IEnumerable<string> sources,
 		ResourceKitSourceGeneratorTestOptions options,

@@ -374,8 +374,8 @@ namespace Testing.Resources
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var types = assembly.GetExportedTypes();
 
-		var hostKitType = await Assert.That(types).HasSingleItem(m => m.Name == "TestingHostKit");
-		var redisResourceKitType = await Assert.That(types).HasSingleItem(m => m.Name == "RedisResourceKit");
+		var hostKitType = await Assert.That(types).HasSingleItem(static m => m.Name == "TestingHostKit");
+		var redisResourceKitType = await Assert.That(types).HasSingleItem(static m => m.Name == "RedisResourceKit");
 
 		await Assert.That(hostKitType.Namespace).IsEqualTo("Testing.Host");
 		await Assert.That(redisResourceKitType.Namespace).IsEqualTo("Testing.Resources");
@@ -443,8 +443,8 @@ namespace Testing
 		var result = await GenerateAsync(sources, cancellationToken);
 		var types = result.CompilationResult.Assembly!.GetExportedTypes();
 
-		var globalHostKitType = types.SingleOrDefault(m => m.Name == globalHostKitTypeName);
-		var redisResourceKitType = types.SingleOrDefault(m => m.Name == redisResourceKitTypeName);
+		var globalHostKitType = types.SingleOrDefault(static m => m.Name == globalHostKitTypeName);
+		var redisResourceKitType = types.SingleOrDefault(static m => m.Name == redisResourceKitTypeName);
 
 		// Assert
 		await Assert.That(globalHostKitType).IsNotNull();

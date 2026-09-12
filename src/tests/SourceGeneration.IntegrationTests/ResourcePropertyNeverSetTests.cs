@@ -163,6 +163,44 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
 	}
 
+	[Test]
+	public async Task Generate_GivenResourceBuilderPropertyNeverSet_StillGeneratesKit(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing;
+
+			[HostKit]
+			partial class TestingHostKit;
+
+			[ResourceDefinition<DefaultAspireResource>]
+			sealed partial class RedisResourceKit
+			{
+				public IResourceBuilder<DefaultAspireResource> Cache { get; private set; }
+
+				protected override IResourceBuilder<DefaultAspireResource> BuildResource(IDistributedApplicationBuilder builder) =>
+					throw new global::System.NotImplementedException();
+			}
+			""";
+
+		// Act
+		var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert — SG0017 is an execution-only warning, so it is reported but generation still proceeds.
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource}>"
+			);
+		await Assert.That(generated).Contains("AddAspireResourceKit");
+	}
+
 	protected override ResourceKitSourceGeneratorTestOptions OnBeforeRun(
 		IEnumerable<string> sources,
 		ResourceKitSourceGeneratorTestOptions options,

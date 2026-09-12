@@ -12,7 +12,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 	{
 		context
 			.RegisterEmbeddedAttribute<HostKitGenerator>()
-			.RegisterPostInitializationOutput(postInitContext =>
+			.RegisterPostInitializationOutput(static postInitContext =>
 			{
 				foreach (var (HintName, Source) in CodeGenEmiiter.EmitAttributes())
 					postInitContext.AddSource(HintName, Source);
@@ -24,7 +24,7 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 		context.RegisterSourceOutput(
 			outputProvider,
-			(sourceProductionContext, combined) =>
+			static (sourceProductionContext, combined) =>
 			{
 				var (generationModel, generationContext) = combined;
 				if (generationContext.Settings.IsSourceGeneratorDisabled)
@@ -38,10 +38,13 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 				var validResourceKits = generationModel
 					.ResourceKits.AsImmutableArray()
-					.Select(m => new ResourceKitModelGroup(
+					.Select(static m => new ResourceKitModelGroup(
 						m.Namespace,
 						EquatableArray<ResourceKitModel>.Create([
-							.. m.Items.AsImmutableArray().Where(m => m.ShouldProcess).Select(m => m.Value),
+							.. m
+								.Items.AsImmutableArray()
+								.Where(static m => m.ShouldProcess)
+								.Select(static m => m.Value),
 						])
 					))
 					.ToImmutableArray();

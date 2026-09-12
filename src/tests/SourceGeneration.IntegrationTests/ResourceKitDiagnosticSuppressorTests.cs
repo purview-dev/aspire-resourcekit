@@ -45,10 +45,10 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 
 		// Assert
 		var suppressed = diagnostics
-			.Where(diagnostic => diagnostic.Id == "CS8618" && diagnostic.IsSuppressed)
+			.Where(static diagnostic => diagnostic.Id == "CS8618" && diagnostic.IsSuppressed)
 			.ToArray();
 		var notSuppressed = diagnostics
-			.Where(diagnostic => diagnostic.Id == "CS8618" && !diagnostic.IsSuppressed)
+			.Where(static diagnostic => diagnostic.Id == "CS8618" && !diagnostic.IsSuppressed)
 			.ToArray();
 
 		await Assert.That(suppressed).IsNotEmpty();
@@ -89,7 +89,9 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 
 		// Assert
 		var cs8618InKit = diagnostics
-			.Where(diagnostic => diagnostic.Id == "CS8618" && GetEnclosingTypeName(diagnostic) == "RedisResourceKit")
+			.Where(static diagnostic =>
+				diagnostic.Id == "CS8618" && GetEnclosingTypeName(diagnostic) == "RedisResourceKit"
+			)
 			.ToArray();
 		await Assert.That(cs8618InKit).IsEmpty();
 	}
@@ -132,7 +134,7 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 
 		// Assert
 		var suppressedInKit = diagnostics
-			.Where(diagnostic =>
+			.Where(static diagnostic =>
 				diagnostic.Id == "CS8618" && diagnostic.IsSuppressed && GetEnclosingTypeName(diagnostic) == "ApiKit"
 			)
 			.ToArray();

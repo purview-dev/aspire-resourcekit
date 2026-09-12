@@ -10,8 +10,8 @@ public sealed class HostResourceKitTests
 	public async Task Build_WhenDisabledByServices_DoesNotCallBuild()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostKit();
-		var resource = new TestResourceKit(hostApp, enabled: false);
+		TestHostKit hostApp = new();
+		TestResourceKit resource = new(hostApp, enabled: false);
 
 		resource.Build(builder);
 
@@ -23,8 +23,8 @@ public sealed class HostResourceKitTests
 	public async Task Build_WhenEnabled_CallsBuildAndSetsResourceBuilder()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostKit();
-		var resource = new TestResourceKit(hostApp, enabled: true);
+		TestHostKit hostApp = new();
+		TestResourceKit resource = new(hostApp, enabled: true);
 
 		resource.Build(builder);
 
@@ -37,8 +37,8 @@ public sealed class HostResourceKitTests
 	public async Task Configure_WhenDisabled_DoesNotCallConfigure()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostKit();
-		var resource = new TestResourceKit(hostApp, enabled: false);
+		TestHostKit hostApp = new();
+		TestResourceKit resource = new(hostApp, enabled: false);
 
 		resource.Build(builder);
 		resource.Configure();
@@ -50,8 +50,8 @@ public sealed class HostResourceKitTests
 	public async Task IsResourceEnabled_WithServices_DelegatesToBuilderOnlyOverloadByDefault()
 	{
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostKit();
-		var resource = new DelegatingTestResourceKit(hostApp);
+		TestHostKit hostApp = new();
+		DelegatingTestResourceKit resource = new(hostApp);
 
 		resource.Build(builder);
 
@@ -63,8 +63,8 @@ public sealed class HostResourceKitTests
 	{
 		// Arrange
 		var builder = DistributedApplication.CreateBuilder();
-		var hostApp = new TestHostKit();
-		var resource = new TestResourceKit(hostApp, enabled: true);
+		TestHostKit hostApp = new();
+		TestResourceKit resource = new(hostApp, enabled: true);
 
 		hostApp.AddResource(resource);
 		hostApp.Build(builder);
@@ -80,8 +80,8 @@ public sealed class HostResourceKitTests
 	public async Task AddResource_WhenSealed_ThrowsInvalidOperationException()
 	{
 		// Arrange
-		var hostApp = new TestHostKit();
-		var resource = new TestResourceKit(hostApp);
+		TestHostKit hostApp = new();
+		TestResourceKit resource = new(hostApp);
 		hostApp.Build(IDistributedApplicationBuilder.Mock());
 
 		// Act/Assert

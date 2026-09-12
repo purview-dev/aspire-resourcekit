@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace Purview.Aspire.ResourceKit;
 
 /// <summary>
-/// Builds configuration arguments or environment variables for options objects by using assignment or selector expressions.
+/// Builds configuration arguments or environment variables for options objects by using assignment expressions.
 /// </summary>
 public static class OptionsHelper
 {
@@ -28,11 +28,11 @@ public static class OptionsHelper
 	/// <typeparam name="TOptions">The root options type.</typeparam>
 	/// <param name="assignments">One or more property assignment actions.</param>
 	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForSet<TOptions>(params Action<TOptions>[] assignments)
+	public static IOptionsBuilder Assign<TOptions>(params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
 
-		return new OptionsBuilder().ForSet(assignments);
+		return new OptionsBuilder().Assign(assignments);
 	}
 
 	/// <summary>
@@ -42,112 +42,24 @@ public static class OptionsHelper
 	/// <param name="sectionName">The root section name override.</param>
 	/// <param name="assignments">One or more property assignment actions.</param>
 	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForSet<TOptions>(string sectionName, params Action<TOptions>[] assignments)
+	public static IOptionsBuilder Assign<TOptions>(string sectionName, params Action<TOptions>[] assignments)
 	{
 		ArgumentNullException.ThrowIfNull(assignments);
 
-		return new OptionsBuilder().ForSet(sectionName, assignments);
+		return new OptionsBuilder().Assign(sectionName, assignments);
 	}
 
 	/// <summary>
-	/// Starts building entries from a single assignment expression for the specified options type.
-	/// </summary>
-	/// <typeparam name="TOptions">The root options type.</typeparam>
-	/// <param name="assignment">A property assignment expression.</param>
-	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForSetOne<TOptions>(
-		Action<TOptions> assignment,
-		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-	)
-	{
-		ArgumentNullException.ThrowIfNull(assignment);
-
-		return new OptionsBuilder().ForSetOne(assignment, assignmentExpression);
-	}
-
-	/// <summary>
-	/// Starts building entries from a single assignment expression for the specified options type with an explicit root section name.
-	/// </summary>
-	/// <typeparam name="TOptions">The root options type.</typeparam>
-	/// <param name="sectionName">The root section name override.</param>
-	/// <param name="assignment">A property assignment expression.</param>
-	/// <param name="assignmentExpression">Captured source text for <paramref name="assignment"/>.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForSetOne<TOptions>(
-		string sectionName,
-		Action<TOptions> assignment,
-		[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-	)
-	{
-		ArgumentNullException.ThrowIfNull(assignment);
-
-		return new OptionsBuilder().ForSetOne(sectionName, assignment, assignmentExpression);
-	}
-
-	/// <summary>
-	/// Starts building entries from a member selector expression for the specified options type.
+	/// Gets the dot-separated member path for a property selector on the specified options type.
 	/// </summary>
 	/// <typeparam name="TOptions">The root options type.</typeparam>
 	/// <param name="selector">A member selector expression.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForOne<TOptions>(Expression<Func<TOptions, object?>> selector)
+	/// <returns>The dot-separated member path (for example, <c>Level1.Level2.Name</c>).</returns>
+	public static string PathFor<TOptions>(Expression<Func<TOptions, object?>> selector)
 	{
 		ArgumentNullException.ThrowIfNull(selector);
 
-		return new OptionsBuilder().ForOne(selector);
-	}
-
-	/// <summary>
-	/// Starts building entries from a member selector expression for the specified options type with an explicit root section name.
-	/// </summary>
-	/// <typeparam name="TOptions">The root options type.</typeparam>
-	/// <param name="sectionName">The root section name override.</param>
-	/// <param name="selector">A member selector expression.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector)
-	{
-		ArgumentNullException.ThrowIfNull(selector);
-
-		return new OptionsBuilder().ForOne(sectionName, selector);
-	}
-
-	/// <summary>
-	/// Starts building entries from multiple member selector expressions for the specified options type.
-	/// </summary>
-	/// <typeparam name="TOptions">The root options type.</typeparam>
-	/// <param name="selector">The first member selector expression.</param>
-	/// <param name="selectors">Additional member selector expressions.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder For<TOptions>(
-		Expression<Func<TOptions, object?>> selector,
-		params Expression<Func<TOptions, object?>>[] selectors
-	)
-	{
-		ArgumentNullException.ThrowIfNull(selector);
-		ArgumentNullException.ThrowIfNull(selectors);
-
-		return new OptionsBuilder().For(selector, selectors);
-	}
-
-	/// <summary>
-	/// Starts building entries from multiple member selector expressions for the specified options type with an explicit root section name.
-	/// </summary>
-	/// <typeparam name="TOptions">The root options type.</typeparam>
-	/// <param name="sectionName">The root section name override.</param>
-	/// <param name="selector">The first member selector expression.</param>
-	/// <param name="selectors">Additional member selector expressions.</param>
-	/// <returns>A builder that can be extended or built.</returns>
-	public static IOptionsBuilder For<TOptions>(
-		string sectionName,
-		Expression<Func<TOptions, object?>> selector,
-		params Expression<Func<TOptions, object?>>[] selectors
-	)
-	{
-		ArgumentNullException.ThrowIfNull(selector);
-		ArgumentNullException.ThrowIfNull(selectors);
-
-		return new OptionsBuilder().For(sectionName, selector, selectors);
+		return GetMemberPath(selector);
 	}
 
 	static string ResolveSectionName<TOptions>(string? sectionNameOverride)
@@ -205,53 +117,6 @@ public static class OptionsHelper
 			: (TOptions)instance;
 	}
 
-	static string GetMemberPath(string assignmentExpression)
-	{
-		if (string.IsNullOrWhiteSpace(assignmentExpression))
-			throw new ArgumentException(
-				"Assignment expression text could not be captured.",
-				nameof(assignmentExpression)
-			);
-
-		var arrowIndex = assignmentExpression.IndexOf("=>", StringComparison.Ordinal);
-		if (arrowIndex < 0)
-			throw new ArgumentException(
-				$"Expression '{assignmentExpression}' must be a lambda assignment expression.",
-				nameof(assignmentExpression)
-			);
-
-		var rhs = assignmentExpression[(arrowIndex + 2)..].Trim();
-		if (rhs.StartsWith('{'))
-		{
-			var statementEnd = rhs.IndexOf(';', StringComparison.Ordinal);
-			if (statementEnd > 0)
-				rhs = rhs[1..statementEnd].Trim();
-		}
-
-		var assignIndex = rhs.IndexOf('=', StringComparison.Ordinal);
-		if (assignIndex < 0)
-			throw new ArgumentException(
-				$"Expression '{assignmentExpression}' must contain an assignment operator.",
-				nameof(assignmentExpression)
-			);
-
-		var left = rhs[..assignIndex].Trim();
-		var firstDot = left.IndexOf('.', StringComparison.Ordinal);
-		if (firstDot < 0 || firstDot == left.Length - 1)
-			throw new ArgumentException(
-				$"Expression '{assignmentExpression}' must assign a member path on the options parameter.",
-				nameof(assignmentExpression)
-			);
-
-		var path = left[(firstDot + 1)..].Replace("!", string.Empty, StringComparison.Ordinal).Trim();
-		return string.IsNullOrWhiteSpace(path)
-			? throw new ArgumentException(
-				$"Expression '{assignmentExpression}' does not contain a valid member path.",
-				nameof(assignmentExpression)
-			)
-			: path.Replace('.', ':');
-	}
-
 	static string GetMemberPath<TOptions>(Expression<Func<TOptions, object?>> selector)
 	{
 		ArgumentNullException.ThrowIfNull(selector);
@@ -263,7 +128,7 @@ public static class OptionsHelper
 			body = unary.Operand;
 #pragma warning restore format
 
-		var segments = new List<string>();
+		List<string> segments = [];
 		while (body is MemberExpression member)
 		{
 			segments.Add(member.Member.Name);
@@ -288,65 +153,7 @@ public static class OptionsHelper
 			);
 
 		segments.Reverse();
-		return string.Join(':', segments);
-	}
-
-	static void EnsurePathObjectsExist(object root, string keyPath)
-	{
-		var segments = keyPath.Split(':', StringSplitOptions.RemoveEmptyEntries);
-		if (segments.Length < 2)
-			return;
-
-		var current = root;
-		for (var i = 0; i < segments.Length - 1; i++)
-		{
-			var property =
-				current
-					.GetType()
-					.GetProperty(segments[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-				?? throw new InvalidOperationException(
-					$"Property '{segments[i]}' was not found on '{current.GetType().FullName}'."
-				);
-
-			var value = property.GetValue(current);
-			if (value is null)
-			{
-				var instance = CreateInstance(property.PropertyType);
-				if (property.SetMethod is null)
-					throw new InvalidOperationException(
-						$"Property '{property.Name}' on '{current.GetType().FullName}' is null and does not have a setter."
-					);
-
-				property.SetValue(current, instance);
-				value = instance;
-			}
-
-			current = value;
-		}
-	}
-
-	static object? GetPathValue(object root, string keyPath)
-	{
-		var segments = keyPath.Split(':', StringSplitOptions.RemoveEmptyEntries);
-		var current = root;
-
-		foreach (var segment in segments)
-		{
-			if (current is null)
-				return null;
-
-			var property =
-				current
-					.GetType()
-					.GetProperty(segment, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-				?? throw new InvalidOperationException(
-					$"Property '{segment}' was not found on '{current.GetType().FullName}'."
-				);
-
-			current = property.GetValue(current);
-		}
-
-		return current;
+		return string.Join('.', segments);
 	}
 
 	static object CreateInstance(Type type)
@@ -677,52 +484,19 @@ public static class OptionsHelper
 		assignment(a);
 		assignment(b);
 
-		var candidates = new List<(string Path, object? Value)>();
+		List<(string Path, object? Value)> candidates = [];
 		CollectEqualLeafPaths(a, b, string.Empty, candidates, [with(ReferenceComparer.Instance)]);
 
-		return candidates.Count != 1
-			? throw new InvalidOperationException(
-				$"Each assignment action must set exactly one property path. Found {candidates.Count} candidate paths."
-			)
-			: candidates[0];
-	}
-
-	static OptionsEntry BuildEntryFromAssignment<TOptions>(
-		Action<TOptions> assignment,
-		string assignmentExpression,
-		string sectionName
-	)
-	{
-		ArgumentNullException.ThrowIfNull(assignment);
-
-		var keyPath = GetMemberPath(assignmentExpression);
-		var root = CreateRootOptionsInstance<TOptions>();
-		ArgumentNullException.ThrowIfNull(root);
-
-		EnsurePathObjectsExist(root, keyPath);
-		assignment(root);
-
-		var value = GetPathValue(root, keyPath);
-		var valueText = ToCommandLineValue(value);
-
-		return new OptionsEntry(sectionName, keyPath, valueText);
-	}
-
-	static OptionsEntry BuildEntryFromSelector<TOptions>(
-		Expression<Func<TOptions, object?>> selector,
-		string sectionName
-	)
-	{
-		var keyPath = GetMemberPath(selector);
-		var root = CreateRootOptionsInstance<TOptions>();
-		ArgumentNullException.ThrowIfNull(root);
-
-		EnsurePathObjectsExist(root, keyPath);
-
-		var value = selector.Compile()(root);
-		var valueText = ToCommandLineValue(value);
-
-		return new OptionsEntry(sectionName, keyPath, valueText);
+		return candidates.Count switch
+		{
+			0 => throw new InvalidOperationException(
+				"The assignment action did not modify any detectable property path. Assign a value that differs from the property's current value, or verify the property has a setter."
+			),
+			1 => candidates[0],
+			_ => throw new InvalidOperationException(
+				$"Each assignment action must set exactly one property path. Found {candidates.Count} candidate paths: {string.Join(", ", candidates.Select(static c => c.Path))}. Split each property into its own assignment, for example Assign<TOptions>(o => o.Path1 = ..., o => o.Path2 = ...)."
+			),
+		};
 	}
 
 	static OptionsEntry[] BuildEntriesFromActions<TOptions>(string? sectionNameOverride, Action<TOptions>[] assignments)
@@ -746,7 +520,7 @@ public static class OptionsHelper
 	{
 		readonly List<OptionsEntry> _entries = [];
 
-		public IOptionsBuilder ForSet<TOptions>(params Action<TOptions>[] assignments)
+		public IOptionsBuilder Assign<TOptions>(params Action<TOptions>[] assignments)
 		{
 			ArgumentNullException.ThrowIfNull(assignments);
 
@@ -757,7 +531,7 @@ public static class OptionsHelper
 			return this;
 		}
 
-		public IOptionsBuilder ForSet<TOptions>(string sectionName, params Action<TOptions>[] assignments)
+		public IOptionsBuilder Assign<TOptions>(string sectionName, params Action<TOptions>[] assignments)
 		{
 			ArgumentNullException.ThrowIfNull(assignments);
 
@@ -765,94 +539,6 @@ public static class OptionsHelper
 				throw new ArgumentException("At least one assignment action is required.", nameof(assignments));
 
 			_entries.AddRange(BuildEntriesFromActions(sectionName, assignments));
-			return this;
-		}
-
-		public IOptionsBuilder ForSetOne<TOptions>(
-			Action<TOptions> assignment,
-			[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-		)
-		{
-			ArgumentNullException.ThrowIfNull(assignment);
-
-			_entries.Add(
-				BuildEntryFromAssignment(
-					assignment,
-					assignmentExpression,
-					ResolveSectionName<TOptions>(sectionNameOverride: null)
-				)
-			);
-			return this;
-		}
-
-		public IOptionsBuilder ForSetOne<TOptions>(
-			string sectionName,
-			Action<TOptions> assignment,
-			[CallerArgumentExpression(nameof(assignment))] string assignmentExpression = ""
-		)
-		{
-			ArgumentNullException.ThrowIfNull(assignment);
-
-			_entries.Add(
-				BuildEntryFromAssignment(assignment, assignmentExpression, ResolveSectionName<TOptions>(sectionName))
-			);
-			return this;
-		}
-
-		public IOptionsBuilder ForOne<TOptions>(Expression<Func<TOptions, object?>> selector)
-		{
-			ArgumentNullException.ThrowIfNull(selector);
-
-			_entries.Add(BuildEntryFromSelector(selector, ResolveSectionName<TOptions>(sectionNameOverride: null)));
-			return this;
-		}
-
-		public IOptionsBuilder ForOne<TOptions>(string sectionName, Expression<Func<TOptions, object?>> selector)
-		{
-			ArgumentNullException.ThrowIfNull(selector);
-
-			_entries.Add(BuildEntryFromSelector(selector, ResolveSectionName<TOptions>(sectionName)));
-			return this;
-		}
-
-		public IOptionsBuilder For<TOptions>(
-			Expression<Func<TOptions, object?>> selector,
-			params Expression<Func<TOptions, object?>>[] selectors
-		)
-		{
-			ArgumentNullException.ThrowIfNull(selector);
-			ArgumentNullException.ThrowIfNull(selectors);
-
-			var sectionName = ResolveSectionName<TOptions>(sectionNameOverride: null);
-			_entries.Add(BuildEntryFromSelector(selector, sectionName));
-
-			for (var i = 0; i < selectors.Length; i++)
-			{
-				ArgumentNullException.ThrowIfNull(selectors[i]);
-				_entries.Add(BuildEntryFromSelector(selectors[i], sectionName));
-			}
-
-			return this;
-		}
-
-		public IOptionsBuilder For<TOptions>(
-			string sectionName,
-			Expression<Func<TOptions, object?>> selector,
-			params Expression<Func<TOptions, object?>>[] selectors
-		)
-		{
-			ArgumentNullException.ThrowIfNull(selector);
-			ArgumentNullException.ThrowIfNull(selectors);
-
-			var resolvedSectionName = ResolveSectionName<TOptions>(sectionName);
-			_entries.Add(BuildEntryFromSelector(selector, resolvedSectionName));
-
-			for (var i = 0; i < selectors.Length; i++)
-			{
-				ArgumentNullException.ThrowIfNull(selectors[i]);
-				_entries.Add(BuildEntryFromSelector(selectors[i], resolvedSectionName));
-			}
-
 			return this;
 		}
 
@@ -875,7 +561,7 @@ public static class OptionsHelper
 	{
 		public IReadOnlyDictionary<string, string> Build()
 		{
-			var result = new Dictionary<string, string>();
+			Dictionary<string, string> result = [];
 			foreach (var entry in entries)
 			{
 				var key = $"{entry.SectionName}__{entry.KeyPath}".Replace(":", "__", StringComparison.Ordinal);

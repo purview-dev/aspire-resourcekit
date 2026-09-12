@@ -24,5 +24,11 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+		<ProjectReference
+			Include="..\SourceGeneration.CodeFixes\SourceGeneration.CodeFixes.csproj"
+			PrivateAssets="all"
+			ReferenceOutputAssembly="false"
+			OutputItemType="Analyzer"
+		/>
 	</ItemGroup>
 </Project>

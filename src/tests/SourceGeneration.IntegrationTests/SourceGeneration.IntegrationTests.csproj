@@ -21,5 +21,10 @@
 			PrivateAssets="all"
 			ReferenceOutputAssembly="true"
 		/>
+		<ProjectReference
+			Include="..\..\src\SourceGeneration.CodeFixes\SourceGeneration.CodeFixes.csproj"
+			PrivateAssets="all"
+			ReferenceOutputAssembly="true"
+		/>
 	</ItemGroup>
 </Project>

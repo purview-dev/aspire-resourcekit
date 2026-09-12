@@ -216,7 +216,7 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 	{
 		var diagnostics = result
 			.DriverResult.Diagnostics.Concat(result.AnalyzerResult?.Diagnostics ?? [])
-			.Where(diagnostic => diagnostic.Location.SourceTree is not null)
+			.Where(static diagnostic => diagnostic.Location.SourceTree is not null)
 			.ToArray();
 
 		await Assert.That(diagnostics).IsNotEmpty();

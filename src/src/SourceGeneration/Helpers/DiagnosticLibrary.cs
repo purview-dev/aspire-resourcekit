@@ -161,7 +161,8 @@ static class DiagnosticLibrary
 		messageFormat: "The '{0}' property of type '{1}' is never assigned in BuildResource or ConfigureResource; resource kit properties must be populated during the build or configure lifecycle",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
-		isEnabledByDefault: true
+		isEnabledByDefault: true,
+		description: "Execution-only concern: the resource kit will fail at runtime, not generation."
 	);
 
 	public static readonly DiagnosticDescriptor ProjectDefinitionMismatch = new(
@@ -169,8 +170,9 @@ static class DiagnosticLibrary
 		title: "Project resource definition mismatch",
 		messageFormat: "The '{0}' resource kit declares project '{1}' but BuildResource must add the same project via AddProject<T>()",
 		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "Execution-only concern: the declared project is not registered, so the resource fails at runtime; generation is not blocked."
 	);
 
 	public static readonly DiagnosticDescriptor ProjectResourceKitBaseMismatch = new(
@@ -178,7 +180,18 @@ static class DiagnosticLibrary
 		title: "Project resource kit base must use ProjectResource",
 		messageFormat: "The '{0}' resource kit declares a project but its explicit base class '{1}' does not use ProjectResource",
 		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "Execution-only concern: the explicit base cannot build the declared project resource; generation is not blocked."
+	);
+
+	public static readonly DiagnosticDescriptor AssignSetsMultiplePropertyPaths = new(
+		id: "SG0020",
+		title: "OptionsHelper.Assign action must set exactly one property path",
+		messageFormat: "An OptionsHelper.Assign action must set exactly one property path. Found {0} assignments: {1}. Split each into its own assignment: Assign<TOptions>(o => o.A = ..., o => o.B = ...).",
+		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
+		isEnabledByDefault: true,
+		description: "Each OptionsHelper.Assign action must set exactly one property path; an action that assigns more than one property throws at runtime when the arguments are built."
 	);
 }

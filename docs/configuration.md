@@ -99,16 +99,19 @@ Use this hook to react to runtime state, for example environment-specific availa
 Use `OptionsHelper` to generate command-line configuration arguments from strongly typed assignments.
 
 ```csharp
-var args = OptionsHelper.ForSet<ShopHostKitOptions>(
+var args = OptionsHelper.Assign<ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
     c => c.API.Name = "api-test"
 ).Build();
 ```
 
-For a single argument, use `ForOne` with a member selector and access the first element:
+Each assignment action must set exactly one property path. To set multiple properties, pass one assignment per property (as above). The compiler reports `SG0020` if an action assigns more than one property path, and offers a code fix that splits it into separate assignments.
+
+If you need a property path as a plain string (for example, to build keys or log config), use `PathFor` with a member selector:
 
 ```csharp
-var arg = OptionsHelper.ForOne<ShopHostKit.ShopHostKitOptions>(f => f.API.Name).Build()[0];
+var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions>(f => f.API.Name);
+// "API.Name"
 ```
 
 Resulting args are in this form:
@@ -119,7 +122,7 @@ Resulting args are in this form:
 To produce environment variables instead, call `AsEnvironmentVariables()` before `Build()`:
 
 ```csharp
-var envVars = OptionsHelper.ForSet<ShopHostKitOptions>(
+var envVars = OptionsHelper.Assign<ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
     c => c.API.Name = "api-test"
 ).AsEnvironmentVariables().Build();
@@ -134,11 +137,11 @@ This returns a dictionary such as `{"ShopHostKit__API__IsEnabled": "false", "Sho
 > protected override string[] Args =>
 > [
 >    .. base.Args,
->    .. OptionsHelper.ForSet<ShopHostKit.ShopHostKitOptions>(
+>    .. OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
 >      c => c.API.IsEnabled = false,
 >      c => c.API.Name = "api-test"
 >    ).Build(),
->];
+> ];
 > ```
 
 ## Section-name resolution order

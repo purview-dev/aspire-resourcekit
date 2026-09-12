@@ -13,6 +13,7 @@
 	<Folder Name="/src/">
 		<Project Path="src/ResourceKit/ResourceKit.csproj" />
 		<Project Path="src/SourceGeneration/SourceGeneration.csproj" />
+		<Project Path="src/SourceGeneration.CodeFixes/SourceGeneration.CodeFixes.csproj" />
 	</Folder>
 	<Folder Name="/src/examples/">
 		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />
