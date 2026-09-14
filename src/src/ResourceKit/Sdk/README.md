@@ -67,7 +67,7 @@ Use `[ResourceDefinition]` when you prefer (or need) to specify the resource typ
 
 ```csharp
 [ResourceDefinition("api")]
-partial class APIResourceKit : ShopHostKitResourceBase<ProjectResource>
+partial class APIResourceKit : ResourceKitBase<ProjectResource>
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);
@@ -75,7 +75,7 @@ partial class APIResourceKit : ShopHostKitResourceBase<ProjectResource>
 ```
 
 - You **must** declare an explicit valid base type.
-- Typically this is the generated host-specific base (`ResourceBase<TResource>`, unlike the `ResourceBase<THostKit, TResource>` that takes the explicit Host Kit as a construction parameter).
+- Typically this is the generated host-specific base (`ResourceKitBase<TResource>`, unlike the `ResourceKitBase<THostKit, TResource>` that takes the explicit Host Kit as a construction parameter).
 
 Do not mix both attribute styles on the same class.
 
@@ -104,7 +104,7 @@ builder.AddAspireResourceKit();
 
 From your attributed partial classes, the generator emits:
 
-- a host base type for resources (`{Host}ResourceBase<TResource>`),
+- a resource kit base type (`ResourceKitBase<TResource>`),
 - host members for each resource definition,
 - generated options types (when enabled),
 - a builder extension method for registration and lifecycle execution.
@@ -142,7 +142,7 @@ When options are generated:
 - Resource options are nested by generated resource property name.
 - `IsEnabled` can be used to skip a resource at runtime.
 
-See detailed patterns in [`/docs/configuration.md`](https://github.com/purview-dev/purview-aspire-resourcekit/blob/main/docs/configuration.md).
+See detailed patterns in [`/docs/configuration.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/docs/configuration.md).
 
 ### Extending generated typed options
 
@@ -241,4 +241,4 @@ SG0017–SG0019 are execution-only warnings: they indicate the resource will fai
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 
-For troubleshooting guidance, see [`/docs/diagnostics.md`](https://github.com/purview-dev/purview-aspire-resourcekit/blob/main/docs/diagnostics.md).
+For troubleshooting guidance, see [`/docs/diagnostics.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/docs/diagnostics.md).

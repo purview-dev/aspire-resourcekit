@@ -41,4 +41,4 @@ The package includes runtime APIs plus the source generator analyzer assembly.
 For package usage guidance (attributes, generated output, configuration, and examples), see:
 
 - `../README.md`
-- `src/ResourceKit/README.md`
+- `src/ResourceKit/Sdk/README.md` (the packaged NuGet README, alongside the `Sdk/` build assets)
