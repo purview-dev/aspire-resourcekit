@@ -6,14 +6,13 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
     name: Release packages
     uses: purview-dev/build/.github/workflows/purview-release.yml@main
     with:
-      build-version: "0.2.1"
       release-mode: NuGet
       release-branch: main
       test-filter: "/*/*/*/*[Category=Unit]"

@@ -15,7 +15,7 @@ Install the `Purview.Aspire.ResourceKit` package in your AppHost project.
 > (for example: `skills/aspire-apphost-to-resourcekit/SKILL.md` → `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`),
 > along with a local `.gitignore` in each generated skill folder to keep updates out of source control noise.
 >
-> To opt out, set `<EnableEmbeddedAgentSkills>false</EnableEmbeddedAgentSkills>` in your project (or `Directory.Build.props`).
+> To opt out, set `<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>` in your project (or `Directory.Build.props`).
 
 ## 2) Define a host kit
 
@@ -66,7 +66,7 @@ Example non-generic style:
 
 ```csharp
 [ResourceDefinition("api")]
-partial class ApiResourceKit : ShopHostKitResourceBase<ProjectResource>
+partial class ApiResourceKit : ResourceKitBase<ProjectResource>
 {
     protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
         => builder.AddProject<Projects.Example_Service>(Name);

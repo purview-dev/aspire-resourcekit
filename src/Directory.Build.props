@@ -16,7 +16,7 @@
 		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
 		<RepositoryUrl>$(RepositoryUrl)</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<PackageIcon>purview-logo.jpg</PackageIcon>
+		<PackageIcon>purview-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -24,6 +24,6 @@
 
 	<ItemGroup Label="NuGet package assets" Condition="'$(IsPackable)' == 'true'">
 		<None Include="$(MSBuildThisFileDirectory)/../LICENSE.md" Link="Sdk/LICENSE.md" />
-		<None Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo.jpg" Link="Sdk/purview-logo.jpg" />
+		<None Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo.png" Link="Sdk/purview-logo.png" />
 	</ItemGroup>
 </Project>

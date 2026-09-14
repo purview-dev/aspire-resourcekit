@@ -1,15 +1,20 @@
 set quiet
 
+export TESTINGPLATFORM_EXITCODE_IGNORE := "8"
+export DOTNET_CLI_TELEMETRY_OPTOUT := "1"
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE := "1"
+export DO_NOT_TRACK := "1"
+
 solution := "src/ResourceKit.slnx"
 build_configuration := "Debug"
 
 artifacts_folder := "./artifacts"
-default_test_filter := "/*/*/*/*/"
+default_test_filter := "/*/*/*/*"
 
 pipeline_feed := "https://api.nuget.org/v3/index.json"
 pipeline_tool := ".tools/purview-build/purview-build"
 
-current_version := `node -p "require('./package.json').version"`
+current_version := `bun -p "require('./package.json').version"`
 
 [private]
 default:
@@ -75,7 +80,12 @@ clean *args:
 [group('Build and Test')]
 test filter=default_test_filter *args:
     echo "Running tests for {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} and filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
-    dotnet test {{ solution }} -c {{ build_configuration }} --ignore-exit-code 8 --treenode-filter "{{ filter }}" -- {{ args }}
+    dotnet test {{ solution }} -c {{ build_configuration }} --treenode-filter "{{ filter }}" -- {{ args }}
+
+# Run unit tests only
+[group('Build and Test')]
+test-unit *args:
+    just test "/*/*/*/*[Category=Unit]" {{ args }}
 
 # Restore dependencies for the solution
 [group('Build and Test')]

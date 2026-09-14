@@ -1,5 +1,8 @@
 # Purview.Aspire.ResourceKit
 
+[![NuGet version](https://img.shields.io/nuget/v/Purview.Aspire.ResourceKit.svg)](https://www.nuget.org/packages/Purview.Aspire.ResourceKit)
+[![Release](https://github.com/purview-dev/aspire-resourcekit/actions/workflows/release.yml/badge.svg)](https://github.com/purview-dev/aspire-resourcekit/actions/workflows/release.yml)
+
 `Purview.Aspire.ResourceKit` is a source-generator-powered framework for structuring .NET Aspire AppHost resource composition as strongly typed, test-friendly classes.
 
 If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
@@ -57,7 +60,7 @@ The extension method name is generated from your host metadata; in this reposito
 >
 > To disable this behavior, set the shared opt-out property in your project (or `Directory.Build.props`):
 >
-> `<EnableEmbeddedAgentSkills>false</EnableEmbeddedAgentSkills>`
+> `<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>`
 
 ## Lifecycle mental model (early cheat sheet)
 
@@ -85,7 +88,7 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 
 ## Learn more
 
-- NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/README.md`](src/src/ResourceKit/README.md)
+- NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Getting started guide: [`docs/getting-started.md`](docs/getting-started.md)
 - Configuration and options patterns: [`docs/configuration.md`](docs/configuration.md)
 - Diagnostics and troubleshooting: [`docs/diagnostics.md`](docs/diagnostics.md)

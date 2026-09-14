@@ -99,7 +99,7 @@ Use this hook to react to runtime state, for example environment-specific availa
 Use `OptionsHelper` to generate command-line configuration arguments from strongly typed assignments.
 
 ```csharp
-var args = OptionsHelper.Assign<ShopHostKitOptions>(
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
     c => c.API.Name = "api-test"
 ).Build();
@@ -122,7 +122,7 @@ Resulting args are in this form:
 To produce environment variables instead, call `AsEnvironmentVariables()` before `Build()`:
 
 ```csharp
-var envVars = OptionsHelper.Assign<ShopHostKitOptions>(
+var envVars = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
     c => c.API.IsEnabled = false,
     c => c.API.Name = "api-test"
 ).AsEnvironmentVariables().Build();
