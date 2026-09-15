@@ -125,7 +125,7 @@ partial class CodeGenEmiiter
 				.Property(
 					new("Name", TypeLibrary.System.String, TypeDeclarationAccessibility.Public)
 					{
-						IsInitOnly = true,
+						HasSetter = true,
 						Initializer = GeneratedText.QuoteLiteral(resourceKit.ResourceName),
 						Attributes =
 						[
@@ -142,7 +142,7 @@ partial class CodeGenEmiiter
 				.Property(
 					new("IsEnabled", TypeLibrary.System.Boolean, TypeDeclarationAccessibility.Public)
 					{
-						IsInitOnly = true,
+						HasSetter = true,
 						Initializer = "true",
 					}
 				);
