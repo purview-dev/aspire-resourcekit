@@ -1,4 +1,4 @@
-# Diagnostics and troubleshooting
+# Diagnostics
 
 ResourceKit reports diagnostics with `SGxxxx` IDs to help you fix model issues quickly. The rules are
 evaluated by the bundled `ResourceKitDiagnosticAnalyzer` (and the source generator uses the same shared
@@ -34,6 +34,9 @@ exiting the constructor" warning does not apply.
 | SG0019 | Warning | A project resource kit declares an explicit base class that does not use `ProjectResource` |
 | SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
 
+See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles, and
+[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics.
+
 ## Execution-only vs generation-blocking rules
 
 SG0017, SG0018, and SG0019 are **execution-only** rules. They report problems that break the resource at
@@ -67,6 +70,7 @@ OptionsHelper.Assign<ShopHostKitOptions>(
 ```
 
 Visual Studio offers a **"Split into separate assignments"** code fix that performs this conversion for you.
+See [OptionsHelper](OptionsHelper.md) and [Source Generator Behaviors](Source-Generator-Behaviors.md).
 
 ## Fast troubleshooting checklist
 
