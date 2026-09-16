@@ -70,7 +70,8 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	/// <param name="builder">The distributed application builder.</param>
 	/// <returns><see langword="true"/> when the resource should be built; otherwise <see langword="false"/>.</returns>
 	/// <remarks>
-	/// The default implementation returns <see cref="IsEnabled"/>.
+	/// The default implementation returns <see cref="IsEnabled"/>. This hook is only invoked when
+	/// <see cref="IsEnabled"/> is already <see langword="true"/>; a disabled kit is never re-enabled here.
 	/// </remarks>
 	protected virtual bool IsResourceEnabled(IDistributedApplicationBuilder builder) => IsEnabled;
 
@@ -92,7 +93,9 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 		ArgumentNullException.ThrowIfNull(builder);
 		ArgumentException.ThrowIfNullOrWhiteSpace(Name, nameof(Name));
 
-		IsEnabled = IsResourceEnabled(builder);
+		if (IsEnabled)
+			IsEnabled = IsResourceEnabled(builder);
+
 		if (!IsEnabled)
 			return;
 

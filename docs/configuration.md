@@ -90,7 +90,7 @@ Use both together for flexible control:
 - `IsEnabled`: static/configured toggle (usually generated options).
 - `IsResourceEnabled(builder)`: runtime decision hook.
 
-At runtime, `Build` sets `IsEnabled = IsResourceEnabled(builder)` first. If the result is `false`, ResourceKit skips both `BuildResource(...)` and `ConfigureResource()` for that resource.
+At runtime, `Build` only calls `IsResourceEnabled(builder)` when `IsEnabled` is already `true`. If the hook returns `false`, ResourceKit skips both `BuildResource(...)` and `ConfigureResource()` for that resource. A kit disabled via `IsEnabled=false` (for example from options) is never re-enabled by the hook.
 
 Use this hook to react to runtime state, for example environment-specific availability, publish mode, or dynamic configuration checks.
 
@@ -151,6 +151,18 @@ If you do not pass a section name explicitly, `OptionsHelper` resolves it as fol
 1. `const string SectionName` on the options type
 2. Type name trimmed by one suffix: `Options`, `Settings`, `Configuration`, `Config`
 3. Original type name
+
+You can look up the resolved section name for any options type directly:
+
+```csharp
+var sectionName = OptionsHelper.SectionNameFor<ShopHostKit.ShopHostKitOptions>();
+// "ShopHostKit"
+
+var sectionNameFromType = OptionsHelper.SectionNameFor(typeof(ShopHostKit.ShopHostKitOptions));
+// "ShopHostKit"
+```
+
+`SectionNameFor` accepts both a generic type argument and a `Type`, and applies the same resolution rules as `Assign` (suffix trimming works for generic types by ignoring type arguments).
 
 ## Tip
 

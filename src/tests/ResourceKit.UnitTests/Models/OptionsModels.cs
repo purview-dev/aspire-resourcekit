@@ -136,3 +136,15 @@ sealed class NestedSampleOptions
 {
 	public string Value { get; set; } = "nested-default";
 }
+
+sealed class GenericServiceOptions<T>
+{
+	public RedisOptions Redis { get; set; } = new();
+}
+
+sealed class GenericSectionOptions<T>
+{
+	public const string SectionName = "GenericSection";
+
+	public RedisOptions Redis { get; set; } = new();
+}
