@@ -69,6 +69,86 @@ public sealed class OptionsHelperTests
 	}
 
 	[Test]
+	public async Task SectionNameFor_GivenSectionNameConst_ReturnsConstValue()
+	{
+		// Arrange
+		const string expected = "PrivateSection";
+
+		// Act
+		var sectionName = OptionsHelper.SectionNameFor<PrivateSectionOptions>();
+
+		// Assert
+		await Assert.That(sectionName).IsEqualTo(expected);
+	}
+
+	[Test]
+	public async Task SectionNameFor_GivenNoConstSection_TrimsKnownSuffix()
+	{
+		// Act
+		var fromOptions = OptionsHelper.SectionNameFor<ServiceOptions>();
+		var fromSettings = OptionsHelper.SectionNameFor<ServiceSettings>();
+		var fromConfiguration = OptionsHelper.SectionNameFor<ServiceConfiguration>();
+		var fromConfig = OptionsHelper.SectionNameFor<ServiceConfig>();
+
+		// Assert
+		await Assert.That(fromOptions).IsEqualTo("Service");
+		await Assert.That(fromSettings).IsEqualTo("Service");
+		await Assert.That(fromConfiguration).IsEqualTo("Service");
+		await Assert.That(fromConfig).IsEqualTo("Service");
+	}
+
+	[Test]
+	public async Task SectionNameFor_GivenTypeNameOnlySuffix_UsesOriginalTypeName()
+	{
+		// Act
+		var sectionName = OptionsHelper.SectionNameFor<Options>();
+
+		// Assert
+		await Assert.That(sectionName).IsEqualTo("Options");
+	}
+
+	[Test]
+	public async Task SectionNameFor_GivenTypeOverload_ReturnsSameAsGeneric()
+	{
+#pragma warning disable CA2263 // Prefer generic overload; this test intentionally exercises the Type overload.
+		// Act
+		var fromType = OptionsHelper.SectionNameFor(typeof(ServiceOptions));
+		var fromGeneric = OptionsHelper.SectionNameFor<ServiceOptions>();
+
+		// Assert
+		await Assert.That(fromType).IsEqualTo(fromGeneric);
+		await Assert.That(fromType).IsEqualTo("Service");
+#pragma warning restore CA2263
+	}
+
+	[Test]
+	public async Task SectionNameFor_GivenGenericType_TrimsKnownSuffix()
+	{
+		// Act
+		var fromOpenGeneric = OptionsHelper.SectionNameFor(typeof(GenericServiceOptions<>));
+		var fromClosedGeneric = OptionsHelper.SectionNameFor<GenericServiceOptions<int>>();
+
+		// Assert
+		await Assert.That(fromOpenGeneric).IsEqualTo("GenericService");
+		await Assert.That(fromClosedGeneric).IsEqualTo("GenericService");
+	}
+
+	[Test]
+	public async Task SectionNameFor_GivenGenericTypeWithConst_ReturnsConstValue()
+	{
+		// Arrange
+		const string expected = "GenericSection";
+
+		// Act
+		var fromOpenGeneric = OptionsHelper.SectionNameFor(typeof(GenericSectionOptions<>));
+		var fromClosedGeneric = OptionsHelper.SectionNameFor<GenericSectionOptions<int>>();
+
+		// Assert
+		await Assert.That(fromOpenGeneric).IsEqualTo(expected);
+		await Assert.That(fromClosedGeneric).IsEqualTo(expected);
+	}
+
+	[Test]
 	public async Task Assign_GivenNoSectionOverride_UsesSectionNameConstValue()
 	{
 		// Arrange

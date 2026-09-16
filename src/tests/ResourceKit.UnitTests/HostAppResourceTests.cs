@@ -20,6 +20,74 @@ public sealed class HostResourceKitTests
 	}
 
 	[Test]
+	public async Task Build_WhenIsEnabledIsFalse_DoesNotCallIsResourceEnabled()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		TestHostKit hostApp = new();
+		TrackingResourceKit resource = new(hostApp) { IsEnabled = false };
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsFalse();
+		await Assert.That(resource.IsResourceEnabledCalled).IsFalse();
+		await Assert.That(resource.BuildCalled).IsFalse();
+	}
+
+	[Test]
+	public async Task Build_WhenIsEnabledIsTrue_CallsIsResourceEnabled()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		TestHostKit hostApp = new();
+		TrackingResourceKit resource = new(hostApp) { IsEnabled = true };
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsTrue();
+		await Assert.That(resource.IsResourceEnabledCalled).IsTrue();
+		await Assert.That(resource.BuildCalled).IsTrue();
+	}
+
+	[Test]
+	public async Task Build_GivenOptionsSetIsEnabledToFalse_DoesNotCallIsResourceEnabled()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		TestHostKit hostApp = new();
+		OptionTrackingResourceKit resource = new(hostApp, new OptionTrackingOptions { IsEnabled = false });
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsFalse();
+		await Assert.That(resource.IsResourceEnabledCalled).IsFalse();
+		await Assert.That(resource.BuildCalled).IsFalse();
+	}
+
+	[Test]
+	public async Task Build_GivenOptionsSetIsEnabledToTrue_StillCallsIsResourceEnabled()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		TestHostKit hostApp = new();
+		OptionTrackingResourceKit resource = new(hostApp, new OptionTrackingOptions { IsEnabled = true });
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsTrue();
+		await Assert.That(resource.IsResourceEnabledCalled).IsTrue();
+		await Assert.That(resource.BuildCalled).IsTrue();
+	}
+
+	[Test]
 	public async Task Build_WhenEnabled_CallsBuildAndSetsResourceBuilder()
 	{
 		var builder = DistributedApplication.CreateBuilder();
@@ -122,5 +190,62 @@ public sealed class HostResourceKitTests
 		protected override IResourceBuilder<ParameterResource> BuildResource(
 			[NotNull] IDistributedApplicationBuilder builder
 		) => builder.AddParameter(Name, "value", secret: false);
+	}
+
+	sealed class TrackingResourceKit(TestHostKit hostKit)
+		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")
+	{
+		public bool IsResourceEnabledCalled { get; private set; }
+
+		public bool BuildCalled { get; private set; }
+
+		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder)
+		{
+			IsResourceEnabledCalled = true;
+			return true;
+		}
+
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		)
+		{
+			BuildCalled = true;
+			return builder.AddParameter(Name, "value", secret: false);
+		}
+	}
+
+	sealed class OptionTrackingOptions
+	{
+		public bool IsEnabled { get; set; } = true;
+	}
+
+	sealed class OptionTrackingResourceKit : ResourceKitBase<TestHostKit, ParameterResource>
+	{
+		public OptionTrackingResourceKit(TestHostKit hostKit, OptionTrackingOptions options)
+			: base(hostKit, "test")
+		{
+			Options = options;
+			IsEnabled = options.IsEnabled;
+		}
+
+		public OptionTrackingOptions Options { get; }
+
+		public bool IsResourceEnabledCalled { get; private set; }
+
+		public bool BuildCalled { get; private set; }
+
+		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder)
+		{
+			IsResourceEnabledCalled = true;
+			return true;
+		}
+
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		)
+		{
+			BuildCalled = true;
+			return builder.AddParameter(Name, "value", secret: false);
+		}
 	}
 }

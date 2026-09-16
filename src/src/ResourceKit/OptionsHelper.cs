@@ -62,12 +62,29 @@ public static class OptionsHelper
 		return GetMemberPath(selector);
 	}
 
-	static string ResolveSectionName<TOptions>(string? sectionNameOverride)
-	{
-		if (!string.IsNullOrWhiteSpace(sectionNameOverride))
-			return sectionNameOverride;
+	/// <summary>
+	/// Gets the configuration section name for the specified options type.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <returns>
+	/// The <c>SectionName</c> constant when present; otherwise the type name trimmed of a known
+	/// suffix (<c>Options</c>, <c>Settings</c>, <c>Configuration</c>, <c>Config</c>); otherwise the type name.
+	/// </returns>
+	public static string SectionNameFor<TOptions>() => SectionNameFor(typeof(TOptions));
 
-		var sectionNameField = typeof(TOptions).GetField(
+	/// <summary>
+	/// Gets the configuration section name for the specified options type.
+	/// </summary>
+	/// <param name="optionsType">The options type.</param>
+	/// <returns>
+	/// The <c>SectionName</c> constant when present; otherwise the type name trimmed of a known
+	/// suffix (<c>Options</c>, <c>Settings</c>, <c>Configuration</c>, <c>Config</c>); otherwise the type name.
+	/// </returns>
+	public static string SectionNameFor(Type optionsType)
+	{
+		ArgumentNullException.ThrowIfNull(optionsType);
+
+		var sectionNameField = optionsType.GetField(
 			"SectionName",
 			BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy
 		);
@@ -82,7 +99,7 @@ public static class OptionsHelper
 		)
 			return constantValue;
 
-		var typeName = typeof(TOptions).Name;
+		var typeName = GetSectionNameCandidateTypeName(optionsType);
 		foreach (var suffix in SectionNameSuffixes)
 		{
 			if (!typeName.EndsWith(suffix, StringComparison.Ordinal))
@@ -93,6 +110,24 @@ public static class OptionsHelper
 		}
 
 		return typeName;
+	}
+
+	static string GetSectionNameCandidateTypeName(Type type)
+	{
+		var typeName = type.Name;
+		if (!type.IsGenericType)
+			return typeName;
+
+		var arityMarker = typeName.IndexOf('`', StringComparison.Ordinal);
+		return arityMarker < 0 ? typeName : typeName[..arityMarker];
+	}
+
+	static string ResolveSectionName<TOptions>(string? sectionNameOverride)
+	{
+		if (!string.IsNullOrWhiteSpace(sectionNameOverride))
+			return sectionNameOverride;
+
+		return SectionNameFor<TOptions>();
 	}
 
 	static TOptions CreateRootOptionsInstance<TOptions>()
