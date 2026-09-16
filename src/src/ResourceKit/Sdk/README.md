@@ -142,7 +142,7 @@ When options are generated:
 - Resource options are nested by generated resource property name.
 - `IsEnabled` can be used to skip a resource at runtime.
 
-See detailed patterns in [`/docs/configuration.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/docs/configuration.md).
+See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration/) patterns.
 
 ### Extending generated typed options
 
@@ -241,4 +241,9 @@ SG0017–SG0019 are execution-only warnings: they indicate the resource will fai
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 
-For troubleshooting guidance, see [`/docs/diagnostics.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/docs/diagnostics.md).
+For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/diagnostics/), see the diagnostics reference.
+
+## Documentation
+
+- [Homepage](https://purview.dev/projects/aspire-resourcekit/)
+- [Documentation](https://purview.dev/docs/aspire-resourcekit/)

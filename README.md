@@ -10,8 +10,8 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > [!TIP]
 > **Lifecycle quick links**
 >
-> - Build vs Configure guidance: [`docs/getting-started.md#5-understand-build-vs-configure-before-adding-dependencies`](docs/getting-started.md#5-understand-build-vs-configure-before-adding-dependencies)
-> - Runtime enablement (`IsEnabled` + `IsResourceEnabled(...)`): [`docs/configuration.md#isenabled-vs-isresourceenabled`](docs/configuration.md#isenabled-vs-isresourceenabled)
+> - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
+> - Runtime enablement (`IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
 
 ## Why teams use it
 
@@ -86,12 +86,15 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - host + per-resource options (when enabled),
 - an AppHost extension method to build/configure/register your host kit.
 
-## Learn more
+## Documentation
 
+- [Homepage](https://purview.dev/projects/aspire-resourcekit/)
+- [Documentation](https://purview.dev/docs/aspire-resourcekit/)
+- [Getting started](docs/wiki/Getting-Started.md)
+- [Configuration and options](docs/wiki/Configuration-and-Options.md)
+- [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
+- [Examples: generated vs manual](docs/wiki/Examples.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
-- Getting started guide: [`docs/getting-started.md`](docs/getting-started.md)
-- Configuration and options patterns: [`docs/configuration.md`](docs/configuration.md)
-- Diagnostics and troubleshooting: [`docs/diagnostics.md`](docs/diagnostics.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)
 
 ## Repository layout

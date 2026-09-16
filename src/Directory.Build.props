@@ -10,12 +10,19 @@
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
 
+	<PropertyGroup Label="Purview site URL metadata">
+		<PurviewHomepage>https://purview.dev/</PurviewHomepage>
+		<PurviewProjectUrl>$(PurviewHomepage)projects/aspire-resourcekit/</PurviewProjectUrl>
+		<PurviewDocsUrl>$(PurviewHomepage)docs/aspire-resourcekit/</PurviewDocsUrl>
+	</PropertyGroup>
+
 	<PropertyGroup Label="NuGet package metadata">
 		<Authors>Purview Contributors</Authors>
 		<Company>Purview.dev</Company>
-		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+		<PackageProjectUrl>$(PurviewProjectUrl)</PackageProjectUrl>
 		<RepositoryUrl>$(RepositoryUrl)</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<PackageIcon>purview-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
