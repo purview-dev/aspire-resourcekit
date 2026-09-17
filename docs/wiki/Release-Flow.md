@@ -22,7 +22,7 @@ workflow. It runs:
 
 Integration tests are never discovered in CI: `purview-build.json` sets `Build:TestPatterns` to
 `*Tests.csproj` and `Build:TestFilter` to `/*/*/*/*[Category=Unit]`, so only unit-test projects (tagged
-`[Category=Unit]` by the `Purview.DotNetProjectSdk`) are executed; integration tests (which require
+`[Category=Unit]` by the `Purview.BuildSdk`) are executed; integration tests (which require
 Docker/Testcontainers) run locally via `just test`.
 
 The PR workflow does not tag, release, or publish packages.
