@@ -14,7 +14,7 @@ At a high level:
 
 This is a .NET repository centered on Aspire and source generation.
 
-- Uses the **Purview DotNet Project SDK** (`Purview.DotNetProjectSdk`) for project defaults and conventions.
+- Uses the **Purview DotNet Project SDK** (`Purview.BuildSdk`) for project defaults and conventions.
 - Uses centrally-managed package versions (`Directory.Packages.props`).
 - Uses **TUnit** and **TUnit.Mocks** for testing.
 - Uses `Microsoft.Testing.Platform` via package-managed tooling.
