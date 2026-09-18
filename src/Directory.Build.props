@@ -23,13 +23,16 @@
 		<RepositoryUrl>$(RepositoryUrl)</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<PackageIcon>purview-logo.png</PackageIcon>
+		<PackageIcon>purview-logo-light.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
 	<ItemGroup Label="NuGet package assets" Condition="'$(IsPackable)' == 'true'">
-		<None Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo.png" Link="Sdk/purview-logo.png" />
+		<None
+			Include="$(MSBuildThisFileDirectory)/../assets/images/purview-logo-light.png"
+			Link="Sdk/purview-logo-light.png"
+		/>
 	</ItemGroup>
 </Project>
