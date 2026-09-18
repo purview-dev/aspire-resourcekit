@@ -19,7 +19,7 @@
 		"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.Shared.dll",
 		"buildTransitive/Purview.Aspire.ResourceKit.props",
 		"README.md",
-		"purview-logo.png"
+		"purview-logo-light.png"
 	  ]
 	},
 	"ForbiddenContent": {}

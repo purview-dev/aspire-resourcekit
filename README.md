@@ -1,4 +1,4 @@
-# Purview.Aspire.ResourceKit
+# Aspire Resource Kit
 
 [![NuGet version](https://img.shields.io/nuget/v/Purview.Aspire.ResourceKit.svg)](https://www.nuget.org/packages/Purview.Aspire.ResourceKit)
 [![Release](https://github.com/purview-dev/aspire-resourcekit/actions/workflows/release.yml/badge.svg)](https://github.com/purview-dev/aspire-resourcekit/actions/workflows/release.yml)

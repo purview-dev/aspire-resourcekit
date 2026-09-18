@@ -85,7 +85,7 @@ federated credential before the shared pipeline runs; the shared workflow itself
 | `Build:TestFilter` | `/*/*/*/*[Category=Unit]` | TUnit tree-node filter (unit-only) |
 | `PackValidation:RequireSymbolPackage` | `true` | Every `.nupkg` needs a matching `.snupkg` |
 | `PackValidation:RequireSymbolFiles` | `true` | Every `.snupkg` must contain PDBs |
-| `PackValidation:RequiredContent` | Expected package contents | Asserts the package ships its expected output — `lib/net8.0|net9.0|net10.0` runtime assemblies + XML docs, the analyzer assembly, `buildTransitive/Purview.Aspire.ResourceKit.props`, `README.md`, and `purview-logo.png` |
+| `PackValidation:RequiredContent` | Expected package contents | Asserts the package ships its expected output — `lib/net8.0|net9.0|net10.0` runtime assemblies + XML docs, the analyzer assembly, `buildTransitive/Purview.Aspire.ResourceKit.props`, `README.md`, and `purview-logo-light.png` |
 | `Release:Mode` | `None` | Publishing is enabled only by the release workflow |
 
 Configuration precedence is command line, environment variables, `purview-build.json`, then the tool's
