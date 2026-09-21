@@ -458,4 +458,31 @@ public sealed class OptionsHelperTests
 		await Assert.That(envVars["HostKit__Redis__Name"]).IsEqualTo("redis-overridden");
 		await Assert.That(envVars).DoesNotContainKey("HostKit__API__Name");
 	}
+
+	[Test]
+	public async Task Environment_GivenOptionsWithSectionNameConst_UsesSectionNameAsKeyPrefix()
+	{
+		// Arrange
+		ChangeOpsServiceOptions options = new()
+		{
+			ServiceName = "migrator",
+			DisplayName = "ChangeOps DbContext Migrator Service",
+			DbMode = ChangeOpsDbMode.Postgres,
+		};
+
+		// Act
+		var envVars = OptionsHelper
+			.Environment(options)
+			.Override(static s => s.ServiceName = "migrator-overridden")
+			.Override(static s => s.DisplayName = "ChangeOps DbContext Migrator Service")
+			.Build();
+
+		// Assert
+		await Assert.That(envVars["Services__ServiceName"]).IsEqualTo("migrator-overridden");
+		await Assert.That(envVars["Services__DisplayName"]).IsEqualTo("ChangeOps DbContext Migrator Service");
+		await Assert.That(envVars["Services__DbMode"]).IsEqualTo("Postgres");
+		await Assert
+			.That(envVars.Keys)
+			.DoesNotContain(key => key.StartsWith("IReadOnlyDictionary", StringComparison.Ordinal));
+	}
 }
