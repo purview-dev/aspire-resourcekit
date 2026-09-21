@@ -1,8 +1,8 @@
 # OptionsHelper
 
 `OptionsHelper` builds configuration arguments or environment variables for options objects by using
-strongly typed assignment expressions. It is useful for integration-test fixtures, scenario toggles,
-and CLI overrides.
+strongly typed assignment expressions or by flattening a populated options object. It is useful for
+integration-test fixtures, scenario toggles, and CLI overrides.
 
 ## Assign
 
@@ -43,6 +43,41 @@ var envVars = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
 
 This returns a dictionary such as
 `{"ShopHostKit__API__IsEnabled": "false", "ShopHostKit__API__Name": "api-test"}`.
+
+## Environment
+
+Call `Environment(...)` to flatten a populated options object into ASP.NET Core binder-style
+environment variables:
+
+```csharp
+var envVars = OptionsHelper.Environment(new ShopOptions
+{
+    Api = new ApiOptions
+    {
+        Name = "api-test",
+        Enabled = true,
+    },
+    ReplicaNames = ["a", "b"],
+    Labels =
+    {
+        ["region"] = "west",
+    },
+})
+.Override(static o => o.Api.Name = "api-prod")
+.Ignore(static o => o.Labels)
+.Build();
+```
+
+The output uses binder-style keys such as:
+
+- `Shop__Api__Name`
+- `Shop__Api__Enabled`
+- `Shop__ReplicaNames__0`
+- `Shop__ReplicaNames__1`
+- `Shop__Labels__region`
+
+Use `Override(...)` to replace selected values before emission, and `Ignore(...)` to drop selected
+properties from the flattened output.
 
 ## PathFor
 

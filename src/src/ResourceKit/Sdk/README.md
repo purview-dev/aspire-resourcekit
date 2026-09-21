@@ -212,6 +212,10 @@ var envVars = OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
 
 Useful for integration-test fixtures and scenario toggles.
 
+If you already have a populated options object, use `OptionsHelper.Environment(...)` and optional
+`Override(...)` / `Ignore(...)` calls to flatten it into ASP.NET Core binder-style environment
+variables.
+
 ## Diagnostics
 
 | ID | Severity | Description |

@@ -46,6 +46,10 @@ sealed class HostKitOptions
 	public RedisOptions Redis { get; set; } = new();
 
 	public APIOptions API { get; set; } = new();
+
+	public List<RedisOptions> RedisNodes { get; set; } = [];
+
+	public Dictionary<string, RedisOptions> RedisMap { get; set; } = [];
 }
 
 sealed class APIOptions
@@ -121,6 +125,8 @@ sealed class RedisOptions
 	public string Name { get; set; } = string.Empty;
 
 	public bool IsEnabled { get; set; }
+
+	public Dictionary<string, string> Labels { get; set; } = [];
 }
 
 sealed class SampleStoreOptions

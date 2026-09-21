@@ -404,4 +404,58 @@ public sealed class OptionsHelperTests
 		await Assert.That(envVars).ContainsKey("CustomSection__Redis__Name");
 		await Assert.That(envVars["CustomSection__Redis__Name"]).IsEqualTo("PIES");
 	}
+
+	[Test]
+	public async Task Environment_GivenPopulatedOptions_FlattensNestedCollectionsAndDictionaries()
+	{
+		// Arrange
+		HostKitOptions options = new()
+		{
+			Redis = new RedisOptions
+			{
+				Name = "redis-a",
+				IsEnabled = true,
+				Labels = { ["tier"] = "primary" },
+			},
+			RedisNodes = [new RedisOptions { Name = "redis-node-a", IsEnabled = false }],
+			RedisMap =
+			{
+				["east"] = new RedisOptions { Name = "redis-east", IsEnabled = true },
+			},
+		};
+
+		// Act
+		var envVars = OptionsHelper.Environment(options).Build();
+
+		// Assert
+		await Assert.That(envVars["HostKit__Redis__Name"]).IsEqualTo("redis-a");
+		await Assert.That(envVars["HostKit__Redis__IsEnabled"]).IsEqualTo("true");
+		await Assert.That(envVars["HostKit__Redis__Labels__tier"]).IsEqualTo("primary");
+		await Assert.That(envVars["HostKit__RedisNodes__0__Name"]).IsEqualTo("redis-node-a");
+		await Assert.That(envVars["HostKit__RedisNodes__0__IsEnabled"]).IsEqualTo("false");
+		await Assert.That(envVars["HostKit__RedisMap__east__Name"]).IsEqualTo("redis-east");
+		await Assert.That(envVars["HostKit__RedisMap__east__IsEnabled"]).IsEqualTo("true");
+	}
+
+	[Test]
+	public async Task Environment_GivenOverridesAndIgnores_AppliesOverridesAndRemovesIgnoredValues()
+	{
+		// Arrange
+		HostKitOptions options = new()
+		{
+			Redis = new RedisOptions { Name = "redis-a", IsEnabled = true },
+			API = new APIOptions { Name = "api-a" },
+		};
+
+		// Act
+		var envVars = OptionsHelper
+			.Environment(options)
+			.Override(static o => o.Redis.Name = "redis-overridden")
+			.Ignore(static o => o.API.Name)
+			.Build();
+
+		// Assert
+		await Assert.That(envVars["HostKit__Redis__Name"]).IsEqualTo("redis-overridden");
+		await Assert.That(envVars).DoesNotContainKey("HostKit__API__Name");
+	}
 }

@@ -84,6 +84,9 @@ partial class CodeGenEmiiter
 			// Write the Configure method
 			GenerateConfigureMethod(context, cancellationToken);
 
+			// Write the partial lifecycle hooks.
+			GenerateLifecyclePartialMethods(context, cancellationToken);
+
 			if (context.Model.HostKit.Value.ShouldGenerateOptions)
 			{
 				// Generate the options class.
@@ -222,7 +225,11 @@ partial class CodeGenEmiiter
 			)
 		)
 		{
-			context.Writer.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["builder"]).NewLine();
+			context
+				.Writer.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["builder"])
+				.NewLine()
+				.MethodCall("OnPreBuild", ["builder"])
+				.NewLine();
 
 			foreach (
 				var resourceKit in context
@@ -269,16 +276,16 @@ partial class CodeGenEmiiter
 
 			context
 				.Writer.NewLine()
-				.Comment("Now the additional post-build func builder")
-				.MethodCallOn("onBuilt", "Invoke", ["this", "builder"], nullConditional: true);
-
-			context
-				.Writer.NewLine()
 				.Comment(
 					"Now that we've populated all of the resources, call the base classes",
 					"Build method to register the app resources with the builder."
 				)
-				.MethodCallOn("base", "Build", ["builder"]);
+				.MethodCallOn("base", "Build", ["builder"])
+				.NewLine()
+				.MethodCall("OnPostBuild", ["builder"])
+				.NewLine()
+				.Comment("Now the additional post-build func builder")
+				.MethodCallOn("onBuilt", "Invoke", ["this", "builder"], nullConditional: true);
 		}
 	}
 
@@ -293,14 +300,57 @@ partial class CodeGenEmiiter
 		{
 			context
 				.Writer.NewLine()
+				.MethodCall("OnPreConfigure")
+				.NewLine()
 				.Comment("Call the base classes Configure method first...")
-				.MethodCallOn("base", "Configure", [], nullConditional: false);
+				.MethodCallOn("base", "Configure", [], nullConditional: false)
+				.NewLine()
+				.MethodCall("OnPostConfigure")
+				.NewLine();
 
 			context
-				.Writer.NewLine()
-				.Comment("Now the additional post-configure func builder")
+				.Writer.Comment("Now the additional post-configure func builder")
 				.MethodCallOn("onConfigured", "Invoke", ["this"], nullConditional: true);
 		}
+	}
+
+	static void GenerateLifecyclePartialMethods(OutputContext context, CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		context.Debug($"Generating lifecycle partial methods for host kit: {context.HostKit.HostKitType.Name}");
+
+		context
+			.Writer.NewLine()
+			.XmlSummary("Invoked before the host kit builds its resources.")
+			.XmlParam("builder", ["The distributed application builder."])
+			.PartialMethod(
+				new("OnPreBuild")
+				{
+					Parameters = [new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder)],
+				}
+			);
+
+		context
+			.Writer.NewLine()
+			.XmlSummary("Invoked after the host kit builds and registers its resources.")
+			.XmlParam("builder", ["The distributed application builder."])
+			.PartialMethod(
+				new("OnPostBuild")
+				{
+					Parameters = [new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder)],
+				}
+			);
+
+		context
+			.Writer.NewLine()
+			.XmlSummary("Invoked before the host kit configures its resources.")
+			.PartialMethod(new("OnPreConfigure"));
+
+		context
+			.Writer.NewLine()
+			.XmlSummary("Invoked after the host kit configures its resources.")
+			.PartialMethod(new("OnPostConfigure"));
 	}
 
 	static void GenerateHostKitOptionsClass(OutputContext context, CancellationToken cancellationToken)

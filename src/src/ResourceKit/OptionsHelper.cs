@@ -50,6 +50,29 @@ public static class OptionsHelper
 	}
 
 	/// <summary>
+	/// Starts building environment variables from a populated options object.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="options">The options instance to flatten.</param>
+	/// <returns>A builder that can override or ignore values before emitting environment variables.</returns>
+	public static IOptionsEnvironmentBuilder<TOptions> Environment<TOptions>(TOptions options)
+	{
+		return new OptionsEnvironmentBuilder<TOptions>(options);
+	}
+
+	/// <summary>
+	/// Starts building environment variables from a populated options object with an explicit root section name.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <param name="sectionName">The root section name override.</param>
+	/// <param name="options">The options instance to flatten.</param>
+	/// <returns>A builder that can override or ignore values before emitting environment variables.</returns>
+	public static IOptionsEnvironmentBuilder<TOptions> Environment<TOptions>(string sectionName, TOptions options)
+	{
+		return new OptionsEnvironmentBuilder<TOptions>(options, sectionName);
+	}
+
+	/// <summary>
 	/// Gets the dot-separated member path for a property selector on the specified options type.
 	/// </summary>
 	/// <typeparam name="TOptions">The root options type.</typeparam>

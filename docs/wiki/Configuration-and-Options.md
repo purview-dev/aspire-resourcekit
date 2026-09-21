@@ -124,7 +124,8 @@ See [Enablement](Enablement.md) for details.
 ## OptionsHelper for tests and overrides
 
 For tests and scenario toggles, `OptionsHelper` converts typed assignments into command-line arguments
-or environment variables:
+or environment variables. It can also flatten a populated options object into ASP.NET Core binder-style
+environment variables:
 
 ```csharp
 var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
@@ -135,6 +136,9 @@ var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
 
 See [OptionsHelper](OptionsHelper.md) for the complete API, including `PathFor`, `SectionNameFor`, and
 the `SG0020` single-property-path rule.
+
+For resource wiring, `IResourceBuilder.WithEnvironment(options)` now accepts a populated options object
+and emits environment variables using the same binder-style key convention.
 
 ## Section-name resolution
 

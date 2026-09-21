@@ -19,7 +19,44 @@ public static class IResourceBuilderExtensions
 			ArgumentNullException.ThrowIfNull(optionsBuilder);
 
 			var items = optionsBuilder.AsEnvironmentVariables().Build().ToDictionary();
-			return WithEnvironment(builder, items);
+			return ApplyEnvironment(builder, items);
+		}
+
+		/// <summary>
+		/// Adds environment variables for a populated options object.
+		/// </summary>
+		/// <typeparam name="TOptions">The options type.</typeparam>
+		/// <param name="options">The options instance.</param>
+		/// <returns>The <see cref="IResourceBuilder{T}"/>.</returns>
+		public IResourceBuilder<T> WithEnvironment<TOptions>(TOptions options)
+		{
+			ArgumentNullException.ThrowIfNull(builder);
+			ArgumentNullException.ThrowIfNull(options);
+
+			var items = OptionsHelper.Environment(options).Build().ToDictionary();
+			return ApplyEnvironment(builder, items);
+		}
+
+		/// <summary>
+		/// Adds environment variables for a populated options object with overrides and ignores.
+		/// </summary>
+		/// <typeparam name="TOptions">The options type.</typeparam>
+		/// <param name="options">The options instance.</param>
+		/// <param name="configure">Optional builder customization.</param>
+		/// <returns>The <see cref="IResourceBuilder{T}"/>.</returns>
+		public IResourceBuilder<T> WithEnvironment<TOptions>(
+			TOptions options,
+			Action<IOptionsEnvironmentBuilder<TOptions>> configure
+		)
+		{
+			ArgumentNullException.ThrowIfNull(builder);
+			ArgumentNullException.ThrowIfNull(options);
+			ArgumentNullException.ThrowIfNull(configure);
+
+			var environmentBuilder = OptionsHelper.Environment(options);
+			configure(environmentBuilder);
+			var items = environmentBuilder.Build().ToDictionary();
+			return ApplyEnvironment(builder, items);
 		}
 
 		/// <summary>
@@ -31,10 +68,18 @@ public static class IResourceBuilderExtensions
 			ArgumentNullException.ThrowIfNull(builder);
 			ArgumentNullException.ThrowIfNull(values);
 
-			foreach (var (key, value) in values)
-				builder = builder.WithEnvironment(key, value);
+			return ApplyEnvironment(builder, values);
+		}
 
-			return builder;
+		static IResourceBuilder<T> ApplyEnvironment(
+			IResourceBuilder<T> resourceBuilder,
+			IEnumerable<KeyValuePair<string, string>> values
+		)
+		{
+			foreach (var (key, value) in values)
+				resourceBuilder = resourceBuilder.WithEnvironment(key, value);
+
+			return resourceBuilder;
 		}
 	}
 }
