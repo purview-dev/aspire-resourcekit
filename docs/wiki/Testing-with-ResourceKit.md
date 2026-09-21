@@ -104,6 +104,9 @@ protected override string[] Args =>
 See [OptionsHelper](OptionsHelper.md) for `Assign`, `AsEnvironmentVariables`, and the `SG0020`
 single-property-path rule.
 
+If you already have a populated options object, use `OptionsHelper.Environment(...)` to flatten it into
+configuration-style environment variables and selectively override or ignore members before emission.
+
 ## Unit-testing the manual pattern
 
 The manual host pattern (see [Examples](Examples.md)) composes `ResourceKitBase<THostKit, TResource>`

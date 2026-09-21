@@ -188,10 +188,10 @@ static class DiagnosticLibrary
 	public static readonly DiagnosticDescriptor AssignSetsMultiplePropertyPaths = new(
 		id: "SG0020",
 		title: "OptionsHelper.Assign action must set exactly one property path",
-		messageFormat: "An OptionsHelper.Assign action must set exactly one property path. Found {0} assignments: {1}. Split each into its own assignment: Assign<TOptions>(o => o.A = ..., o => o.B = ...).",
+		messageFormat: "An OptionsHelper.Assign/Override action must set exactly one property path. Found {0} assignments: {1}. Split each into its own assignment: Assign<TOptions>(o => o.A = ..., o => o.B = ...).",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true,
-		description: "Each OptionsHelper.Assign action must set exactly one property path; an action that assigns more than one property throws at runtime when the arguments are built."
+		description: "Each OptionsHelper.Assign/Override action must set exactly one property path; an action that assigns more than one property throws at runtime when the arguments are built."
 	);
 }
