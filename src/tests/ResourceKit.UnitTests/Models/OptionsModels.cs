@@ -148,6 +148,23 @@ sealed class GenericServiceOptions<T>
 	public RedisOptions Redis { get; set; } = new();
 }
 
+sealed class ChangeOpsServiceOptions
+{
+	public const string SectionName = "Services";
+
+	public string ServiceName { get; set; } = string.Empty;
+
+	public string DisplayName { get; set; } = string.Empty;
+
+	public ChangeOpsDbMode DbMode { get; set; } = ChangeOpsDbMode.SqlServer;
+}
+
+enum ChangeOpsDbMode
+{
+	SqlServer,
+	Postgres,
+}
+
 sealed class GenericSectionOptions<T>
 {
 	public const string SectionName = "GenericSection";

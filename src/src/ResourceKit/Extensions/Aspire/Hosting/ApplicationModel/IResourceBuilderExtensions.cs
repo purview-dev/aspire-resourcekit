@@ -71,6 +71,20 @@ public static class IResourceBuilderExtensions
 			return ApplyEnvironment(builder, values);
 		}
 
+		/// <summary>
+		/// Adds environment variables to the resource, for example the dictionary returned by
+		/// <see cref="IOptionsEnvironmentBuilder{TOptions}.Build"/>.
+		/// </summary>
+		/// <param name="values">The environment variables to add.</param>
+		/// <returns>The <see cref="IResourceBuilder{T}"/>.</returns>
+		public IResourceBuilder<T> WithEnvironment(IReadOnlyDictionary<string, string> values)
+		{
+			ArgumentNullException.ThrowIfNull(builder);
+			ArgumentNullException.ThrowIfNull(values);
+
+			return ApplyEnvironment(builder, values);
+		}
+
 		static IResourceBuilder<T> ApplyEnvironment(
 			IResourceBuilder<T> resourceBuilder,
 			IEnumerable<KeyValuePair<string, string>> values

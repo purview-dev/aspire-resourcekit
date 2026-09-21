@@ -79,6 +79,15 @@ The output uses binder-style keys such as:
 Use `Override(...)` to replace selected values before emission, and `Ignore(...)` to drop selected
 properties from the flattened output.
 
+The dictionary returned by `Build()` can be passed straight to a resource:
+
+```csharp
+ResourceBuilder.WithEnvironment(OptionsHelper.Environment(Options).Build());
+```
+
+`IResourceBuilder.WithEnvironment(IReadOnlyDictionary<string, string>)` applies the entries directly, so
+the keys are preserved verbatim (for example `Services__ServiceName`).
+
 ## PathFor
 
 If you need a property path as a plain string (for example, to build keys or log config), use
