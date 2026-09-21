@@ -65,7 +65,8 @@ static class OptionsEnvironmentHelper
 			foreach (var selector in ignores)
 			{
 				ArgumentNullException.ThrowIfNull(selector);
-				var path = $"{sectionName}__{OptionsHelper.PathFor(selector).Replace(".", "__", StringComparison.Ordinal)}";
+				var path =
+					$"{sectionName}__{OptionsHelper.PathFor(selector).Replace(".", "__", StringComparison.Ordinal)}";
 				RemovePath(values, path);
 			}
 		}
@@ -96,7 +97,12 @@ static class OptionsEnvironmentHelper
 			if (value is IDictionary dictionary)
 			{
 				foreach (DictionaryEntry entry in dictionary)
-					Flatten(entry.Value, Combine(path, Convert.ToString(entry.Key, CultureInfo.InvariantCulture) ?? string.Empty), values, stack);
+					Flatten(
+						entry.Value,
+						Combine(path, Convert.ToString(entry.Key, CultureInfo.InvariantCulture) ?? string.Empty),
+						values,
+						stack
+					);
 
 				return;
 			}
@@ -113,7 +119,9 @@ static class OptionsEnvironmentHelper
 				return;
 			}
 
-			foreach (var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+			foreach (
+				var property in type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+			)
 			{
 				if (!property.CanRead || property.GetIndexParameters().Length != 0)
 					continue;
@@ -129,7 +137,9 @@ static class OptionsEnvironmentHelper
 
 	static void RemovePath(Dictionary<string, string> values, string prefix)
 	{
-		var keys = values.Keys.Where(key => key == prefix || key.StartsWith(prefix + "__", StringComparison.Ordinal)).ToArray();
+		var keys = values
+			.Keys.Where(key => key == prefix || key.StartsWith(prefix + "__", StringComparison.Ordinal))
+			.ToArray();
 		foreach (var key in keys)
 			values.Remove(key);
 	}
@@ -159,7 +169,8 @@ static class OptionsEnvironmentHelper
 		};
 	}
 
-	static string Combine(string prefix, string segment) => string.IsNullOrEmpty(prefix) ? segment : $"{prefix}:{segment}";
+	static string Combine(string prefix, string segment) =>
+		string.IsNullOrEmpty(prefix) ? segment : $"{prefix}:{segment}";
 
 	static string ToEnvironmentKey(string path) => path.Replace(":", "__", StringComparison.Ordinal);
 
@@ -206,11 +217,6 @@ sealed class OptionsEnvironmentBuilder<TOptions> : IOptionsEnvironmentBuilder<TO
 
 	public IReadOnlyDictionary<string, string> Build()
 	{
-		return OptionsEnvironmentHelper.BuildEnvironmentVariables(
-			_options,
-			_sectionNameOverride,
-			_overrides,
-			_ignores
-		);
+		return OptionsEnvironmentHelper.BuildEnvironmentVariables(_options, _sectionNameOverride, _overrides, _ignores);
 	}
 }

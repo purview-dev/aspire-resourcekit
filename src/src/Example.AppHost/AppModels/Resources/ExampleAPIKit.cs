@@ -14,28 +14,23 @@ sealed partial class ExampleAPIKit
 			ResourceBuilder.WithEnvironment(Options.PublishEnvironmentVariableName, HostKit.PublishMarker);
 
 		ResourceBuilder.WithEnvironment(
-			OptionsHelper.Environment(
-				new DemoServiceEnvironmentOptions
-				{
-					Service = new()
+			OptionsHelper
+				.Environment(
+					new DemoServiceEnvironmentOptions
 					{
-						Name = Name,
-						Enabled = true,
-						Labels =
+						Service = new()
 						{
-							["region"] = "west",
+							Name = Name,
+							Enabled = true,
+							Labels = { ["region"] = "west" },
 						},
-					},
-					Replicas = [1, 2, 3],
-					Routes =
-					{
-						["health"] = "/health",
-					},
-				}
-			)
-			.Override(static o => o.Service.Name = "api")
-			.Ignore(static o => o.Service.Labels)
-			.Build()
+						Replicas = [1, 2, 3],
+						Routes = { ["health"] = "/health" },
+					}
+				)
+				.Override(static o => o.Service.Name = "api")
+				.Ignore(static o => o.Service.Labels)
+				.Build()
 		);
 
 		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);

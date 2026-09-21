@@ -8,10 +8,10 @@ using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
-	/// Reports <c>SG0020</c> when an <c>OptionsHelper.Assign</c>/<c>OptionsHelper.Environment(...).Override</c>
-	/// (or chained <c>IOptionsBuilder.Assign</c>) action is a block-bodied lambda that assigns more than one
-	/// property path. Each assignment action must set exactly one property path, otherwise <c>OptionsHelper</c>
-	/// throws at runtime when the arguments are built.
+/// Reports <c>SG0020</c> when an <c>OptionsHelper.Assign</c>/<c>OptionsHelper.Environment(...).Override</c>
+/// (or chained <c>IOptionsBuilder.Assign</c>) action is a block-bodied lambda that assigns more than one
+/// property path. Each assignment action must set exactly one property path, otherwise <c>OptionsHelper</c>
+/// throws at runtime when the arguments are built.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class OptionsHelperAssignAnalyzer : DiagnosticAnalyzer

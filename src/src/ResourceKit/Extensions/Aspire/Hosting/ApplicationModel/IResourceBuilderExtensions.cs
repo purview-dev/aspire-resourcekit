@@ -71,7 +71,10 @@ public static class IResourceBuilderExtensions
 			return ApplyEnvironment(builder, values);
 		}
 
-		static IResourceBuilder<T> ApplyEnvironment(IResourceBuilder<T> resourceBuilder, IEnumerable<KeyValuePair<string, string>> values)
+		static IResourceBuilder<T> ApplyEnvironment(
+			IResourceBuilder<T> resourceBuilder,
+			IEnumerable<KeyValuePair<string, string>> values
+		)
 		{
 			foreach (var (key, value) in values)
 				resourceBuilder = resourceBuilder.WithEnvironment(key, value);

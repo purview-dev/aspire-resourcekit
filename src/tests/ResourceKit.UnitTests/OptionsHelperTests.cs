@@ -415,26 +415,12 @@ public sealed class OptionsHelperTests
 			{
 				Name = "redis-a",
 				IsEnabled = true,
-				Labels =
-				{
-					["tier"] = "primary",
-				},
+				Labels = { ["tier"] = "primary" },
 			},
-			RedisNodes =
-			[
-				new RedisOptions
-				{
-					Name = "redis-node-a",
-					IsEnabled = false,
-				},
-			],
+			RedisNodes = [new RedisOptions { Name = "redis-node-a", IsEnabled = false }],
 			RedisMap =
 			{
-				["east"] = new RedisOptions
-				{
-					Name = "redis-east",
-					IsEnabled = true,
-				},
+				["east"] = new RedisOptions { Name = "redis-east", IsEnabled = true },
 			},
 		};
 
@@ -457,15 +443,8 @@ public sealed class OptionsHelperTests
 		// Arrange
 		HostKitOptions options = new()
 		{
-			Redis = new RedisOptions
-			{
-				Name = "redis-a",
-				IsEnabled = true,
-			},
-			API = new APIOptions
-			{
-				Name = "api-a",
-			},
+			Redis = new RedisOptions { Name = "redis-a", IsEnabled = true },
+			API = new APIOptions { Name = "api-a" },
 		};
 
 		// Act

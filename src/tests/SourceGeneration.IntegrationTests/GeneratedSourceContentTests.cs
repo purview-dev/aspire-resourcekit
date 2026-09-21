@@ -11,10 +11,13 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source = TestHelper.GenerateSources(generateOptions: false);
 
+		// Act
 		var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		var generated = result.GetSource();
 		await Assert
 			.That(generated)
@@ -44,6 +47,77 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 			.Contains(
 				$"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource}>"
 			);
+	}
+
+	[Test]
+	public async Task Generate_GivenHostKit_EmitsLifecyclePartialMethods(CancellationToken cancellationToken)
+	{
+		// Arrange
+		var source = TestHelper.GenerateSources();
+
+		// Act
+		var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains("partial void OnPreBuild(global::Aspire.Hosting.IDistributedApplicationBuilder builder);");
+		await Assert
+			.That(generated)
+			.Contains("partial void OnPostBuild(global::Aspire.Hosting.IDistributedApplicationBuilder builder);");
+		await Assert.That(generated).Contains("partial void OnPreConfigure();");
+		await Assert.That(generated).Contains("partial void OnPostConfigure();");
+	}
+
+	[Test]
+	public async Task Generate_GivenHostKit_BuildInvokesLifecycleHooksInExpectedOrder(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source = TestHelper.GenerateSources();
+
+		// Act
+		var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		var generated = result.GetSource();
+		var preBuildIndex = generated.IndexOf("OnPreBuild(builder);", StringComparison.Ordinal);
+		var addResourceIndex = generated.IndexOf("AddResource(", StringComparison.Ordinal);
+		var baseBuildIndex = generated.IndexOf("base.Build(builder);", StringComparison.Ordinal);
+		var postBuildIndex = generated.IndexOf("OnPostBuild(builder);", StringComparison.Ordinal);
+		var onBuiltIndex = generated.IndexOf("onBuilt?.Invoke(this, builder);", StringComparison.Ordinal);
+
+		await Assert.That(preBuildIndex).IsGreaterThan(-1);
+		await Assert.That(addResourceIndex).IsGreaterThan(preBuildIndex);
+		await Assert.That(baseBuildIndex).IsGreaterThan(addResourceIndex);
+		await Assert.That(postBuildIndex).IsGreaterThan(baseBuildIndex);
+		await Assert.That(onBuiltIndex).IsGreaterThan(postBuildIndex);
+	}
+
+	[Test]
+	public async Task Generate_GivenHostKit_ConfigureInvokesLifecycleHooksInExpectedOrder(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source = TestHelper.GenerateSources();
+
+		// Act
+		var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		var generated = result.GetSource();
+		var preConfigureIndex = generated.IndexOf("OnPreConfigure();", StringComparison.Ordinal);
+		var baseConfigureIndex = generated.IndexOf("base.Configure();", StringComparison.Ordinal);
+		var postConfigureIndex = generated.IndexOf("OnPostConfigure();", StringComparison.Ordinal);
+		var onConfiguredIndex = generated.IndexOf("onConfigured?.Invoke(this);", StringComparison.Ordinal);
+
+		await Assert.That(preConfigureIndex).IsGreaterThan(-1);
+		await Assert.That(baseConfigureIndex).IsGreaterThan(preConfigureIndex);
+		await Assert.That(postConfigureIndex).IsGreaterThan(baseConfigureIndex);
+		await Assert.That(onConfiguredIndex).IsGreaterThan(postConfigureIndex);
 	}
 
 	[Test]
