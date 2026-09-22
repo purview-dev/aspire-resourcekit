@@ -182,18 +182,11 @@ static class OptionsEnvironmentHelper
 	}
 }
 
-sealed class OptionsEnvironmentBuilder<TOptions> : IOptionsEnvironmentBuilder<TOptions>
+sealed class OptionsEnvironmentBuilder<TOptions>(TOptions options, string? sectionNameOverride = null)
+	: IOptionsEnvironmentBuilder<TOptions>
 {
 	readonly List<Action<TOptions>> _overrides = [];
 	readonly List<Expression<Func<TOptions, object?>>> _ignores = [];
-	readonly TOptions _options;
-	readonly string? _sectionNameOverride;
-
-	public OptionsEnvironmentBuilder(TOptions options, string? sectionNameOverride = null)
-	{
-		_options = options;
-		_sectionNameOverride = sectionNameOverride;
-	}
 
 	public IOptionsEnvironmentBuilder<TOptions> Override(params Action<TOptions>[] assignments)
 	{
@@ -217,6 +210,6 @@ sealed class OptionsEnvironmentBuilder<TOptions> : IOptionsEnvironmentBuilder<TO
 
 	public IReadOnlyDictionary<string, string> Build()
 	{
-		return OptionsEnvironmentHelper.BuildEnvironmentVariables(_options, _sectionNameOverride, _overrides, _ignores);
+		return OptionsEnvironmentHelper.BuildEnvironmentVariables(options, sectionNameOverride, _overrides, _ignores);
 	}
 }

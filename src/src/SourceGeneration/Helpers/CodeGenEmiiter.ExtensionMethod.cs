@@ -70,10 +70,8 @@ partial class CodeGenEmiiter
 			new(
 				"onBuilt",
 				TypeLibrary
-					.System.Action.MakeGeneric(
-						context.HostKit.HostKitType,
-						TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder
-					)
+					.System.Action.WithArity(2)
+					.MakeGeneric(context.HostKit.HostKitType, TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder)
 					.MakeNullable(writer)
 			)
 			{
