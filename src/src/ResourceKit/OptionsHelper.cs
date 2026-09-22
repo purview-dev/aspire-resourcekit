@@ -150,6 +150,7 @@ public static class OptionsHelper
 		if (!string.IsNullOrWhiteSpace(sectionNameOverride))
 			return sectionNameOverride;
 
+		// If the override is null or whitespace, fall back to the SectionNameFor<TOptions>() logic.
 		return SectionNameFor<TOptions>();
 	}
 

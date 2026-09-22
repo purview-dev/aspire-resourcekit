@@ -1,4 +1,3 @@
-using Projects;
 using Purview.Aspire.ResourceKit.Fixtures;
 
 namespace Purview.Aspire.ResourceKit;
@@ -9,6 +8,6 @@ public sealed class ExampleManualAppHostIntegrationTests(ExampleAppHostFixture<E
 	[Test]
 	public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)
 	{
-		await Helpers.APIIsHealthyAsync(fixture, cancellationToken);
+		await fixture.APIIsHealthyAsync(cancellationToken);
 	}
 }
