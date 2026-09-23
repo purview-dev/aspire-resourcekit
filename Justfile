@@ -100,6 +100,13 @@ pack publish_folder=artifacts_folder *args:
     echo "  Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
     dotnet pack {{ solution }} -c {{ build_configuration }} -o {{ publish_folder }} {{ args }}
 
+# Run the pipeline through pack + validate (restore, build, lint, tests, pack, validate pack contents) without publishing/releasing
+[group('Pipeline')]
+pipeline-pack-validate *args:
+    just ensure-pipeline-tool
+    echo "Running pack + validate pipeline..."
+    "{{ pipeline_tool }}" --Build:RunPack=true --Build:ValidatePack=true --Release:Mode=None {{ args }}
+
 # Open the solution in Visual Studio/ Registered application
 [group('Utilities')]
 vs:
