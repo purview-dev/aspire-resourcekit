@@ -5,29 +5,21 @@
 		"TestPatterns": "*Tests.csproj",
 		"TestFilter": "/*/*/*/*[Category=Unit]"
 	},
-  "PackValidation": {
-	"RequireSymbolPackage": true,
-	"RequireSymbolFiles": true,
-	"RequiredContent": {
-	  "purview.aspire.resourcekit": [
-		"lib/net10.0/Purview.Aspire.ResourceKit.dll",
-		"lib/net10.0/Purview.Aspire.ResourceKit.xml",
-		"lib/net9.0/Purview.Aspire.ResourceKit.dll",
-		"lib/net9.0/Purview.Aspire.ResourceKit.xml",
-		"lib/net8.0/Purview.Aspire.ResourceKit.dll",
-		"lib/net8.0/Purview.Aspire.ResourceKit.xml",
-		"buildTransitive/Purview.Aspire.ResourceKit.props",
-		"README.md",
-		"purview-logo-light.png"
-	  ]
+	"PackValidation": {
+		"RequireSymbolPackage": true,
+		"RequireSymbolFiles": true,
+		"RequiredContent": {
+			"purview.aspire.resourcekit": [
+				".agents/**.*",
+				"analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.dll",
+				"buildTransitive/Purview.Aspire.ResourceKit.props",
+				"lib/$(TFM)/Purview.Aspire.ResourceKit.dll",
+				"lib/$(TFM)/Purview.Aspire.ResourceKit.xml",
+				"README.md",
+				"purview-logo-light.png"
+			]
+		}
 	},
-	"ForbiddenContent": {
-	  "purview.aspire.resourcekit": [
-		"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.dll"
-	  ]
-	}
-
-  },
 	"Release": {
 		"Mode": "None"
 	}
