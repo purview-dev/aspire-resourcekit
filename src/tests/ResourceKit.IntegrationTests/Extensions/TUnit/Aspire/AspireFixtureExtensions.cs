@@ -4,6 +4,11 @@ using Purview.Aspire.ResourceKit.Example;
 namespace TUnit.Aspire;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+	"Purview.SourceGeneratorFramework",
+	"PSGFR37:Extension class extends multiple receiver types",
+	Justification = "Bug in the detection"
+)]
 static class AspireFixtureExtensions
 {
 	extension<TAppHost>(AspireFixture<TAppHost> fixture)

@@ -1,5 +1,6 @@
 using Purview.Aspire.ResourceKit.Example;
 using Purview.Aspire.ResourceKit.Fixtures;
+using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit;
 
