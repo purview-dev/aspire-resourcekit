@@ -1,5 +1,6 @@
 using Purview.Aspire.ResourceKit.Example;
 using Purview.Aspire.ResourceKit.Fixtures;
+using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit;
 
@@ -9,7 +10,7 @@ public sealed class ExampleAppHostCustomOptionsIntegrationTests(CustomOptionsExa
 	[Test]
 	public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(CancellationToken cancellationToken)
 	{
-		await Helpers.ConnectionStringIsUnavailableAsync(fixture, Platform.ResourceKits.Redis, cancellationToken);
+		await fixture.ConnectionStringIsUnavailableAsync(Platform.ResourceKits.Redis, cancellationToken);
 
 		await Assert
 			.That(fixture.GetResourceSnapshot(CustomOptionsExampleAppHostFixture.AzureStorageName))

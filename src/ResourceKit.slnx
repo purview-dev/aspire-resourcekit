@@ -1,6 +1,7 @@
 <Solution>
 	<Folder Name="/Solution Items/">
 		<File Path="../package.json" />
+		<File Path="../purview-build.json" />
 		<File Path="Directory.Build.props" />
 		<File Path="Directory.Build.targets" />
 		<File Path="README.md" />
@@ -12,8 +13,8 @@
 	</Folder>
 	<Folder Name="/src/">
 		<Project Path="src/ResourceKit/ResourceKit.csproj" />
-		<Project Path="src/SourceGeneration/SourceGeneration.csproj" />
 		<Project Path="src/SourceGeneration.CodeFixes/SourceGeneration.CodeFixes.csproj" />
+		<Project Path="src/SourceGeneration/SourceGeneration.csproj" />
 	</Folder>
 	<Folder Name="/src/examples/">
 		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />

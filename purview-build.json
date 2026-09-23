@@ -5,25 +5,29 @@
 		"TestPatterns": "*Tests.csproj",
 		"TestFilter": "/*/*/*/*[Category=Unit]"
 	},
-	"PackValidation": {
-		"RequireSymbolPackage": true,
-		"RequireSymbolFiles": true,
-		"RequiredContent": {
-			"purview.aspire.resourcekit": [
-				"lib/net10.0/Purview.Aspire.ResourceKit.dll",
-				"lib/net10.0/Purview.Aspire.ResourceKit.xml",
-				"lib/net9.0/Purview.Aspire.ResourceKit.dll",
-				"lib/net9.0/Purview.Aspire.ResourceKit.xml",
-				"lib/net8.0/Purview.Aspire.ResourceKit.dll",
-				"lib/net8.0/Purview.Aspire.ResourceKit.xml",
-				"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.dll",
-				"buildTransitive/Purview.Aspire.ResourceKit.props",
-				"README.md",
-				"purview-logo-light.png"
-			]
-		},
-		"ForbiddenContent": {}
+  "PackValidation": {
+	"RequireSymbolPackage": true,
+	"RequireSymbolFiles": true,
+	"RequiredContent": {
+	  "purview.aspire.resourcekit": [
+		"lib/net10.0/Purview.Aspire.ResourceKit.dll",
+		"lib/net10.0/Purview.Aspire.ResourceKit.xml",
+		"lib/net9.0/Purview.Aspire.ResourceKit.dll",
+		"lib/net9.0/Purview.Aspire.ResourceKit.xml",
+		"lib/net8.0/Purview.Aspire.ResourceKit.dll",
+		"lib/net8.0/Purview.Aspire.ResourceKit.xml",
+		"buildTransitive/Purview.Aspire.ResourceKit.props",
+		"README.md",
+		"purview-logo-light.png"
+	  ]
 	},
+	"ForbiddenContent": {
+	  "purview.aspire.resourcekit": [
+		"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.dll"
+	  ]
+	}
+
+  },
 	"Release": {
 		"Mode": "None"
 	}

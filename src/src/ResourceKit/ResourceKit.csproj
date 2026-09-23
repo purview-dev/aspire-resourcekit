@@ -7,9 +7,6 @@
 		<Description>Composable and test-friendly Aspire resource isolation model for local, running, and publishing modes.</Description>
 		<PackageTags>aspire;resource-kit;apphost;testing</PackageTags>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<IncludeSymbols>true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<AssemblyName>Purview.Aspire.ResourceKit</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
