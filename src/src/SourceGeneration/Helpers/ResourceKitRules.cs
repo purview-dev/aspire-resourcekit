@@ -43,8 +43,8 @@ static class ResourceKitRules
 	);
 
 	/// <summary>
-	/// A neutral rule evaluation that can be converted into either a <see cref="ReportableDiagnostic"/> (for the
-	/// generator's incremental model) or a Roslyn <see cref="Diagnostic"/> (for the analyzer).
+	/// A neutral rule evaluation that can be converted into either a <c>ReportableDiagnostic</c> (for the generator's
+	/// incremental model) or a Roslyn <see cref="Diagnostic"/> (for the analyzer).
 	/// </summary>
 	internal readonly record struct RuleEvaluation(
 		DiagnosticDescriptor Descriptor,
