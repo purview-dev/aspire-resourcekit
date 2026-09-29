@@ -18,4 +18,18 @@
 			ReferenceOutputAssembly="true"
 		/>
 	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Copy the analyzer release tracking files so AnalyzerReleaseTrackingTests can read them. -->
+		<None
+			Include="..\..\src\SourceGeneration\AnalyzerReleases.Shipped.md"
+			Link="AnalyzerReleases\AnalyzerReleases.Shipped.md"
+			CopyToOutputDirectory="PreserveNewest"
+		/>
+		<None
+			Include="..\..\src\SourceGeneration\AnalyzerReleases.Unshipped.md"
+			Link="AnalyzerReleases\AnalyzerReleases.Unshipped.md"
+			CopyToOutputDirectory="PreserveNewest"
+		/>
+	</ItemGroup>
 </Project>

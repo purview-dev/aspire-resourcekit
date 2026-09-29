@@ -14,3 +14,5 @@
 - [Source Generator Behaviors](Source-Generator-Behaviors.md)
 - [Contributing](Contributing.md)
 - [Release Flow](Release-Flow.md)
+- [Release Notes](Release-Notes.md)
+- [Versioning](Versioning.md)

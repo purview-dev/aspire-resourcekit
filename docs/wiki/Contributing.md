@@ -58,6 +58,19 @@ The repository carries agent skills and prompt workflows under `.agents/`. Consu
 on source generators, tests, the project SDK, or conventional commits. AGENTS.md is the canonical
 agent guidance and references `.agents/` for reusable workflows.
 
+## Releases
+
+Releases are produced by the shared pipeline when a version bump is merged to `main`; see
+[Release Flow](Release-Flow.md). When preparing a release:
+
+1. Update `package.json` (the authoritative version) and align `global.json` and
+   `Directory.Packages.props` with stable dependency versions.
+2. Move new diagnostics from `src/src/SourceGeneration/AnalyzerReleases.Unshipped.md` into
+   `src/src/SourceGeneration/AnalyzerReleases.Shipped.md` under the released version, leaving the
+   unshipped file empty.
+3. Add a [`CHANGELOG.md`](../../CHANGELOG.md) entry and update the wiki [release notes](Release-Notes.md).
+4. Validate with `just lint-check` and `just pipeline-pack-validate` before merging.
+
 ## Pull requests
 
 Pull requests target `main` and are validated by `.github/workflows/pr.yml`, which delegates to the
