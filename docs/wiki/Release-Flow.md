@@ -63,6 +63,45 @@ Prerelease versions (any SemVer containing a hyphen, for example `1.0.0-prerelea
 through the same push-to-`main` flow. The `v<version>` tag and GitHub release are still created and
 packages published; the shared pipeline does not mark the GitHub release with the prerelease flag.
 
+## Stable release preparation
+
+A stable release (for example `1.0.0`) follows the same push-to-`main` flow, but requires version
+preparation before the merge:
+
+1. Set `package.json` `version` to the stable version (for example `1.0.0`).
+2. Align the build SDK in `global.json` and the centrally-managed package versions in
+   `Directory.Packages.props` with their stable releases.
+3. Move every entry from `src/src/SourceGeneration/AnalyzerReleases.Unshipped.md` into
+   `src/src/SourceGeneration/AnalyzerReleases.Shipped.md` under the released version, and leave the
+   unshipped file empty (see below).
+4. Add the release to `CHANGELOG.md` and update the [release notes](Release-Notes.md) page.
+5. Validate locally (`just lint-check` and `just pipeline-pack-validate`) before merging to `main`.
+
+The GitHub release is created with automatically generated notes, grouped by the categories in
+`.github/release.yml`.
+
+## Analyzer release tracking
+
+`src/src/SourceGeneration` ships public diagnostics (`SG0001`–`SG0020`), so it maintains the Roslyn
+release tracking files:
+
+- `AnalyzerReleases.Shipped.md` — rules that have shipped in a released version.
+- `AnalyzerReleases.Unshipped.md` — rules added or changed since the last release.
+
+`Microsoft.CodeAnalysis.Analyzers` automatically adds these files as analyzer additional files when
+they exist in the project directory, so they are validated during the build (Roslyn components build
+with `TreatWarningsAsErrors`). Add new rules to the *unshipped* file while developing, and move them
+into the *shipped* file as part of a release. See [Contributing](Contributing.md) for the day-to-day
+workflow.
+
+## Build-time dependencies
+
+Some centrally-managed packages are build/analysis-time only (consumed with `PrivateAssets`), for
+example `Purview.Telemetry.SourceGenerator`, which `Purview.BuildSdk` injects into every non-test C#
+project, and `Purview.SourceGeneratorFramework`. They never flow to consumers of the NuGet package,
+but the repository cannot restore unless the pinned version exists on a configured feed. A stable
+release therefore requires the pinned versions to be resolvable before merging to `main`.
+
 ## NuGet publishing
 
 NuGet publishing uses the shared workflow's API-key path with the organization `NUGET__APIKEY` secret

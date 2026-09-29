@@ -1,0 +1,30 @@
+# Configuration for GitHub's automatically generated release notes.
+# The shared Purview release pipeline creates the GitHub release and uses these
+# categories to group merged pull requests.
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - skip-changelog
+  categories:
+    - title: Features
+      labels:
+        - feature
+        - enhancement
+    - title: Fixes
+      labels:
+        - bug
+        - fix
+    - title: Documentation
+      labels:
+        - docs
+        - documentation
+    - title: Build and tooling
+      labels:
+        - build
+        - ci
+        - dependencies
+        - chore
+    - title: Other Changes
+      labels:
+        - "*"

@@ -7,6 +7,9 @@
 
 If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
 
+> [!NOTE]
+> `Purview.Aspire.ResourceKit` 1.0.0 is the first stable release. See the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
+
 > [!TIP]
 > **Lifecycle quick links**
 >
@@ -62,7 +65,7 @@ The extension method name is generated from your host metadata; in this reposito
 >
 > `<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>`
 
-## Lifecycle mental model (early cheat sheet)
+## Lifecycle mental model
 
 ResourceKit has two layers of lifecycle methods:
 
@@ -94,6 +97,9 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
 - [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)
+- [Release notes](docs/wiki/Release-Notes.md)
+- [Versioning and compatibility](docs/wiki/Versioning.md)
+- [Changelog](CHANGELOG.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)
 

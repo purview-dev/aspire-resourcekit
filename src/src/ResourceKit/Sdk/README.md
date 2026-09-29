@@ -251,3 +251,5 @@ For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/diagn
 
 - [Homepage](https://purview.dev/projects/aspire-resourcekit/)
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
+- [Changelog](https://github.com/purview-dev/aspire-resourcekit/blob/main/CHANGELOG.md)
+- [Release notes](https://github.com/purview-dev/aspire-resourcekit/releases)
