@@ -4,6 +4,15 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IsPackable>false</IsPackable>
 		<NoWarn>$(NoWarn);CA1034;CA1062;</NoWarn>
+		<!--
+			Declares the two suppressions above as deliberate so Purview.BuildSdk's style policy
+			(PRSGD0008) can tell them apart from an accidental one. An Aspire AppHost nests the public
+			options types the resource kit binds, which is the shape CA1034 objects to, and its
+			composition code is reached only from this executable's own entry point, so CA1062's
+			public-API argument checks add nothing. This is the SDK's supported mechanism - it keeps the
+			rest of the accessibility policy enforced, unlike DisablePurviewStylePolicyValidation.
+		-->
+		<PurviewPolicyExemptNoWarn>$(PurviewPolicyExemptNoWarn);CA1034;CA1062;</PurviewPolicyExemptNoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />

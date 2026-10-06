@@ -3,7 +3,7 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<RoslynVersion>5.9.0</RoslynVersion>
 		<TUnitVersion>1.68.17</TUnitVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.0.0-prerelease.54</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewSourceGeneratorFrameworkVersion>1.0.0</PurviewSourceGeneratorFrameworkVersion>
 		<PurviewTelemetryVersion>5.0.0</PurviewTelemetryVersion>
 		<DotNetRuntimeVersion>10.0.12</DotNetRuntimeVersion>
 		<MSExtensionVersion>10.10.0</MSExtensionVersion>
