@@ -1,4 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup Label="Agent Skills">
+		<!-- Authored at the repository root in skills/; packed into .agents/skills/ so consumers
+		     still receive them through the mirror. See src/Directory.Build.targets. -->
+		<PurviewSkillsToPack>aspire-apphost-to-resourcekit</PurviewSkillsToPack>
+	</PropertyGroup>
+
 	<PropertyGroup>
 		<TargetFramework />
 		<TargetFrameworks>$(AllTargetFrameworks)</TargetFrameworks>
@@ -21,6 +27,7 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+
 		<ProjectReference
 			Include="..\SourceGeneration.CodeFixes\SourceGeneration.CodeFixes.csproj"
 			PrivateAssets="all"

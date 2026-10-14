@@ -72,3 +72,35 @@ Before considering a change done:
 1. Relevant tests are updated/added using the conventions above.
 2. Test runs pass for the impacted scope.
 3. New/updated docs stay consistent with this file and the `.agents/` guidance.
+
+## Agent skills
+
+Authored skills live in the repository-root `skills/` folder — **not** in `.agents/skills/`, which is the
+gitignored mirror that NuGet packages write into on build. The skills CLI (`npx skills`) only discovers
+skills at a root `skills/` folder, and a gitignored folder is absent from a git clone, so the authored copy
+has to be tracked at the root. One copy serves both routes: the git clone for the CLI, and the package for
+the existing mirror.
+
+Install them into your agent's own directories with:
+
+```bash
+npx skills add purview-dev/aspire-resourcekit
+```
+
+### Skills shipped with a package
+
+| Skill | Package | Declared in |
+| --- | --- | --- |
+| `aspire-apphost-to-resourcekit` | `Purview.Aspire.ResourceKit` | `src/src/ResourceKit/ResourceKit.csproj` |
+
+The repository's other authored skills (`changesets-prerelease`, `dotnet-tunit`, `git-conventional-commits`,
+`lefthook-integration`, `tunit-filtering`, `tunit-test-runner`) describe working *in this repository*. They
+live in `skills/` and are installable from git, but are not packed into any package.
+
+Packing is performed by the `IncludeRepositorySkillsInPackage` target in `src/Directory.Build.targets`. That
+is an **interim shim**: `global.json` pins `Purview.BuildSdk` 1.0.5, which has no SDK-side equivalent yet. It
+implements the same `PurviewSkillsToPack` property the newer SDK uses, so adopting it means setting
+`PurviewPackRepositorySkills=true` on the same projects and deleting the shim.
+
+To add a skill: create `skills/<name>/SKILL.md`, then add the name to the owning project's
+`PurviewSkillsToPack`. A skill not named there is installable from git but ships in no package.
