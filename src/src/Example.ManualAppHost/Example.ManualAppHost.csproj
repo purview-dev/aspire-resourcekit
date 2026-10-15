@@ -1,4 +1,4 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
 	<PropertyGroup>
 		<!--
 			This isn't required, but it proves the point that it all works
@@ -6,6 +6,7 @@
 		-->
 		<DisablePurviewAspireResourceKitSourceGenerator>true</DisablePurviewAspireResourceKitSourceGenerator>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<AspireUseCliBundle>true</AspireUseCliBundle>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 	<ItemGroup>

@@ -17,7 +17,7 @@ namespace Testing
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		using var result = await GenerateAsync(EmptySource, cancellationToken);
 
 		var tree = result.GetGeneratedTree("HostKitAttribute.g.cs");
 		tree = await Assert.That(tree).IsNotNull();
@@ -37,7 +37,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		using var result = await GenerateAsync(EmptySource, cancellationToken);
 		var query = result.Generated();
 
 		await Assert
@@ -57,7 +57,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		using var result = await GenerateAsync(EmptySource, cancellationToken);
 		var query = result.Generated();
 
 		await Assert.That(query).HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute);
@@ -72,7 +72,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		using var result = await GenerateAsync(EmptySource, cancellationToken);
 		var query = result.Generated();
 
 		foreach (
@@ -91,7 +91,7 @@ namespace Testing
 	[Test]
 	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, cancellationToken);
+		using var result = await GenerateAsync(EmptySource, cancellationToken);
 		var query = result.Generated();
 
 		var attributeClass = await Assert
@@ -106,7 +106,11 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
-		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
+		using var result = await GenerateAsync(
+			EmptySource,
+			ResourceKitSourceGeneratorTestOptions.Compile,
+			cancellationToken
+		);
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var type = assembly.GetType(
 			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName
@@ -127,7 +131,11 @@ namespace Testing
 	[Test]
 	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
-		var result = await GenerateAsync(EmptySource, ResourceKitSourceGeneratorTestOptions.Compile, cancellationToken);
+		using var result = await GenerateAsync(
+			EmptySource,
+			ResourceKitSourceGeneratorTestOptions.Compile,
+			cancellationToken
+		);
 		//var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
 		var query = result.Generated();

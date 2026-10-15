@@ -53,7 +53,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -79,7 +79,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -100,7 +100,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -124,7 +124,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -149,7 +149,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -176,7 +176,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);
@@ -208,7 +208,7 @@ public class OptionsHelperAssignAnalyzerTests : ResourceKitSourceGeneratorTestBa
 			""";
 
 		// Act
-		var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
+		using var result = await GenerateAsync(BuildSource(callerSource), CreateOptions(), cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.AssignSetsMultiplePropertyPaths);

@@ -16,7 +16,7 @@ public class Empty { }
 ";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result.DriverResult.GeneratedTrees.Length).IsEqualTo(ExpectedGeneratedFileCount);
@@ -35,7 +35,7 @@ partial class TestingHostKit;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert — attribute files + 1 generated host app
 		await Assert.That(result.DriverResult.GeneratedTrees.Length).IsEqualTo(ExpectedFileCountPlusGen);
@@ -59,7 +59,11 @@ partial class TestingHostKit2;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.MultipleHostKitsFoundInfo);
@@ -80,7 +84,11 @@ class TestingHostKit;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ClassMustBePartial);
@@ -106,7 +114,11 @@ partial class TestingHostKit
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonEmptyConstructorsNotSupported);
@@ -136,7 +148,11 @@ partial class RedisResourceKit : ResourceKitBase<TestResource>
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonEmptyConstructorsNotSupported);
@@ -163,7 +179,11 @@ partial class RedisResourceKit : {TypeLibrary.Purview.Aspire.ResourceKit.Resourc
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourceMustDeriveFromResourceKitBase);
@@ -187,7 +207,11 @@ partial class RedisResourceKit;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NonGenericResourceDefinitionRequiresExplicitBase);
@@ -211,7 +235,11 @@ partial class RedisResourceKit : ResourceKitBase<DefaultAspireResource>;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.GenericResourceDefinitionCannotHaveExplicitBase);
@@ -236,7 +264,11 @@ partial class RedisResourceKit;
 ";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.MixedResourceDefinitionAttributesNotSupported);
