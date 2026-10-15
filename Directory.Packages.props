@@ -2,7 +2,9 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<RoslynVersion>5.9.0</RoslynVersion>
-		<TUnitVersion>1.68.17</TUnitVersion>
+		<!-- Purview.Skills.Testing 1.0.6 depends on TUnit.Assertions/TUnit.Core 1.75.0, and central
+		     transitive pinning would otherwise pin them back down. -->
+		<TUnitVersion>1.75.0</TUnitVersion>
 		<PurviewSourceGeneratorFrameworkVersion>1.1.0</PurviewSourceGeneratorFrameworkVersion>
 		<PurviewTelemetryVersion>5.0.3</PurviewTelemetryVersion>
 		<DotNetRuntimeVersion>10.0.12</DotNetRuntimeVersion>
@@ -52,6 +54,8 @@
 		<PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
+		<!-- The Agent Skills conformance rule set, shipped alongside Purview.BuildSdk. -->
+		<PackageVersion Include="Purview.Skills.Testing" Version="1.0.6" />
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OTelVersion)" />
