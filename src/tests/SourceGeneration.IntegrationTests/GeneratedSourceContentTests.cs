@@ -15,7 +15,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var source = TestHelper.GenerateSources(generateOptions: false);
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -36,7 +36,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var source = TestHelper.GenerateSources(resourceKitBase: null);
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -56,7 +56,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var source = TestHelper.GenerateSources();
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -79,7 +79,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var source = TestHelper.GenerateSources();
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -105,7 +105,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		var source = TestHelper.GenerateSources();
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -133,7 +133,7 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 		);
 
 		// Act
-		var result = await GenerateAsync(sources, cancellationToken);
+		using var result = await GenerateAsync(sources, cancellationToken);
 
 		// Assert
 		var generated = result.GetSource();
@@ -159,7 +159,7 @@ public partial class RedisResourceKit
 ";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -202,7 +202,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -235,7 +235,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -265,7 +265,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -303,7 +303,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -336,7 +336,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -373,7 +373,7 @@ namespace Testing
 ";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -409,7 +409,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -441,7 +441,7 @@ namespace Testing.Resources
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -484,7 +484,7 @@ namespace Testing
 }}
 ";
 
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		await Assert.That(result).HasNoErrorDiagnostics();
 
@@ -514,7 +514,7 @@ namespace Testing
 		);
 
 		// Act
-		var result = await GenerateAsync(sources, cancellationToken);
+		using var result = await GenerateAsync(sources, cancellationToken);
 		var types = result.CompilationResult.Assembly!.GetExportedTypes();
 
 		var globalHostKitType = types.SingleOrDefault(static m => m.Name == globalHostKitTypeName);

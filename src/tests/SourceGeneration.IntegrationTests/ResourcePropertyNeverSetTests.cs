@@ -32,7 +32,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
@@ -61,7 +61,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
@@ -93,7 +93,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
@@ -128,7 +128,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
@@ -157,7 +157,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);
@@ -186,7 +186,7 @@ public class ResourcePropertyNeverSetTests : ResourceKitSourceGeneratorTestBase<
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert — SG0017 is an execution-only warning, so it is reported but generation still proceeds.
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourcePropertyNeverSet);

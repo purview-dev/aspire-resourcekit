@@ -72,3 +72,51 @@ Before considering a change done:
 1. Relevant tests are updated/added using the conventions above.
 2. Test runs pass for the impacted scope.
 3. New/updated docs stay consistent with this file and the `.agents/` guidance.
+
+## Agent skills
+
+Authored skills live in the repository-root `skills/` folder. **Nothing packs them into a NuGet
+package.** `Purview.BuildSdk` 1.0.6 removed skill packaging outright — the skills CLI clones the
+*git* repository and only discovers a root `skills/` folder, so that is the one delivery route.
+`PurviewSkillsToPack`, the `IncludeRepositorySkillsInPackage` shim in `src/Directory.Build.targets`,
+and the `.agents/**.*` entry in `.config/purview-build.json` went with it.
+
+`.agents/skills/` is the CLI's install location for skills from **other** repositories, and is
+gitignored. This repository's own skills are never installed into it — that would leave two copies to
+drift apart. Read them at their authored path, `skills/<name>/SKILL.md`.
+
+```bash
+npx skills add purview-dev/aspire-resourcekit
+```
+
+| Skill | Answers |
+| --- | --- |
+| `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
+| `skills/purview-resourcekit-options/` | generated options, extending them, `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
+| `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means and how to fix it |
+| `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition |
+
+Every skill carries the `purview-resourcekit` prefix. Skills install into one flat directory per
+agent, shared with every skill a developer has installed from anywhere, so an unprefixed name
+collides and the loser is whichever installed second.
+
+Six skills were **removed** in the 1.0.6 migration: `changesets-prerelease`, `dotnet-tunit`,
+`git-conventional-commits`, `lefthook-integration`, `tunit-filtering` and `tunit-test-runner`. None
+of them described ResourceKit, all of them carried exactly the kind of generic name that collides in
+a shared install directory, and the TUnit ones duplicate `purview-buildsdk-testing`
+(`npx skills add purview-dev/build-sdk`). Guidance about working *in this repository* belongs in this
+file, not in a skill — a skill here ships to somebody else.
+
+To add a skill: create `skills/<name>/SKILL.md` with spec-legal frontmatter. There is no per-project
+registration any more.
+
+`src/tests/Repository.UnitTests/SkillTests.cs` validates every skill on every test run, through
+`Purview.Skills.Testing`'s rule set (the Agent Skills specification: frontmatter fields, name and
+description constraints, bundled links, body size). The `[InheritsTests]` attribute on that class is
+load-bearing — TUnit does not walk base types during discovery, so without it the run is green and
+nothing is checked.
+
+A relative link from one `SKILL.md` into another skill's folder is a rule violation: only a skill's
+own folder is installed with it, so such a link works here and nowhere else. Name the other skill in
+prose instead, and keep deep detail in the skill's own `references/`.

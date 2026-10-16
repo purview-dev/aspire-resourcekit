@@ -41,7 +41,7 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -91,7 +91,11 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);
@@ -128,7 +132,11 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectResourceKitBaseMismatch);
@@ -154,7 +162,11 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.NoAspireResourceFound);
@@ -189,7 +201,7 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
@@ -226,7 +238,7 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 
 		// Assert — SG0018 is an execution-only warning, so it is reported but generation still proceeds.
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);

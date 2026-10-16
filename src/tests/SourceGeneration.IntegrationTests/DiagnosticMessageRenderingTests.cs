@@ -55,7 +55,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);
@@ -79,7 +83,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);
@@ -109,7 +117,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);
@@ -130,7 +142,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);
@@ -178,7 +194,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);
@@ -206,7 +226,11 @@ public partial class DiagnosticMessageRenderingTests : ResourceKitSourceGenerato
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, ResourceKitSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
 
 		// Assert
 		await AssertMessagesRenderAsync(result);

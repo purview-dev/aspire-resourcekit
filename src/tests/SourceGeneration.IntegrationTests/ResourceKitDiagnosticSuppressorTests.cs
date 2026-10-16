@@ -40,7 +40,7 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 		var diagnostics = await RunSuppressorAsync(result, cancellationToken);
 
 		// Assert
@@ -84,7 +84,7 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 		var diagnostics = await RunSuppressorAsync(result, cancellationToken);
 
 		// Assert
@@ -129,7 +129,7 @@ public class ResourceKitDiagnosticSuppressorTests : ResourceKitSourceGeneratorTe
 			""";
 
 		// Act
-		var result = await GenerateAsync(source, cancellationToken);
+		using var result = await GenerateAsync(source, cancellationToken);
 		var diagnostics = await RunSuppressorAsync(result, cancellationToken);
 
 		// Assert

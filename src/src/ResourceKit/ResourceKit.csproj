@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework />
 		<TargetFrameworks>$(AllTargetFrameworks)</TargetFrameworks>
@@ -21,6 +21,7 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+
 		<ProjectReference
 			Include="..\SourceGeneration.CodeFixes\SourceGeneration.CodeFixes.csproj"
 			PrivateAssets="all"

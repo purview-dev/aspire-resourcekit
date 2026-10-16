@@ -1,31 +1,36 @@
-# Bundled agent skills
+# Agent skills
 
-`Purview.Aspire.ResourceKit` ships one or more bundled [Agent Skills](https://agentskills.io/) that
-are auto-installed into consuming repositories so supported coding agents can discover
-ResourceKit-specific guidance automatically.
+This repository authors a set of [Agent Skills](https://agentskills.io/) for
+`Purview.Aspire.ResourceKit`, so a coding agent can discover ResourceKit-specific guidance instead of
+inferring it.
 
-## How auto-install works
+## How to install them
 
-When a consuming project builds, any `skills/**/SKILL.md` files in the package are copied to
-`.agents/skills/**` in the consuming repository.
+They are **not** shipped inside the NuGet package, and nothing copies them into your repository on
+build. Install them with the skills CLI, which clones this git repository:
 
-Example mapping:
-
-- `skills/aspire-apphost-to-resourcekit/SKILL.md` →
-  `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`
-
-A local `.gitignore` is written into each generated skill folder to keep updates out of source control
-noise, so the skills stay fresh on rebuild without polluting the repository history.
-
-## Opting out
-
-To disable this behavior, set the shared opt-out property in your project (or `Directory.Build.props`):
-
-```xml
-<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>
+```bash
+npx skills add purview-dev/aspire-resourcekit
 ```
 
-## Bundled skill
+Append `#<ref>` to pin a specific commit or tag. The CLI writes into your agent's own directories and
+records what it installed in `skills-lock.json`, so the set can be restored later with
+`npx skills experimental_install`.
 
-- `aspire-apphost-to-resourcekit` — guides migrating an inline AppHost into ResourceKit composition,
-  covering attributes, lifecycle, options, and configuration.
+> The earlier behaviour — the package writing `skills/**/SKILL.md` into `.agents/skills/**` during a
+> build, with a generated `.gitignore` per folder, controlled by `EnableAgentFolderInPackage` — was
+> removed in `Purview.BuildSdk` 1.0.6. It duplicated the CLI and wrote to the same paths, so a build
+> could silently overwrite a pinned install. The CLI is now the only installer.
+
+## The skills
+
+| Skill | Answers |
+| --- | --- |
+| `purview-resourcekit-authoring` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
+| `purview-resourcekit-options` | generated options, extending them, `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `purview-resourcekit-testing` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
+| `purview-resourcekit-diagnostics` | what an `SG00xx` means and how to fix it |
+| `purview-resourcekit-migration` | converting an existing inline AppHost into ResourceKit composition |
+
+Each is authored at `skills/<name>/SKILL.md` in this repository, and validated on every test run
+against the Agent Skills specification by `src/tests/Repository.UnitTests/SkillTests.cs`.

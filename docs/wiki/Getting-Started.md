@@ -16,14 +16,9 @@ dotnet add package Purview.Aspire.ResourceKit
 ```
 
 > [!TIP]
-> This package can include one or more bundled [Agent Skills](https://agentskills.io/).
-> On build, `skills/**/SKILL.md` entries are copied to `.agents/skills/**` in the consuming repository
-> (for example: `skills/aspire-apphost-to-resourcekit/SKILL.md` →
-> `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`), along with a local `.gitignore` in each
-> generated skill folder to keep updates out of source control noise.
->
-> To opt out, set `<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>` in your project
-> (or `Directory.Build.props`). See [Bundled Agent Skills](Agent-Skills.md).
+> ResourceKit publishes [Agent Skills](https://agentskills.io/) so a coding agent knows these
+> patterns. They are not shipped in the package - install them explicitly with
+> `npx skills add purview-dev/aspire-resourcekit`. See [Agent Skills](Agent-Skills.md).
 
 ## Define a host kit
 

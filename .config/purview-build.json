@@ -14,7 +14,6 @@
 		"RequireSymbolFiles": true,
 		"RequiredContent": {
 			"purview.aspire.resourcekit": [
-				".agents/**.*",
 				"analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.dll",
 				"buildTransitive/Purview.Aspire.ResourceKit.props",
 				"lib/$(TFM)/Purview.Aspire.ResourceKit.dll",

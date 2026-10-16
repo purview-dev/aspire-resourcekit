@@ -1,5 +1,5 @@
 ---
-name: aspire-apphost-to-resourcekit
+name: purview-resourcekit-migration
 description: "Use when converting an Aspire AppHost (typically Program.cs/AppHost.cs) into Purview.Aspire.ResourceKit patterns: generate a HostKit, split resources into ResourceKits with BuildResource/ConfigureResource, map existing config into generated options (IsEnabled/Name), replace direct wiring with AddAspireResourceKit, and update tests/fixtures/configuration to use OptionsHelper and ResourceKit semantics."
 ---
 

@@ -1,10 +1,10 @@
 <Solution>
 	<Folder Name="/Solution Items/">
 		<File Path="../package.json" />
-		<File Path="../purview-build.json" />
 		<File Path="Directory.Build.props" />
 		<File Path="Directory.Build.targets" />
 		<File Path="README.md" />
+		<File Path="../.config/purview-build.json" />
 		<File Path="../.editorconfig" />
 		<File Path="../global.json" />
 		<File Path="../Directory.Packages.props" />
@@ -28,5 +28,6 @@
 		<Project Path="tests/SharedTestingInfra/SharedTestingInfra.csproj" />
 		<Project Path="tests/SourceGeneration.IntegrationTests/SourceGeneration.IntegrationTests.csproj" />
 		<Project Path="tests/SourceGeneration.UnitTests/SourceGeneration.UnitTests.csproj" />
+		<Project Path="tests/Repository.UnitTests/Repository.UnitTests.csproj" />
 	</Folder>
 </Solution>
