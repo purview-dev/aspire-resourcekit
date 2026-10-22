@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Aspire.Hosting;
@@ -7,6 +7,7 @@ namespace Aspire.Hosting;
 /// Provides extension methods for registering a ResourceKit host application.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class DistributedApplicationBuilderExtensions
 {
 	extension(IDistributedApplicationBuilder builder)

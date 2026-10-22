@@ -1,4 +1,4 @@
-﻿<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.6.3">
 	<PropertyGroup>
 		<!--
 			This isn't required, but it proves the point that it all works

@@ -9,6 +9,7 @@ using OpenTelemetry.Trace;
 namespace Microsoft.Extensions.Hosting;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class HostApplicationBuilderExtensions
 {
 	extension<TBuilder>(TBuilder builder)

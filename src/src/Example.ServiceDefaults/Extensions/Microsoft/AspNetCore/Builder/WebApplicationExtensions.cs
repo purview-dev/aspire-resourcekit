@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 namespace Microsoft.AspNetCore.Builder;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class WebApplicationExtensions
 {
 	extension(WebApplication app)

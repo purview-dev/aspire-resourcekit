@@ -46,7 +46,7 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 		var harnessCompilation = (await GenerateAsync(sources, cancellationToken)).CompilationResult.Compilation;
 
 		var parseOptions = (CSharpParseOptions)harnessCompilation.SyntaxTrees.First().Options;
-		const string Usings =
+		const string usings =
 			"using Purview.Aspire.ResourceKit;\n"
 			+ "using Aspire.Hosting.ApplicationModel;\n"
 			+ "using Aspire.Hosting;\n"
@@ -56,7 +56,7 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 			+ "using Microsoft.Extensions.Configuration;\n";
 		var userTrees = sources
 			.Select(
-				(source, index) => CSharpSyntaxTree.ParseText(Usings + source, parseOptions, path: $"Source{index}.cs")
+				(source, index) => CSharpSyntaxTree.ParseText(usings + source, parseOptions, path: $"Source{index}.cs")
 			)
 			.ToArray();
 		var cleanCompilation = CSharpCompilation.Create(

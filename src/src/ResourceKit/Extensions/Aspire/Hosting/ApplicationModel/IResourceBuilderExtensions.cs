@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace Aspire.Hosting.ApplicationModel;
 
 [EditorBrowsable(EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class IResourceBuilderExtensions
 {
 	extension<T>(IResourceBuilder<T> builder)
