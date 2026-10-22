@@ -14,8 +14,8 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			.RegisterEmbeddedAttribute<HostKitGenerator>()
 			.RegisterPostInitializationOutput(static postInitContext =>
 			{
-				foreach (var (HintName, Source) in CodeGenEmiiter.EmitAttributes())
-					postInitContext.AddSource(HintName, Source);
+				foreach (var (hintName, source) in CodeGenEmiiter.EmitAttributes())
+					postInitContext.AddSource(hintName, source);
 			});
 
 		var pipelines = SourceGenLibrary.GetGeneratorValueProviders(context);
@@ -61,8 +61,8 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 	static bool ReportDiagnostics(SourceProductionContext sourceProductionContext, KitGenerationModel outputContext)
 	{
-		var (IsFatal, Diagnostics) = outputContext.GetAllDiagnostics();
-		foreach (var diagnostic in Diagnostics)
+		var (isFatal, diagnostics) = outputContext.GetAllDiagnostics();
+		foreach (var diagnostic in diagnostics)
 		{
 			// Rules owned by ResourceKitDiagnosticAnalyzer are reported by the analyzer; the source
 			// generator only raises diagnostics the analyzers cannot determine.
@@ -72,6 +72,6 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			sourceProductionContext.ReportDiagnostic(diagnostic.ToDiagnostic());
 		}
 
-		return IsFatal;
+		return isFatal;
 	}
 }
