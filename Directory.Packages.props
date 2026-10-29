@@ -1,11 +1,10 @@
 <Project>
 	<PropertyGroup>
-		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<RoslynVersion>5.9.0</RoslynVersion>
 		<TUnitVersion>1.76.0</TUnitVersion>
 		<PurviewSourceGeneratorFrameworkVersion>1.2.1</PurviewSourceGeneratorFrameworkVersion>
-		<PurviewTelemetryVersion>5.0.6</PurviewTelemetryVersion>
-		<DotNetRuntimeVersion>10.0.13</DotNetRuntimeVersion>
+		<PurviewTelemetryVersion>5.1.0</PurviewTelemetryVersion>
+		<DotNetRuntimeVersion>10.0.14</DotNetRuntimeVersion>
 		<MSExtensionVersion>10.11.0</MSExtensionVersion>
 		<OTelVersion>1.20.1</OTelVersion>
 		<AspireVersion>13.6.4</AspireVersion>
