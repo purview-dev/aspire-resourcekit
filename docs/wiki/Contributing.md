@@ -34,6 +34,14 @@ just scrub          # remove bin/obj, clean, restore, stop build server
 just version        # show the current version from package.json
 ```
 
+Nothing here needs the Aspire CLI installed. The example AppHosts build against the NuGet-delivered
+DCP and dashboard packages (`AspireUseCliBundle=false`), which the AppHost SDK turns into
+`Aspire.Dashboard.Sdk.<rid>` and `Aspire.Hosting.Orchestration.<rid>` references for the build machine's
+RID. Opting them into the CLI bundle instead (`-p:AspireUseCliBundle=true`) makes a *build* need a
+resolvable bundle, and resolving one is a network install performed mid-build, once per AppHost — two of
+which then race on the NuGet cache and fail each other with ASPIRE009. `ExampleAppHostTests` keeps the
+opt-in out of the project files for exactly that reason.
+
 ## Testing conventions
 
 - Tests use **TUnit** (and TUnit.Mocks); do not introduce NUnit, xUnit, or MSTest patterns.
@@ -53,7 +61,8 @@ Test projects:
 - `src/tests/SourceGeneration.IntegrationTests` — generated source content, caching, diagnostics,
   suppression, and the SG0020 code fix.
 - `src/tests/Repository.UnitTests` — asserts things about this repository itself: the conformance of the
-  authored skills in `skills/`, and the architecture policy in `.config/architecture-policy.json`.
+  authored skills in `skills/`, the architecture policy in `.config/architecture-policy.json`, and the
+  example AppHosts' build contract (no machine-global Aspire CLI).
 - `src/tests/SharedTestingInfra` — a shared-testing library, referenced rather than executed.
 
 Reports are written to `TestResults/`.

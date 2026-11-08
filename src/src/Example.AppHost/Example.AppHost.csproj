@@ -1,8 +1,31 @@
 ﻿<Project Sdk="Aspire.AppHost.Sdk">
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<AspireUseCliBundle>true</AspireUseCliBundle>
+		<!--
+			The examples build against the NuGet-delivered DCP and dashboard packages, so `dotnet build`
+			works on a machine that has never installed the Aspire CLI.
+
+			AspireUseCliBundle=true makes *building* an AppHost require a resolvable CLI bundle. With no
+			bundle present, Aspire.Hosting.AppHost.targets runs `dnx aspire.cli@<version> setup` once per
+			AppHost, so a single solution build restores and extracts the same CLI concurrently. Reproduced
+			against the paired CLI version, 13.6.4: the losing process dies with "The process cannot access
+			the file '...aspire.cli.13.6.4.nupkg' because it is being used by another process" and exit
+			code 1, which MSBuild reports only as ASPIRE009, "Automatic Aspire CLI bundle setup failed with
+			exit code 1". Being a race, it fails some runs and not others: that is how the release pipeline
+			failed a 'dotnet build' the PR pipeline had just passed on the same sources. Neither shared
+			pipeline can install the CLI before its build, so the build must not need one.
+
+			false is the Aspire-documented fallback: the AppHost SDK adds Aspire.Dashboard.Sdk.<rid> and
+			Aspire.Hosting.Orchestration.<rid> references for the build machine's RID instead, and running
+			the AppHost (`dotnet run`, `aspire run`, TUnit.Aspire) still works. Choosing it is reported as
+			ASPIRE010, suppressed below because it is deliberate rather than noise. Opt back in per build
+			with:
+
+				dotnet build -p:AspireUseCliBundle=true
+		-->
+		<AspireUseCliBundle Condition="'$(AspireUseCliBundle)' == ''">false</AspireUseCliBundle>
 		<NoWarn>$(NoWarn);CA1034;CA1062;</NoWarn>
+		<NoWarn Condition="'$(AspireUseCliBundle)' != 'true'">$(NoWarn);ASPIRE010</NoWarn>
 		<!--
 			Declares the two suppressions above as deliberate so Purview.BuildSdk's style policy
 			(PRSGD0008) can tell them apart from an accidental one. An Aspire AppHost nests the public

@@ -37,6 +37,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `Home.md`, `_Sidebar.md`) are removed. The `docs/wiki` topic pages remain the source consumed by
   <https://purview.dev/docs/aspire-resourcekit/>.
 
+### Fixed
+
+- **The repository builds without the Aspire CLI installed.** `Example.AppHost` and
+  `Example.ManualAppHost` set `AspireUseCliBundle=true`, which makes a *build* require a resolvable CLI
+  bundle: with none present, `Aspire.Hosting.AppHost.targets` runs `dnx aspire.cli@13.6.4 setup` once per
+  AppHost, so one solution build restores and extracts the same CLI twice, and the loser dies on the
+  locked NuGet cache file with exit code 1. MSBuild reports that only as ASPIRE009 ("Automatic Aspire CLI
+  bundle setup failed with exit code 1"), which failed the release pipeline on sources the PR pipeline had
+  just built — a race, so it passed some runs and failed others. Both examples now build against the
+  NuGet-delivered DCP and dashboard packages (`AspireUseCliBundle=false`, ASPIRE010 suppressed as
+  deliberate), which is unchanged for running them; `ExampleAppHostTests` keeps the opt-in out of the
+  project files.
+
 ## [1.0.0] - 2026-09-29
 
 The first stable release of `Purview.Aspire.ResourceKit`.
