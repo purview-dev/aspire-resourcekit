@@ -5,6 +5,38 @@ All notable changes to `Purview.Aspire.ResourceKit` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Run modes** — `ResourceKitMode` (`All`, `LocalDevelopment`, `Run`, `Publish`) selects which AppHost
+  execution a host kit or resource kit participates in. Declare the default on `[HostKit]` /
+  `[ResourceDefinition]` (named property or constructor argument), override it from configuration
+  (`<HostKit>:Mode`, `<HostKit>:<Resource>:Mode`), and `Build` gates on it before `IsEnabled` and
+  `IsResourceEnabled(builder)`, so publish-only and local-development-only resources need no code.
+
+### Changed
+
+- **Breaking: .NET 10 is now the minimum.** The runtime targets `net10.0` only — the `net8.0` and
+  `net9.0` legs are removed, so a consuming AppHost must be on .NET 10. This also drops the
+  `Microsoft.Extensions.*` 10.x floor those legs previously forced onto `net8.0` consumers, which was
+  the whole point: a package should not vendor a framework's abstractions to consumers on an older
+  framework. Raising a framework floor requires a **major** version.
+- **Repository guardrails** — `.config/architecture-policy.json` plus
+  `src/tests/Repository.UnitTests/ArchitectureTests.cs` now enforce the dependency direction between the
+  runtime, the Roslyn components and the samples, and `just verify-consumers` packs the package and builds
+  a real consumer against it (one that installs it by `PackageReference` and is generated into, which no
+  test in this repository previously proved).
+- **Agent skill delivery documented correctly** — `README.md` no longer claims the package installs skills
+  into a consuming repository on build. That mirror was removed in `Purview.BuildSdk` 1.0.6; the skills CLI
+  is the only installer.
+
+### Removed
+
+- **mkdocs site configuration** — `mkdocs.yml` and the mkdocs-only navigation pages (`index.md`,
+  `Home.md`, `_Sidebar.md`) are removed. The `docs/wiki` topic pages remain the source consumed by
+  <https://purview.dev/docs/aspire-resourcekit/>.
+
 ## [1.0.0] - 2026-09-29
 
 The first stable release of `Purview.Aspire.ResourceKit`.

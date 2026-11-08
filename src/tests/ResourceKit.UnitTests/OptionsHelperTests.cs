@@ -30,6 +30,8 @@ public sealed class OptionsHelperTests
 	[Test]
 	public async Task Assign_WithNestedClasses_GeneratesCorrectSet()
 	{
+		// Arrange
+
 		// Act
 		var args = OptionsHelper
 			.Assign<AContainerForNestedClasses.TestOptionsSettings>(
@@ -84,6 +86,8 @@ public sealed class OptionsHelperTests
 	[Test]
 	public async Task SectionNameFor_GivenNoConstSection_TrimsKnownSuffix()
 	{
+		// Arrange
+
 		// Act
 		var fromOptions = OptionsHelper.SectionNameFor<ServiceOptions>();
 		var fromSettings = OptionsHelper.SectionNameFor<ServiceSettings>();
@@ -100,6 +104,8 @@ public sealed class OptionsHelperTests
 	[Test]
 	public async Task SectionNameFor_GivenTypeNameOnlySuffix_UsesOriginalTypeName()
 	{
+		// Arrange
+
 		// Act
 		var sectionName = OptionsHelper.SectionNameFor<Options>();
 
@@ -111,6 +117,8 @@ public sealed class OptionsHelperTests
 	public async Task SectionNameFor_GivenTypeOverload_ReturnsSameAsGeneric()
 	{
 #pragma warning disable CA2263 // Prefer generic overload; this test intentionally exercises the Type overload.
+		// Arrange
+
 		// Act
 		var fromType = OptionsHelper.SectionNameFor(typeof(ServiceOptions));
 		var fromGeneric = OptionsHelper.SectionNameFor<ServiceOptions>();
@@ -124,6 +132,8 @@ public sealed class OptionsHelperTests
 	[Test]
 	public async Task SectionNameFor_GivenGenericType_TrimsKnownSuffix()
 	{
+		// Arrange
+
 		// Act
 		var fromOpenGeneric = OptionsHelper.SectionNameFor(typeof(GenericServiceOptions<>));
 		var fromClosedGeneric = OptionsHelper.SectionNameFor<GenericServiceOptions<int>>();
@@ -484,5 +494,37 @@ public sealed class OptionsHelperTests
 		await Assert
 			.That(envVars.Keys)
 			.DoesNotContain(key => key.StartsWith("IReadOnlyDictionary", StringComparison.Ordinal));
+	}
+
+	[Test]
+	public async Task Assign_GivenResourceKitMode_EmitsEnumMemberName()
+	{
+		// Arrange
+		const string expected = "--Mode:Mode=Publish";
+
+		// Act
+		var args = OptionsHelper.Assign<ModeOptions>(static c => c.Mode = ResourceKitMode.Publish).Build();
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(1);
+		await Assert.That(args[0]).IsEqualTo(expected);
+	}
+
+	[Test]
+	public async Task Environment_GivenResourceKitMode_EmitsEnumMemberName()
+	{
+		// Arrange
+		const string expectedKey = "Mode__Mode";
+
+		// Act
+		var envVars = OptionsHelper.Environment(new ModeOptions { Mode = ResourceKitMode.LocalDevelopment }).Build();
+
+		// Assert
+		await Assert.That(envVars[expectedKey]).IsEqualTo("LocalDevelopment");
+	}
+
+	sealed class ModeOptions
+	{
+		public ResourceKitMode Mode { get; set; }
 	}
 }

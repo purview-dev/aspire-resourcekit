@@ -21,6 +21,20 @@ Optional named arguments:
 | `Name` | `string?` | `null` | Controls generated naming. |
 | `ExtensionMethodName` | `string?` | Derived from host kit name | Overrides the generated builder extension name (for example `AddAspireResourceKit()`). |
 | `GenerateOptions` | `bool` | `true` | Enables/disables generated host options. |
+| `Mode` | `ResourceKitMode` | `All` | Execution mode in which the host kit, and therefore every resource, participates. |
+
+`Mode` is available as both a named property and a constructor argument, and configuration can override
+the generated default:
+
+```csharp
+[HostKit(Mode = ResourceKitMode.LocalDevelopment)]
+sealed partial class ShopHostKit;
+
+[HostKit(ResourceKitMode.Publish)]
+sealed partial class PublishHostKit;
+```
+
+See [Enablement](Enablement.md) for the mode list and evaluation order.
 
 ## `ResourceDefinitionAttribute` (`[ResourceDefinition]`)
 
@@ -37,7 +51,20 @@ Options:
 | --- | --- | --- | --- |
 | `Name` | `string?` | Derived from class name (suffix trimmed) | Logical Aspire resource name. |
 | `PropertyName` | `string?` | Derived from class name | Generated host property name. Must be a valid C# identifier (SG0008). |
+| `Mode` | `ResourceKitMode` | `All` | Execution mode in which this resource participates. |
 | `AspireResourceType` | generic type argument | `null` | The Aspire `IResource` type (generic style only). |
+
+`Mode` accepts a named property or a constructor argument, and configuration can override it:
+
+```csharp
+// Publish-only, for example Azure Key Vault or Application Insights.
+[ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]
+partial class KeyVaultKit;
+
+// Local-development-only, for example a documentation or diagram site.
+[ResourceDefinition<ProjectResource>(Mode = ResourceKitMode.LocalDevelopment)]
+partial class DocsSiteKit;
+```
 
 ## `ResourceDefinition` vs `ResourceDefinition<TResource>`
 

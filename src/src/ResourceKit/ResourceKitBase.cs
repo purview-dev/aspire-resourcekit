@@ -45,6 +45,21 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	public bool IsEnabled { get; set; } = true;
 
 	/// <summary>
+	/// Gets the execution mode in which this resource participates.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Defaults to <see cref="ResourceKitMode.All"/>. Generated resource kits override this member to surface the
+	/// configured <c>Mode</c> option; manual resource kits can override it directly.
+	/// </para>
+	/// <para>
+	/// The mode is evaluated by <see cref="Build"/> before <see cref="IsResourceEnabled"/> is invoked, so a
+	/// resource excluded by its mode never runs that hook and never builds.
+	/// </para>
+	/// </remarks>
+	protected virtual ResourceKitMode Mode => ResourceKitMode.All;
+
+	/// <summary>
 	/// Gets the underlying Aspire resource builder for this resource.
 	/// </summary>
 	/// <remarks>
@@ -71,7 +86,8 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	/// <returns><see langword="true"/> when the resource should be built; otherwise <see langword="false"/>.</returns>
 	/// <remarks>
 	/// The default implementation returns <see cref="IsEnabled"/>. This hook is only invoked when
-	/// <see cref="IsEnabled"/> is already <see langword="true"/>; a disabled kit is never re-enabled here.
+	/// <see cref="IsEnabled"/> is already <see langword="true"/> and <see cref="Mode"/> participates in the
+	/// current run; a disabled or mode-excluded kit is never re-enabled here.
 	/// </remarks>
 	protected virtual bool IsResourceEnabled(IDistributedApplicationBuilder builder) => IsEnabled;
 
@@ -94,7 +110,7 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 		ArgumentException.ThrowIfNullOrWhiteSpace(Name, nameof(Name));
 
 		if (IsEnabled)
-			IsEnabled = IsResourceEnabled(builder);
+			IsEnabled = Mode.IsEnabledFor(builder) && IsResourceEnabled(builder);
 
 		if (!IsEnabled)
 			return;

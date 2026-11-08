@@ -15,5 +15,9 @@ Keep product, architecture, and general engineering standards centralized in `AG
 
 - Apply the `AGENTS.md` testing bar strictly (TUnit/TUnit.Mocks, AAA comments, naming, cancellation token rule).
 - Treat work as incomplete until relevant tests pass.
-- Consult the repository `.agents/` folder for additional skills/workflows that may improve execution quality.
+- Product, architecture and architecture-policy rules are enforced by tests; read them before changing a
+  project reference (`src/tests/Repository.UnitTests/ArchitectureTests.cs`).
+- Skills this repository authors live in `skills/<name>/SKILL.md`. `.agents/skills/` and `.claude/skills/`
+  are the skills CLI's install locations and are gitignored, so a fresh clone has none — do not read
+  guidance from there or write to it.
 - Keep edits minimal, focused, and aligned with existing SDK and repository conventions.

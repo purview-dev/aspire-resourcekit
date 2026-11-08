@@ -1,10 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<Nullable>enable</Nullable>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
+		<!--
+			A code-fix provider is a Roslyn component. Declaring it as one lets Purview.BuildSdk supply
+			netstandard2.0, LangVersion, Nullable, TreatWarningsAsErrors and the telemetry opt-out, and
+			- the part that was actually missing - turn on EnforceExtendedAnalyzerRules so the RS rules
+			for analyzer and code-fix authors are enforced. The five properties that used to sit here
+			only restated the defaults IsRoslynComponent=true already gives.
+		-->
+		<IsRoslynComponent>true</IsRoslynComponent>
 	</PropertyGroup>
 
 	<ItemGroup>

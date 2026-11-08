@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Aspire.AppHost.Sdk">
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<AspireUseCliBundle>true</AspireUseCliBundle>
-		<IsPackable>false</IsPackable>
 		<NoWarn>$(NoWarn);CA1034;CA1062;</NoWarn>
 		<!--
 			Declares the two suppressions above as deliberate so Purview.BuildSdk's style policy

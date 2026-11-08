@@ -32,6 +32,9 @@ static partial class TypeLibraryGenerator
 	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity IResourceKit = default;
 
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceKitMode = default;
+
 	// Other required types
 	[TypeRef("Microsoft.Extensions.Configuration")]
 	static readonly TypeIdentity ConfigurationBinder = default;

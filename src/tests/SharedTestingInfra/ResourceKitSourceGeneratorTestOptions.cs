@@ -25,6 +25,8 @@ public sealed record ResourceKitSourceGeneratorTestOptions : SourceGeneratorTest
 		additionalTypes.Add(typeof(Microsoft.Extensions.Options.IOptions<>));
 		additionalTypes.Add(typeof(Microsoft.Extensions.DependencyInjection.OptionsBuilderConfigurationExtensions));
 		additionalTypes.Add(typeof(Microsoft.Extensions.Configuration.ConfigurationBinder));
+		// Emitted attributes expose ResourceKitMode, so every test compilation needs the runtime assembly.
+		additionalTypes.Add(typeof(ResourceKitMode));
 
 		AdditionalNamespaces = [.. additionalNamespaces];
 		AdditionalAssemblyTypes = [.. additionalTypes];

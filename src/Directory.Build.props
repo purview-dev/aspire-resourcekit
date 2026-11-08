@@ -4,7 +4,6 @@
 	<PropertyGroup>
 		<TargetFramework Condition="'$(TargetFrameworks)' == ''">$(DefaultTargetFramework)</TargetFramework>
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
-		<IsPackable>false</IsPackable>
 		<RepositoryUrl>https://github.com/purview-dev/aspire-resourcekit</RepositoryUrl>
 	</PropertyGroup>
 
@@ -20,7 +19,6 @@
 		<Authors>Purview Contributors</Authors>
 		<Company>Purview.dev</Company>
 		<PackageProjectUrl>$(PurviewProjectUrl)</PackageProjectUrl>
-		<RepositoryUrl>$(RepositoryUrl)</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<PackageIcon>purview-logo-light.png</PackageIcon>

@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework />
-		<TargetFrameworks>$(AllTargetFrameworks)</TargetFrameworks>
 		<IsPackable>true</IsPackable>
 		<Title>Purview Aspire ResourceKit</Title>
 		<Description>Composable and test-friendly Aspire resource isolation model for local, running, and publishing modes.</Description>

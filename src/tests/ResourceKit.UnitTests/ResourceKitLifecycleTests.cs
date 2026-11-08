@@ -4,17 +4,30 @@ using Aspire.Hosting.ApplicationModel;
 
 namespace Purview.Aspire.ResourceKit;
 
-public sealed class HostResourceKitTests
+/// <summary>
+/// Covers the <c>Build</c>/<c>Configure</c> lifecycle contract shared by <c>HostKitBase&lt;THostKit&gt;</c>
+/// and <c>ResourceKitBase&lt;THostKit, TResource&gt;</c>: enablement gating, the order the hooks run in,
+/// and how <see cref="ResourceKitMode"/> excludes a kit from an execution.
+/// </summary>
+/// <remarks>
+/// A scope-named suite rather than a <c>{ClassUnderTest}Tests</c> one, because no single type owns the
+/// contract under test - the resource kit decides, and the host kit fans the call out over its
+/// resources.
+/// </remarks>
+public sealed class ResourceKitLifecycleTests
 {
 	[Test]
 	public async Task Build_WhenDisabledByServices_DoesNotCallBuild()
 	{
+		// Arrange
 		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit hostApp = new();
 		TestResourceKit resource = new(hostApp, enabled: false);
 
+		// Act
 		resource.Build(builder);
 
+		// Assert
 		await Assert.That(resource.IsEnabled).IsFalse();
 		await Assert.That(resource.BuildCalled).IsFalse();
 	}
@@ -90,12 +103,15 @@ public sealed class HostResourceKitTests
 	[Test]
 	public async Task Build_WhenEnabled_CallsBuildAndSetsResourceBuilder()
 	{
+		// Arrange
 		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit hostApp = new();
 		TestResourceKit resource = new(hostApp, enabled: true);
 
+		// Act
 		resource.Build(builder);
 
+		// Assert
 		await Assert.That(resource.IsEnabled).IsTrue();
 		await Assert.That(resource.BuildCalled).IsTrue();
 		await Assert.That(resource.ResourceBuilder).IsNotNull();
@@ -104,25 +120,31 @@ public sealed class HostResourceKitTests
 	[Test]
 	public async Task Configure_WhenDisabled_DoesNotCallConfigure()
 	{
+		// Arrange
 		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit hostApp = new();
 		TestResourceKit resource = new(hostApp, enabled: false);
 
+		// Act
 		resource.Build(builder);
 		resource.Configure();
 
+		// Assert
 		await Assert.That(resource.ConfigureCalled).IsFalse();
 	}
 
 	[Test]
 	public async Task IsResourceEnabled_WithServices_DelegatesToBuilderOnlyOverloadByDefault()
 	{
+		// Arrange
 		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit hostApp = new();
 		DelegatingTestResourceKit resource = new(hostApp);
 
+		// Act
 		resource.Build(builder);
 
+		// Assert
 		await Assert.That(resource.IsEnabled).IsFalse();
 	}
 
@@ -145,18 +167,167 @@ public sealed class HostResourceKitTests
 	}
 
 	[Test]
+	public async Task Build_GivenModeExcludedByExecutionOperation_DoesNotInvokeHookOrBuild()
+	{
+		// Arrange
+		var builder = TestApplicationBuilderFactory.Create(DistributedApplicationOperation.Run);
+		TestHostKit hostApp = new();
+		ModeTrackingResourceKit resource = new(hostApp, ResourceKitMode.Publish);
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsFalse();
+		await Assert.That(resource.IsResourceEnabledCalled).IsFalse();
+		await Assert.That(resource.BuildCalled).IsFalse();
+	}
+
+	[Test]
+	public async Task Build_GivenModeIncludedByExecutionOperation_InvokesHookAndBuilds()
+	{
+		// Arrange
+		var builder = TestApplicationBuilderFactory.Create(
+			DistributedApplicationOperation.Run,
+			environmentName: "Development"
+		);
+		TestHostKit hostApp = new();
+		ModeTrackingResourceKit resource = new(hostApp, ResourceKitMode.LocalDevelopment);
+
+		// Act
+		resource.Build(builder);
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsTrue();
+		await Assert.That(resource.IsResourceEnabledCalled).IsTrue();
+		await Assert.That(resource.BuildCalled).IsTrue();
+	}
+
+	[Test]
+	public async Task Configure_GivenModeExcludedByExecutionOperation_DoesNotCallConfigure()
+	{
+		// Arrange
+		var builder = TestApplicationBuilderFactory.Create(DistributedApplicationOperation.Publish);
+		TestHostKit hostApp = new();
+		ModeTrackingResourceKit resource = new(hostApp, ResourceKitMode.LocalDevelopment);
+
+		resource.Build(builder);
+
+		// Act
+		resource.Configure();
+
+		// Assert
+		await Assert.That(resource.ConfigureCalled).IsFalse();
+	}
+
+	[Test]
+	public async Task Build_GivenHostKitModeExcludedByExecutionOperation_DisablesAndSkipsEveryResource()
+	{
+		// Arrange
+		var builder = TestApplicationBuilderFactory.Create(DistributedApplicationOperation.Run);
+		ModeHostKit hostApp = new(ResourceKitMode.Publish);
+		ModeHostResourceKit resource = new(hostApp);
+		hostApp.AddResource(resource);
+
+		// Act
+		hostApp.Build(builder);
+		hostApp.Configure();
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsFalse();
+		await Assert.That(resource.BuildCalled).IsFalse();
+		await Assert.That(resource.ConfigureCalled).IsFalse();
+	}
+
+	[Test]
+	public async Task Build_GivenHostKitModeIncludedByExecutionOperation_BuildsEveryResource()
+	{
+		// Arrange
+		var builder = TestApplicationBuilderFactory.Create(DistributedApplicationOperation.Run);
+		ModeHostKit hostApp = new(ResourceKitMode.Run);
+		ModeHostResourceKit resource = new(hostApp);
+		hostApp.AddResource(resource);
+
+		// Act
+		hostApp.Build(builder);
+		hostApp.Configure();
+
+		// Assert
+		await Assert.That(resource.IsEnabled).IsTrue();
+		await Assert.That(resource.BuildCalled).IsTrue();
+		await Assert.That(resource.ConfigureCalled).IsTrue();
+	}
+
+	[Test]
 	public async Task AddResource_WhenSealed_ThrowsInvalidOperationException()
 	{
 		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit hostApp = new();
 		TestResourceKit resource = new(hostApp);
-		hostApp.Build(IDistributedApplicationBuilder.Mock());
+		hostApp.Build(builder);
 
-		// Act/Assert
-		await Assert.That(() => hostApp.AddResource(resource)).ThrowsExactly<InvalidOperationException>();
+		// Act
+		var exception = await Assert
+			.That(() => hostApp.AddResource(resource))
+			.ThrowsExactly<InvalidOperationException>();
+
+		// Assert
+		await Assert.That(exception).IsNotNull();
 	}
 
 	sealed class TestHostKit : HostKitBase<TestHostKit>;
+
+	sealed class ModeHostKit(ResourceKitMode mode) : HostKitBase<ModeHostKit>
+	{
+		protected override ResourceKitMode Mode => mode;
+	}
+
+	sealed class ModeHostResourceKit(ModeHostKit hostKit)
+		: ResourceKitBase<ModeHostKit, ParameterResource>(hostKit, "test")
+	{
+		public bool BuildCalled { get; private set; }
+
+		public bool ConfigureCalled { get; private set; }
+
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		)
+		{
+			BuildCalled = true;
+			return builder.AddParameter(Name, "value", secret: false);
+		}
+
+		protected override void ConfigureResource() => ConfigureCalled = true;
+	}
+
+	sealed class ModeTrackingResourceKit(TestHostKit hostKit, ResourceKitMode mode)
+		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")
+	{
+		public bool IsResourceEnabledCalled { get; private set; }
+
+		public bool BuildCalled { get; private set; }
+
+		public bool ConfigureCalled { get; private set; }
+
+		protected override ResourceKitMode Mode => mode;
+
+		protected override bool IsResourceEnabled([NotNull] IDistributedApplicationBuilder builder)
+		{
+			IsResourceEnabledCalled = true;
+			return true;
+		}
+
+		protected override IResourceBuilder<ParameterResource> BuildResource(
+			[NotNull] IDistributedApplicationBuilder builder
+		)
+		{
+			BuildCalled = true;
+			return builder.AddParameter(Name, "value", secret: false);
+		}
+
+		protected override void ConfigureResource() => ConfigureCalled = true;
+	}
 
 	sealed class TestResourceKit(TestHostKit hostKit, bool enabled = true)
 		: ResourceKitBase<TestHostKit, ParameterResource>(hostKit, "test")

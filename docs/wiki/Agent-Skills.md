@@ -27,7 +27,7 @@ records what it installed in `skills-lock.json`, so the set can be restored late
 | Skill | Answers |
 | --- | --- |
 | `purview-resourcekit-authoring` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
-| `purview-resourcekit-options` | generated options, extending them, `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `purview-resourcekit-options` | generated options, extending them, run modes (`Mode`), `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
 | `purview-resourcekit-testing` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
 | `purview-resourcekit-diagnostics` | what an `SG00xx` means and how to fix it |
 | `purview-resourcekit-migration` | converting an existing inline AppHost into ResourceKit composition |

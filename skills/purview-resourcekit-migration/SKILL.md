@@ -26,8 +26,9 @@ By the end of migration:
 - Prefer incremental commits/patches and verify after each phase.
 - Keep `BuildResource(...)` pure to resource construction; place cross-resource references in `ConfigureResource()`.
 - Use `IsEnabled` for static/config-driven toggles.
-- Use `IsResourceEnabled(builder)` for runtime-state decisions (environment, publish mode, feature probes).
-- If `IsResourceEnabled(builder)` returns `false`, both build and configure paths are skipped for that resource.
+- Use `Mode` (`ResourceKitMode`) for publish-only, run-only or local-development-only resources.
+- Use `IsResourceEnabled(builder)` for runtime-state decisions that are not a mode (feature probes, dynamic configuration).
+- If `Mode`, `IsEnabled` or `IsResourceEnabled(builder)` excludes the resource, both build and configure paths are skipped for it.
 
 ## Discovery checklist
 
@@ -140,7 +141,8 @@ Use these properties via generated `Options` surfaces:
 Translate existing conditional logic as follows:
 
 - Config-only conditions → default to `IsEnabled` option values.
-- Runtime conditions → override `IsResourceEnabled(builder)`.
+- Publish/run/local-development conditions → `ResourceKitMode` on the attribute (or a `Mode` config override).
+- Other runtime conditions → override `IsResourceEnabled(builder)`.
 
 Pattern:
 
@@ -156,8 +158,9 @@ protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder
 
 When AppHost has multiple mode branches, map each branch into targeted resource kits with branch-aware enablement:
 
-- Publish-only resources: override `IsResourceEnabled(builder)` with `builder.ExecutionContext.IsPublishMode`.
-- Run-only resources: override `IsResourceEnabled(builder)` with `builder.ExecutionContext.IsRunMode`.
+- Publish-only resources: `[ResourceDefinition<T>(ResourceKitMode.Publish)]`.
+- Run-only resources: `[ResourceDefinition<T>(ResourceKitMode.Run)]`.
+- Local-development-only resources (docs sites, diagram sites): `[ResourceDefinition<T>(ResourceKitMode.LocalDevelopment)]`.
 - Test-mode-only behavior: include config predicates such as `builder.Configuration.GetValue<bool>("Testing:IsTestMode")`.
 
 ### 6) Update AppHost entrypoint

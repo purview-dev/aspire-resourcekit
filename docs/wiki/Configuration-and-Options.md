@@ -10,6 +10,10 @@ A host options type contains one nested options object per resource.
 ```csharp
 public class ShopHostKitOptions
 {
+    public const string SectionName = "ShopHostKit";
+
+    public ResourceKitMode Mode { get; set; } = ResourceKitMode.All;
+
     public APIKitOptions Api { get; set; } = new();
     public RedisKitOptions Redis { get; set; } = new();
 }
@@ -19,6 +23,8 @@ public class APIKitOptions
     public string Name { get; set; } = "api";
 
     public bool IsEnabled { get; set; } = true;
+
+    public ResourceKitMode Mode { get; set; } = ResourceKitMode.All;
 }
 
 ...
@@ -87,6 +93,8 @@ Typical keys (example):
 
 - `ShopHostKit:API:Name`
 - `ShopHostKit:API:IsEnabled`
+- `ShopHostKit:API:Mode`
+- `ShopHostKit:Mode`
 
 Configuration is bound by the generated extension method:
 
@@ -108,16 +116,50 @@ Set `IsEnabled=false` for that resource's options section.
 }
 ```
 
+## Select a run mode
+
+Resource kits (and their host kit) expose a `Mode` option that selects which AppHost execution they
+participate in. It defaults to `All`, so nothing changes unless you opt in.
+
+| Mode | Participates when |
+| --- | --- |
+| `All` (default) | always |
+| `LocalDevelopment` | run mode and the `Development` environment |
+| `Run` | run mode, any environment |
+| `Publish` | publish mode (`aspire publish` / `azd`) |
+
+The attribute sets the default, and configuration can override it:
+
+```csharp
+[ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]
+sealed partial class KeyVaultKit;
+```
+
+```json
+{
+  "ShopHostKit": {
+    "Mode": "All",
+    "KeyVault": { "Mode": "Publish" },
+    "DocsSite": { "Mode": "LocalDevelopment" }
+  }
+}
+```
+
+The host `Mode` gates every resource in the host kit; a resource `Mode` gates only that resource.
+See [Enablement](Enablement.md) for the evaluation order.
+
 ## `IsEnabled` vs `IsResourceEnabled(...)`
 
 Use both together for flexible control:
 
-- `IsEnabled`: static/configured toggle (usually generated options).
+- `IsEnabled`: static/configured toggle (usually generated options), and the only member consumers
+  need to check.
 - `IsResourceEnabled(builder)`: runtime decision hook.
 
-At runtime, `Build` only calls `IsResourceEnabled(builder)` when `IsEnabled` is already `true`. If the
-hook returns `false`, ResourceKit skips both `BuildResource(...)` and `ConfigureResource()` for that
-resource. A kit disabled via `IsEnabled=false` is never re-enabled by the hook.
+At runtime, `Build` evaluates the configured `Mode` first, then calls `IsResourceEnabled(builder)` when
+`IsEnabled` is already `true`. If either gate excludes the kit, ResourceKit skips both `BuildResource(...)`
+and `ConfigureResource()` for that resource. A kit disabled via `IsEnabled=false` is never re-enabled by
+the hook.
 
 See [Enablement](Enablement.md) for details.
 

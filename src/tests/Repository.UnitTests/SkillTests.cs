@@ -24,8 +24,14 @@ public sealed class SkillTests : PurviewSkillTests
 	[Test]
 	public async Task SkillsFolder_ResolvesToThisRepository()
 	{
+		// Arrange
+		// No RepositoryRoot override: the catalogue resolves the repository root with the SDK's own
+		// marker walk, which is the resolution a contributor gets.
+
+		// Act
 		var catalogue = Evaluator.Catalogue;
 
+		// Assert
 		await Assert
 			.That(catalogue.FolderExists)
 			.IsTrue()
@@ -42,14 +48,19 @@ public sealed class SkillTests : PurviewSkillTests
 	[Test]
 	public async Task EverySkill_IsNamedForThisProduct()
 	{
+		// Arrange
 		// Skills install into one flat directory per agent, shared with every skill a developer has
 		// installed from anywhere. An unprefixed name - 'dotnet-tunit', 'git-conventional-commits' -
 		// collides with somebody else's, and the loser is whichever installed second.
-		var unprefixed = Evaluator
-			.Catalogue.Skills.Select(skill => skill.FolderName)
+		var skills = Evaluator.Catalogue.Skills;
+
+		// Act
+		var unprefixed = skills
+			.Select(skill => skill.FolderName)
 			.Where(name => !name.StartsWith("purview-resourcekit", StringComparison.Ordinal))
 			.ToArray();
 
+		// Assert
 		await Assert
 			.That(unprefixed)
 			.IsEmpty()

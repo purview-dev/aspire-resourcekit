@@ -1,0 +1,194 @@
+<Project>
+
+	<!--
+		Verifies what the package claims to a *consumer*, which this repository's own tests cannot: the
+		library's build is not a consumer. Everything inside this repository reaches ResourceKit through
+		a ProjectReference, which resolves the unmerged bin - not the analyzers/dotnet/cs artifact a
+		PackageReference consumer actually loads.
+
+		Run with: just verify-consumers   (or: dotnet msbuild scripts/verify-consumers.proj)
+
+		Deliberately outside the unit tier: it packs, then restores from nuget.org.
+	-->
+
+	<PropertyGroup>
+		<RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</RepoRoot>
+		<ResourceKitProject>$(RepoRoot)/src/src/ResourceKit/ResourceKit.csproj</ResourceKitProject>
+
+		<VerifyRoot>$(RepoRoot)/artifacts/verify-consumers</VerifyRoot>
+		<FeedDir>$(VerifyRoot)/feed</FeedDir>
+		<UnzipDir>$(VerifyRoot)/package</UnzipDir>
+		<ConsumerDir>$(VerifyRoot)/consumer</ConsumerDir>
+
+		<PackageId>Purview.Aspire.ResourceKit</PackageId>
+		<MergedGenerator>analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.dll</MergedGenerator>
+		<MergedCodeFixes>analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.CodeFixes.dll</MergedCodeFixes>
+	</PropertyGroup>
+
+	<Target Name="VerifyConsumers" DependsOnTargets="PackPackage;AssertPackageShape;BuildConsumer">
+		<Message Importance="high" Text="verify-consumers: passed." />
+	</Target>
+
+	<!-- 1. Pack into a private feed. -->
+	<Target Name="PackPackage">
+		<RemoveDir Directories="$(VerifyRoot)" />
+		<MakeDir Directories="$(FeedDir)" />
+
+		<Exec
+			Command="dotnet pack &quot;$(ResourceKitProject)&quot; -c Release -o &quot;$(FeedDir)&quot; -v minimal"
+			WorkingDirectory="$(RepoRoot)"
+		/>
+
+		<ItemGroup>
+			<_PackedNupkg Include="$(FeedDir)/*.nupkg" />
+		</ItemGroup>
+		<Error Condition="'@(_PackedNupkg)' == ''" Text="Pack produced no .nupkg in $(FeedDir)." />
+
+		<!--
+			Pin the consumer to the version this run produced, so the restore cannot quietly satisfy the
+			reference from nuget.org and verify a published package instead of the local build.
+		-->
+		<PropertyGroup>
+			<PackedVersion>%(_PackedNupkg.Filename)</PackedVersion>
+		</PropertyGroup>
+		<PropertyGroup>
+			<PackedVersion>$(PackedVersion.Replace('$(PackageId).', ''))</PackedVersion>
+		</PropertyGroup>
+		<Message Importance="high" Text="packed $(PackageId) $(PackedVersion) into $(FeedDir)." />
+	</Target>
+
+	<!--
+		2. Assert the packaging gates by reading the package, never by concluding from "the sample
+		compiled".
+	-->
+	<Target Name="AssertPackageShape" DependsOnTargets="PackPackage">
+		<Unzip SourceFiles="@(_PackedNupkg)" DestinationFolder="$(UnzipDir)" OverwriteReadOnlyFiles="true" />
+
+		<!-- The framework floor is declared once, in Versions.props; assert the package matches it. -->
+		<XmlPeek
+			XmlInputPath="$(RepoRoot)/src/Versions.props"
+			Query="/Project/PropertyGroup/DefaultTargetFramework/text()"
+		>
+			<Output TaskParameter="Result" PropertyName="MinimumTargetFramework" />
+		</XmlPeek>
+
+		<ItemGroup>
+			<_PackagedFile Include="$(UnzipDir)/**/*" />
+			<_LooseFrameworkDll Include="$(UnzipDir)/**/Purview.SourceGeneratorFramework.dll" />
+			<_ShippedPdb Include="$(UnzipDir)/**/*.pdb" />
+			<_ShippedGenerator Include="$(UnzipDir)/$(MergedGenerator)" />
+			<_ShippedCodeFixes Include="$(UnzipDir)/$(MergedCodeFixes)" />
+			<_ShippedRuntime Include="$(UnzipDir)/lib/**/$(PackageId).dll" />
+			<_ShippedFloorRuntime Include="$(UnzipDir)/lib/$(MinimumTargetFramework)/$(PackageId).dll" />
+			<_ShippedBuildTransitive Include="$(UnzipDir)/buildTransitive/$(PackageId).props" />
+			<_ShippedReadme Include="$(UnzipDir)/README.md" />
+			<_ShippedLogo Include="$(UnzipDir)/purview-logo-light.png" />
+		</ItemGroup>
+
+		<!-- No loose framework DLL, and no PDB outside the .snupkg. -->
+		<Error
+			Condition="'@(_LooseFrameworkDll)' != ''"
+			Text="The package ships Purview.SourceGeneratorFramework.dll at @(_LooseFrameworkDll). The merged generator carries its own copy; a loose DLL lets two framework versions collide in one compiler host."
+		/>
+		<Error
+			Condition="'@(_ShippedPdb)' != ''"
+			Text="The package ships a .pdb (@(_ShippedPdb)); symbols belong in the .snupkg only."
+		/>
+
+		<!-- The merged entry points survived the merge. -->
+		<Error
+			Condition="'@(_ShippedGenerator)' == ''"
+			Text="The package is missing $(MergedGenerator), so a consumer gets the runtime but no generator."
+		/>
+		<Error
+			Condition="'@(_ShippedCodeFixes)' == ''"
+			Text="The package is missing $(MergedCodeFixes), so the SG0020 code fix is unavailable to consumers."
+		/>
+
+		<!-- The consumer-facing assets the package promises. -->
+		<Error Condition="'@(_ShippedRuntime)' == ''" Text="The package ships no lib/**/$(PackageId).dll." />
+		<Error
+			Condition="'@(_ShippedFloorRuntime)' == ''"
+			Text="The package ships no lib/$(MinimumTargetFramework)/$(PackageId).dll, so it does not support the framework floor declared in src/Versions.props."
+		/>
+		<Error
+			Condition="'@(_ShippedRuntime->Count())' != '1'"
+			Text="The package ships @(_ShippedRuntime->Count()) runtime assets (@(_ShippedRuntime)); .NET 10 is the declared minimum and the only supported leg, so exactly one lib folder is expected."
+		/>
+		<Error
+			Condition="'@(_ShippedBuildTransitive)' == ''"
+			Text="The package ships no buildTransitive/$(PackageId).props, so DisablePurviewAspireResourceKitSourceGenerator is not compiler-visible in a consumer."
+		/>
+		<Error Condition="'@(_ShippedReadme)' == ''" Text="The package ships no README.md." />
+		<Error Condition="'@(_ShippedLogo)' == ''" Text="The package ships no purview-logo-light.png." />
+
+		<Message
+			Importance="high"
+			Text="package shape ok: @(_PackagedFile->Count()) files; merged generator and code fixes present; no loose framework DLL; no shipped PDB."
+		/>
+	</Target>
+
+	<!--
+		3. Build a throwaway consumer that installs the produced package. The declarations below carry
+		no base types and no members of their own, so they compile only if the packaged generator ran
+		and emitted the kit bases - a green build is the consumer claim being proved.
+	-->
+	<Target Name="BuildConsumer" DependsOnTargets="AssertPackageShape">
+		<MakeDir Directories="$(ConsumerDir)" />
+
+		<!-- Read the version the repository pins rather than restating it. -->
+		<XmlPeek
+			XmlInputPath="$(RepoRoot)/Directory.Packages.props"
+			Query="/Project/PropertyGroup/AspireVersion/text()"
+		>
+			<Output TaskParameter="Result" PropertyName="AspireVersionPinned" />
+		</XmlPeek>
+
+		<Copy
+			SourceFiles="$(MSBuildThisFileDirectory)verify-consumers/Kits.cs;$(MSBuildThisFileDirectory)verify-consumers/nuget.config"
+			DestinationFolder="$(ConsumerDir)"
+		/>
+
+		<!-- Stops Central Package Management and the SDK conventions walking up into this repository. -->
+		<WriteLinesToFile File="$(ConsumerDir)/Directory.Packages.props" Lines="&lt;Project /&gt;" Overwrite="true" />
+		<WriteLinesToFile File="$(ConsumerDir)/Directory.Build.props" Lines="&lt;Project /&gt;" Overwrite="true" />
+
+		<WriteLinesToFile
+			File="$(ConsumerDir)/Consumer.csproj"
+			Lines="&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;;&lt;PropertyGroup&gt;;&lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;;&lt;EmitCompilerGeneratedFiles&gt;true&lt;/EmitCompilerGeneratedFiles&gt;;&lt;/PropertyGroup&gt;;&lt;ItemGroup&gt;;&lt;PackageReference Include=&quot;$(PackageId)&quot; Version=&quot;$(PackedVersion)&quot; /&gt;;&lt;PackageReference Include=&quot;Aspire.Hosting&quot; Version=&quot;$(AspireVersionPinned)&quot; /&gt;;&lt;/ItemGroup&gt;;&lt;/Project&gt;"
+			Overwrite="true"
+		/>
+
+		<!--
+			No command-line source override: the consumer's own nuget.config lists the local feed first
+			and nuget.org second, which is what a real consumer sees. Passing an https URL through Exec
+			gets re-parsed as a path by the shell, which NuGet then reports as a missing local source.
+		-->
+		<Exec
+			Command="dotnet build &quot;$(ConsumerDir)/Consumer.csproj&quot; -c Release -v minimal"
+			WorkingDirectory="$(ConsumerDir)"
+		/>
+
+		<!-- A green build is the outcome; this asserts the generator emitted, so a consumer that
+		     silently stopped generating fails here rather than in somebody's AppHost. -->
+		<ItemGroup>
+			<_ConsumerGenerated Include="$(ConsumerDir)/obj/**/*.g.cs" />
+			<_ConsumerHostKit Include="$(ConsumerDir)/obj/**/*ConsumerHostKit*.g.cs" />
+		</ItemGroup>
+
+		<Error
+			Condition="'@(_ConsumerGenerated)' == ''"
+			Text="The generator produced no output for the consumer: the analyzer shipped in the package did not run."
+		/>
+		<Error
+			Condition="'@(_ConsumerHostKit)' == ''"
+			Text="No generated file mentions ConsumerHostKit; the generator ran but emitted nothing for the attributed host kit."
+		/>
+
+		<Message
+			Importance="high"
+			Text="consumer build ok: @(_ConsumerGenerated->Count()) generated files from the packaged analyzer."
+		/>
+	</Target>
+
+</Project>

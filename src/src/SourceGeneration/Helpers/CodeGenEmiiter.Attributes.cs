@@ -51,6 +51,55 @@ partial class CodeGenEmiiter
 						);
 
 					attributeBody
+						.XmlSummary("Initializes a new instance of the HostKitAttribute class.")
+						.XmlParam("mode", "The execution mode in which the host kit participates.")
+						.Constructor(
+							new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
+							{
+								Parameters = [new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode)],
+							},
+							static ctor => ctor.Assignment("Mode", "mode")
+						);
+
+					attributeBody
+						.XmlSummary("Initializes a new instance of the HostKitAttribute class.")
+						.XmlParam("generateOptions", "Whether the Host App generates IOptions support.")
+						.XmlParam("mode", "The execution mode in which the host kit participates.")
+						.Constructor(
+							new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
+							{
+								Parameters =
+								[
+									new("generateOptions", TypeLibrary.System.Boolean),
+									new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+								],
+							},
+							static ctor =>
+								ctor.Assignment("GenerateOptions", "generateOptions").Assignment("Mode", "mode")
+						);
+
+					attributeBody
+						.XmlSummary("Initializes a new instance of the HostKitAttribute class.")
+						.XmlParam("name", "Optional logical host app name used for generated type naming.")
+						.XmlParam("generateOptions", "Whether the Host App generates IOptions support.")
+						.XmlParam("mode", "The execution mode in which the host kit participates.")
+						.Constructor(
+							new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute)
+							{
+								Parameters =
+								[
+									new("name", TypeLibrary.System.String),
+									new("generateOptions", TypeLibrary.System.Boolean),
+									new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+								],
+							},
+							static ctor =>
+								ctor.Assignment("Name", "name")
+									.Assignment("GenerateOptions", "generateOptions")
+									.Assignment("Mode", "mode")
+						);
+
+					attributeBody
 						.XmlSummary("Gets or sets an optional logical host app name used in generated type names.")
 						.Property(
 							new(
@@ -89,6 +138,8 @@ partial class CodeGenEmiiter
 								IsInitOnly = true,
 							}
 						);
+
+					AddModeProperty(attributeBody);
 				}
 			);
 	}
@@ -138,6 +189,54 @@ partial class CodeGenEmiiter
 					);
 
 				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters = [new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode)],
+						},
+						static ctor => ctor.Assignment("Mode", "mode")
+					);
+
+				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("name", "Logical resource name used in Aspire resource registration.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters =
+							[
+								new("name", TypeLibrary.System.String),
+								new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+							],
+						},
+						static ctor => ctor.Assignment("Name", "name").Assignment("Mode", "mode")
+					);
+
+				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("name", "Logical resource name used in Aspire resource registration.")
+					.XmlParam("propertyName", "Generated host-app property name for this resource.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters =
+							[
+								new("name", TypeLibrary.System.String),
+								new("propertyName", TypeLibrary.System.String),
+								new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+							],
+						},
+						static ctor =>
+							ctor.Assignment("Name", "name")
+								.Assignment("PropertyName", "propertyName")
+								.Assignment("Mode", "mode")
+					);
+
+				attributeBody
 					.XmlComment("Gets or sets the logical resource name used in Aspire resource registration.")
 					.Property(
 						new(
@@ -162,6 +261,8 @@ partial class CodeGenEmiiter
 							IsInitOnly = true,
 						}
 					);
+
+				AddModeProperty(attributeBody);
 			}
 		);
 
@@ -207,6 +308,54 @@ partial class CodeGenEmiiter
 						},
 						static ctor => ctor.Comment("Empty")
 					);
+
+				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters = [new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode)],
+							Initializer = "base(mode)",
+						},
+						static ctor => ctor.Comment("Empty")
+					);
+
+				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("name", "Logical resource name used in Aspire resource registration.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters =
+							[
+								new("name", TypeLibrary.System.String),
+								new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+							],
+							Initializer = "base(name, mode)",
+						},
+						static ctor => ctor.Comment("Empty")
+					);
+
+				attributeBody
+					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
+					.XmlParam("name", "Logical resource name used in Aspire resource registration.")
+					.XmlParam("propertyName", "Generated host-app property name for this resource.")
+					.XmlParam("mode", "The execution mode in which this resource participates.")
+					.Constructor(
+						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
+						{
+							Parameters =
+							[
+								new("name", TypeLibrary.System.String),
+								new("propertyName", TypeLibrary.System.String),
+								new("mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode),
+							],
+							Initializer = "base(name, propertyName, mode)",
+						},
+						static ctor => ctor.Comment("Empty")
+					);
 			}
 		);
 
@@ -218,5 +367,21 @@ partial class CodeGenEmiiter
 		CodeWriter writer = new(GenerationSettings.Create<HostKitGenerator>());
 
 		return writer.AutoGeneratedHeader().FileScopedNamespace(TypeLibrary.Purview.Aspire.ResourceKit.Namespace);
+	}
+
+	static void AddModeProperty(CodeWriter attributeBody)
+	{
+		attributeBody
+			.XmlSummary(
+				"Gets or sets the execution mode in which the host kit or resource kit participates.",
+				$"Defaults to <see cref=\"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.All\" />."
+			)
+			.Property(
+				new("Mode", TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode, TypeDeclarationAccessibility.Public)
+				{
+					Initializer = $"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.All",
+					IsInitOnly = true,
+				}
+			);
 	}
 }
