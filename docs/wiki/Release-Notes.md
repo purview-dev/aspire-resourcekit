@@ -5,6 +5,12 @@ upgrade from the `1.0.0-prerelease.*` line. The full, machine-readable history l
 [`CHANGELOG.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/CHANGELOG.md) and on
 the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/releases).
 
+## Next (unreleased)
+
+- **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost
+  must be on `net10.0`, and the package ships a single `lib/net10.0` asset. See
+  [Supported target frameworks](Versioning.md#supported-target-frameworks).
+
 ## 1.0.0
 
 The first stable release. The public surface that shipped during the prerelease line is now frozen
@@ -28,8 +34,9 @@ under [semantic versioning](Versioning.md).
 - **Project resources** — first-class `AddProject<T>()` support with SG0018/SG0019 validation. See
   [Project Resources](Project-Resources.md).
 - **Diagnostics SG0001–SG0020** with an IDE code fix for SG0020. See [Diagnostics](Diagnostics.md).
-- **Bundled agent skill** — `aspire-apphost-to-resourcekit` auto-installs into `.agents/skills/**`.
-  See [Bundled Agent Skills](Agent-Skills.md).
+- **Agent skills** — `1.0.0` bundled `aspire-apphost-to-resourcekit` and copied it into
+  `.agents/skills/**` on build. That delivery is withdrawn: skills now install through the skills CLI,
+  and the authored set has changed. See [Agent Skills](Agent-Skills.md).
 
 ### Upgrade notes
 

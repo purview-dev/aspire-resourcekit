@@ -2,9 +2,9 @@
 name: purview-resourcekit-options
 description: >-
   Use when configuring Purview.Aspire.ResourceKit through options - the generated host and resource
-  options shape, extending them with custom properties, section-name resolution, disabling a resource
-  with IsEnabled, overriding enablement with IsResourceEnabled, and building args or environment
-  variables with OptionsHelper.
+  options shape, extending them with custom properties, selecting a run mode with Mode, section-name
+  resolution, disabling a resource with IsEnabled, overriding enablement with IsResourceEnabled, and
+  building args or environment variables with OptionsHelper.
 metadata:
   product: Purview.Aspire.ResourceKit
   repository: purview-dev/aspire-resourcekit
@@ -12,8 +12,8 @@ metadata:
 
 # Configuration, enablement and OptionsHelper
 
-ResourceKit generates typed options for the host and for each resource, so names and enablement are
-configuration rather than code.
+ResourceKit generates typed options for the host and for each resource, so names, enablement and the
+run mode are configuration rather than code.
 
 ## The generated shape
 
@@ -21,6 +21,8 @@ configuration rather than code.
 public class ShopHostKitOptions
 {
     public const string SectionName = "ShopHostKit";
+
+    public ResourceKitMode Mode { get; set; } = ResourceKitMode.All;
 
     public APIKitOptions Api { get; set; } = new();
     public RedisKitOptions Redis { get; set; } = new();
@@ -30,11 +32,13 @@ public class APIKitOptions
 {
     public string Name { get; set; } = "api";
     public bool IsEnabled { get; set; } = true;
+    public ResourceKitMode Mode { get; set; } = ResourceKitMode.All;
 }
 ```
 
 Host options bind to `SectionName` and `ValidateOnStart()` is called; resource options nest under the
-generated resource property name. Typical keys: `ShopHostKit:API:Name`, `ShopHostKit:API:IsEnabled`.
+generated resource property name. Typical keys: `ShopHostKit:API:Name`, `ShopHostKit:API:IsEnabled`,
+`ShopHostKit:API:Mode`, `ShopHostKit:Mode`.
 
 ## Extending them
 
@@ -85,32 +89,71 @@ When a section name is not passed explicitly, it resolves in this order:
 Suffix trimming ignores generic type arguments. `OptionsHelper.SectionNameFor<T>()` (or the `Type`
 overload) returns the resolved name.
 
+## Run modes
+
+`Mode` selects which AppHost execution a kit participates in, so publish-only and local-only resources
+are configuration instead of branching code:
+
+| Mode | Participates when |
+| --- | --- |
+| `All` (default) | always |
+| `LocalDevelopment` | run mode and the `Development` environment |
+| `Run` | run mode, any environment |
+| `Publish` | publish mode (`aspire publish` / `azd`) |
+
+Declare the default on the attribute (named property or constructor argument):
+
+```csharp
+[ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]
+[ResourceDefinition<ParameterResource>(Mode = ResourceKitMode.Publish)]
+```
+
+Override it from configuration, host-wide or per resource:
+
+```json
+{ "ShopHostKit": { "Mode": "All", "KeyVault": { "Mode": "Publish" } } }
+```
+
+The host `Mode` gates every resource in the host kit; a resource `Mode` gates that resource only. Manual
+kits override the `Mode` property instead. `ResourceKitModeExtensions.IsEnabledFor(mode, builder)`
+evaluates a mode yourself if you need to.
+
 ## `IsEnabled` versus `IsResourceEnabled`
 
 Two toggles, and the interaction is the part people get wrong:
 
-- **`IsEnabled`** — the persisted/configured flag, usually bound from generated options.
+- **`IsEnabled`** — the persisted/configured flag, usually bound from generated options, and the only
+  member consumers need to check.
 - **`IsResourceEnabled(builder)`** — the runtime decision hook. Its default returns `IsEnabled`.
 
 During `Build`:
 
-1. if `IsEnabled` is `true`, `IsResourceEnabled(builder)` is called and its result assigned back to
+1. the configured `Mode` is evaluated first; if it does not participate, `IsEnabled` becomes `false` and
+   the hook never runs;
+2. if `IsEnabled` is `true`, `IsResourceEnabled(builder)` is called and its result assigned back to
    `IsEnabled`;
-2. if the result is `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped.
+3. if the result is `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped.
 
 Two consequences worth stating plainly:
 
-- **The hook only runs when `IsEnabled` is already `true`.** A kit disabled through options is
-  *never* re-enabled by the hook. That is deliberate: configuration is the outer gate.
+- **The hook only runs when `IsEnabled` is already `true` and the mode participates.** A kit disabled
+  through options is *never* re-enabled by the hook. That is deliberate: configuration is the outer gate.
 - **`ResourceBuilder` cannot be accessed while the resource is disabled** — the property guards
   itself and throws `InvalidOperationException`.
 
-Override the hook when enablement depends on runtime state:
+Override the hook when enablement depends on runtime state that is not a mode:
 
 ```csharp
-// Publish-only resources - a Key Vault, a publish marker parameter.
+// A feature flag, not an execution mode.
 protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder) =>
-    builder.ExecutionContext.IsPublishMode;
+    builder.Configuration["Features:KeyVault"] == "true";
+```
+
+Publish-only resources need no hook — use the mode:
+
+```csharp
+[ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]
+sealed partial class KeyVaultKit;
 ```
 
 Disabling from configuration needs no code change:

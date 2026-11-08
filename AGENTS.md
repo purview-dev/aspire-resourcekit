@@ -14,13 +14,19 @@ At a high level:
 
 This is a .NET repository centered on Aspire and source generation.
 
+- **.NET 10 is the floor and the only leg**: `src/Versions.props` declares `DefaultTargetFramework`,
+  every project inherits it, and the package ships a single `lib/net10.0` asset. Do not add a
+  multi-targeting leg without giving it its own lowest-compatible `Microsoft.Extensions.*` floor.
+- The two Roslyn components (`SourceGeneration`, `SourceGeneration.CodeFixes`) target `netstandard2.0`
+  by SDK rule — a generator runs inside the compiler and IDE host, not on the consumer's framework.
 - Uses the **Purview DotNet Project SDK** (`Purview.BuildSdk`) for project defaults and conventions.
 - Uses centrally-managed package versions (`Directory.Packages.props`).
 - Uses **TUnit** and **TUnit.Mocks** for testing.
 - Uses `Microsoft.Testing.Platform` via package-managed tooling.
 
-For additional agent capabilities, conventions, and reusable workflows, use the repository’s `.agents/` folder.
-Do not assume this file contains every available helper; consult `.agents/` as part of planning and execution.
+The skills this repository **authors** live in the root `skills/` folder — read them there, at
+`skills/<name>/SKILL.md`. Skills a *package* ships are installed into `.agents/skills/` by the skills
+CLI (which is gitignored here, so a fresh clone has none until you run `npx skills add`).
 
 ## Purview DotNet Project SDK guidance
 
@@ -56,6 +62,9 @@ Use naming that mirrors production structure:
 
 - Test namespace should match the target namespace shape (same hierarchy intent).
 - Test class naming: `{ClassUnderTest}Tests`
+- A suite whose subject is a contract spanning several types is named for its scope instead — for
+  example `ResourceKitLifecycleTests` covers the `Build`/`Configure` contract of both `HostKitBase` and
+  `ResourceKitBase`. Forcing a `{ClassUnderTest}Tests` name onto one of those is less truthful, not more.
 - Test method naming: `{SubjectOrMethodUnderTest}_{Scenario}_{Expectation}`
 
 ### Cancellation token rule
@@ -71,7 +80,12 @@ Before considering a change done:
 
 1. Relevant tests are updated/added using the conventions above.
 2. Test runs pass for the impacted scope.
-3. New/updated docs stay consistent with this file and the `.agents/` guidance.
+3. New/updated docs stay consistent with this file and the authored skills in `skills/`.
+4. A change to a project reference is reflected in `.config/architecture-policy.json` — the policy is
+   enforced by `src/tests/Repository.UnitTests/ArchitectureTests.cs`, and widening `mayDependOn` is a
+   reviewed policy change rather than a convenient edit.
+5. A change to what the package ships, or to a claim the README/diagnostics pages make about it, is
+   verified with `just verify-consumers` — it packs the package and builds a consumer that installs it.
 
 ## Agent skills
 
@@ -92,7 +106,7 @@ npx skills add purview-dev/aspire-resourcekit
 | Skill | Answers |
 | --- | --- |
 | `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
-| `skills/purview-resourcekit-options/` | generated options, extending them, `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `skills/purview-resourcekit-options/` | generated options, extending them, run modes (`Mode`), `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
 | `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
 | `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means and how to fix it |
 | `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition |

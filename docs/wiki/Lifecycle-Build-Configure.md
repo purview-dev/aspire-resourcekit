@@ -75,6 +75,7 @@ through the host kit's generated properties.
 
 Before `BuildResource(...)` runs, ResourceKit checks whether the resource should participate:
 
+- The configured `Mode` (`All`, `LocalDevelopment`, `Run`, `Publish`) must participate in the current AppHost execution.
 - If `IsEnabled` is `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped.
 - During `Build`, `IsResourceEnabled(builder)` is evaluated (only when `IsEnabled` is already `true`)
   and its result is assigned back to `IsEnabled`.

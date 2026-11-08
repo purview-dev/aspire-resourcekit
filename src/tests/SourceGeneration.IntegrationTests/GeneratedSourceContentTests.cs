@@ -50,6 +50,135 @@ public partial class GeneratedSourceContentTests : ResourceKitSourceGeneratorTes
 	}
 
 	[Test]
+	public async Task Generate_GivenResourceDefinedKits_EmitsModeOptionDefaultingToAll(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source = TestHelper.GenerateSources();
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"public {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode} Mode {{ get; set; }} = {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.All;"
+			);
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceDefinedKits_EmitsModeOverrideSourcedFromOptions(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source = TestHelper.GenerateSources();
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"protected override {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode} Mode => Options.Mode;"
+			);
+	}
+
+	[Test]
+	public async Task Generate_GivenHostKitWithModeConstructorArgument_EmitsHostOptionsModeDefault(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source =
+			@$"
+namespace Testing
+{{
+	[HostKit({TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.LocalDevelopment)]
+	partial class TestingHostKit;
+}}
+";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"public {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode} Mode {{ get; set; }} = {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.LocalDevelopment;"
+			);
+	}
+
+	[Test]
+	public async Task Generate_GivenGenerateOptionsDisabledWithModeProperty_EmitsModeOverrideFromAttribute(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source =
+			@$"
+namespace Testing
+{{
+	[HostKit(GenerateOptions = false, Mode = {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.Publish)]
+	partial class TestingHostKit;
+}}
+";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"protected override {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode} Mode => {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.Publish;"
+			);
+	}
+
+	[Test]
+	public async Task Generate_GivenResourceDefinitionWithModeConstructorArgument_EmitsConfiguredModeDefault(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var source =
+			@$"
+namespace Testing
+{{
+	[HostKit]
+	partial class TestingHostKit;
+
+	[ResourceDefinition<{TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource}>({TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.Publish)]
+	partial class RedisResourceKit
+	{{
+		{TestHelper.GenerateBuildResourceMethod()}
+	}}
+}}
+";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert.That(generated).Contains($"= {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.Publish;");
+	}
+
+	[Test]
 	public async Task Generate_GivenHostKit_EmitsLifecyclePartialMethods(CancellationToken cancellationToken)
 	{
 		// Arrange
@@ -177,6 +306,7 @@ public partial class RedisResourceKit
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var buildResourceMethod = TestHelper.GenerateBuildResourceMethod();
 		var source =
 			@$"
@@ -202,8 +332,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -220,6 +352,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -235,8 +368,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -250,6 +385,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -265,8 +401,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -282,6 +420,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -303,8 +442,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -321,6 +462,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -336,8 +478,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -394,6 +538,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -409,8 +554,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();
@@ -423,6 +570,7 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing.Host
@@ -441,8 +589,10 @@ namespace Testing.Resources
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
@@ -461,6 +611,7 @@ namespace Testing.Resources
 	)]
 	public async Task Generate_GivenHostKitWithNameOverride_UsesCustomBaseClassName(CancellationToken cancellationToken)
 	{
+		// Arrange
 		var source =
 			@$"
 namespace Testing
@@ -484,8 +635,10 @@ namespace Testing
 }}
 ";
 
+		// Act
 		using var result = await GenerateAsync(source, cancellationToken);
 
+		// Assert
 		await Assert.That(result).HasNoErrorDiagnostics();
 
 		var generated = result.GetSource();

@@ -9,6 +9,10 @@ an Aspire AppHost project and a service project ready to compose.
 
 ## Install the package
 
+> [!IMPORTANT]
+> `Purview.Aspire.ResourceKit` targets **.NET 10** only, so the AppHost project must be on `net10.0`.
+> See [Versioning and compatibility](Versioning.md#supported-target-frameworks).
+
 Install the `Purview.Aspire.ResourceKit` package in your AppHost project.
 
 ```bash

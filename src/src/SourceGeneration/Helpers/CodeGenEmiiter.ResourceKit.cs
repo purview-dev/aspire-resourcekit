@@ -92,6 +92,12 @@ partial class CodeGenEmiiter
 					{
 						GenerateResourceKitOptionsClass(context, resourceKit, cancellationToken);
 					}
+
+					// Surface the execution mode from the bound options (or the attribute) so the base class gates Build.
+					ModeOverride(
+						context.Writer,
+						context.HostKit.ShouldGenerateOptions ? "Options.Mode" : ModeExpression(resourceKit.Mode)
+					);
 				}
 			}
 
@@ -144,6 +150,21 @@ partial class CodeGenEmiiter
 					{
 						HasSetter = true,
 						Initializer = "true",
+					}
+				);
+
+			context
+				.Writer.NewLine()
+				.XmlSummary("Gets or sets the execution mode in which this resource participates.")
+				.Property(
+					new(
+						"Mode",
+						TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode,
+						TypeDeclarationAccessibility.Public
+					)
+					{
+						HasSetter = true,
+						Initializer = ModeExpression(resourceKit.Mode),
 					}
 				);
 		}

@@ -17,6 +17,7 @@
 		"RequiredContent": {
 			"purview.aspire.resourcekit": [
 				"analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.dll",
+				"analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.CodeFixes.dll",
 				"buildTransitive/Purview.Aspire.ResourceKit.props",
 				"lib/$(TFM)/Purview.Aspire.ResourceKit.dll",
 				"lib/$(TFM)/Purview.Aspire.ResourceKit.xml",

@@ -19,8 +19,19 @@ Both hosts build the same logical resources through `Purview.Aspire.ResourceKit.
 | API | `api` | `ProjectResource` (`Projects.Example_Service`) |
 | Publish marker | `publish-marker` | `ParameterResource` |
 
-Key Vault and the publish marker are publish-only (`IsResourceEnabled` returns
-`builder.ExecutionContext.IsPublishMode`).
+Key Vault and the publish marker are publish-only. The generated AppHost declares that on the
+attribute (`ResourceKitMode.Publish`), and the manual AppHost overrides the `Mode` property:
+
+```csharp
+// Example.AppHost (generated)
+[ResourceDefinition<AzureKeyVaultResource>(Platform.ResourceKits.KeyVault, ResourceKitMode.Publish)]
+sealed partial class KeyVaultKit;
+
+// Example.ManualAppHost (manual)
+protected override ResourceKitMode Mode => ResourceKitMode.Publish;
+```
+
+See [Enablement](Enablement.md) for the full mode list.
 
 ## Generated pattern (`Example.AppHost`)
 

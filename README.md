@@ -7,14 +7,17 @@
 
 If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
 
-> [!NOTE]
-> `Purview.Aspire.ResourceKit` 1.0.0 is the first stable release. See the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
+> [!IMPORTANT]
+> Requires **.NET 10**. The package targets `net10.0` only — there is no `net8.0` or `net9.0` asset.
+> See [Versioning and compatibility](docs/wiki/Versioning.md#supported-target-frameworks).
+>
+> For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
 
 > [!TIP]
 > **Lifecycle quick links**
 >
 > - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
-> - Runtime enablement (`IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
+> - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
 
 ## Why teams use it
 
@@ -48,22 +51,21 @@ builder.AddAspireResourceKit();
 The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
 
 > [!TIP]
-> **Built-in AI agent skills (auto-installed via NuGet)**
+> **Agent skills for your coding agent**
 >
-> This package can ship one or more bundled [Agent Skills](https://agentskills.io/).
-> When a consuming project builds, any `skills/**/SKILL.md` files in the package are copied to:
+> This repository authors [Agent Skills](https://agentskills.io/) describing ResourceKit — declaring a
+> `[HostKit]` and resource kits, the generated options and run modes, test fixtures, and what each
+> `SG00xx` diagnostic means.
 >
-> - `.agents/skills/**`
+> They are **not** shipped in the NuGet package, and nothing copies them into your repository on build.
+> The skills CLI clones the git repository and installs them into your agent's own skill directory:
 >
-> Example:
+> ```bash
+> npx skills add purview-dev/aspire-resourcekit
+> ```
 >
-> - `skills/aspire-apphost-to-resourcekit/SKILL.md` → `.agents/skills/aspire-apphost-to-resourcekit/SKILL.md`
->
-> It also writes a local `.gitignore` into each generated skill folder to keep updates out of source control noise.
->
-> To disable this behavior, set the shared opt-out property in your project (or `Directory.Build.props`):
->
-> `<EnableAgentFolderInPackage>false</EnableAgentFolderInPackage>`
+> Append `#<ref>` to pin a commit or tag. The CLI records the installed set in `skills-lock.json`, so it
+> can be restored later with `npx skills experimental_install`.
 
 ## Lifecycle mental model
 
@@ -74,11 +76,12 @@ ResourceKit has two layers of lifecycle methods:
 
 Enablement is evaluated *before* resource construction:
 
-- `IsEnabled` is the persisted toggle (typically from generated options).
+- `Mode` selects which AppHost execution a kit participates in (`All`, `LocalDevelopment`, `Run`, `Publish`). It is configured through the generated options and can be declared on `[HostKit]`/`[ResourceDefinition]`.
+- `IsEnabled` is the persisted toggle (typically from generated options) and the single member consumers need to check.
 - `IsResourceEnabled(builder)` is the runtime hook used by `Build` to decide whether this resource should run now.
-- If it evaluates to `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
+- If any gate excludes the resource, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
 
-Use `IsResourceEnabled(builder)` when enablement depends on runtime state (environment, config, publish mode, etc.), not just static options.
+Use `Mode` for publish-only or local-development-only resources, and `IsResourceEnabled(builder)` when enablement depends on runtime state beyond an execution mode (environment probes, dynamic configuration).
 
 ## What gets generated
 

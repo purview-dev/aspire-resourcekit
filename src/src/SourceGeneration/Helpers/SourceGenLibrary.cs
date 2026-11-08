@@ -162,7 +162,8 @@ static class SourceGenLibrary
 				OptionsType: optionsType,
 				ResourceKitBaseType: TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase,
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
-				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName
+				ExtensionMethodName: data.ExtensionMethodName ?? PropertyLibrary.DefaultExtensionMethodName,
+				Mode: data.Mode
 			),
 			diagnostics
 		);
@@ -202,7 +203,8 @@ static class SourceGenLibrary
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				PropertyName: propertyName,
 				ResourceName: resourceName ?? "<unknown>",
-				HasExplicitBaseType: hasExplicitBaseType
+				HasExplicitBaseType: hasExplicitBaseType,
+				Mode: matchedAttribute.Instance.Mode
 			),
 			diagnostics
 		);

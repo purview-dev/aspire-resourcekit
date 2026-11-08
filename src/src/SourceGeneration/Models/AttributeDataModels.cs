@@ -9,7 +9,10 @@ readonly partial record struct HostKitAttributeData(
 		string? Name,
 	string? ExtensionMethodName,
 #pragma warning disable format
-	[Property] [Argument("generateOptions", DefaultValue = true)] bool GenerateOptions
+	[Property] [Argument("generateOptions", DefaultValue = true)] bool GenerateOptions,
+	[Property(IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
+	[Argument("mode", IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
+		string? Mode
 #pragma warning restore format
 );
 
@@ -25,5 +28,8 @@ readonly partial record struct ResourceDefinitionAttributeData(
 	// For the ctor
 	[Argument("propertyName")]
 		string? PropertyName,
+	[Property(IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
+	[Argument("mode", IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
+		string? Mode,
 	[GenericTypeArgument] TypeIdentity AspireResourceType
 );

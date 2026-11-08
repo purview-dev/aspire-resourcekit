@@ -104,6 +104,14 @@ pipeline-pack-validate *args:
     echo "Running pack + validate pipeline..."
     {{ pipeline_tool }} --Build:RunPack=true --Build:ValidatePack=true --Release:Mode=None {{ args }}
 
+# Verify the package against a real consumer: pack, assert the package shape, then build a
+# throwaway consumer that installs it. Restores from nuget.org, so it is not part of the unit tier.
+[group('Pipeline')]
+verify-consumers *args:
+    just ensure-pipeline-tool
+    echo "Verifying packaged consumers..."
+    dotnet msbuild scripts/verify-consumers.proj {{ args }}
+
 # Open the solution in Visual Studio/ Registered application
 [group('Utilities')]
 vs:

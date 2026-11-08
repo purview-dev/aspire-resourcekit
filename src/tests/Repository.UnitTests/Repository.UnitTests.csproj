@@ -1,14 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<!-- These tests assert something about the repository itself - its skills/ folder - not about
-		     the runtime's reach, and Purview.Skills.Testing ships net10.0 only. -->
-		<TargetFramework>net10.0</TargetFramework>
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<!-- The Agent Skills conformance rule set, shipped by Purview.BuildSdk. The rules live in the
 		     package so they are defined once rather than reimplemented here. -->
 		<PackageReference Include="Purview.Skills.Testing" />
+		<!-- The architecture rule set, so the dependency direction declared in
+		     .config/architecture-policy.json fails the build instead of living in review. -->
+		<PackageReference Include="Purview.Architecture.Testing" />
 	</ItemGroup>
 </Project>

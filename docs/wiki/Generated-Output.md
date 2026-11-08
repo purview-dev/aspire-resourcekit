@@ -73,11 +73,15 @@ internal sealed partial class ExampleAPIKit : global::Purview.Aspire.ResourceKit
     }
 
     public ExampleAPIKitOptions Options { get; }
+
+    protected override global::Purview.Aspire.ResourceKit.ResourceKitMode Mode => Options.Mode;
 }
 ```
 
 Your `partial class` supplies `BuildResource(...)` and optionally `ConfigureResource()` and
-`IsResourceEnabled(builder)`.
+`IsResourceEnabled(builder)`. `Mode` is generated (sourced from the options, or from the attribute when
+options are disabled), so publish-only and local-development-only resources are configuration rather
+than code. See [Enablement](Enablement.md).
 
 ## Generated options
 
@@ -89,11 +93,15 @@ public sealed partial class ExampleHostKitOptions
 {
     public const string SectionName = "ExampleHostKit";
 
+    public global::Purview.Aspire.ResourceKit.ResourceKitMode Mode { get; set; } =
+        global::Purview.Aspire.ResourceKit.ResourceKitMode.All;
+
     public ExampleAPIKitOptions ExampleAPI { get; init; } = new();
 }
 ```
 
-Each resource options type carries `Name` (defaulting to the logical resource name) and `IsEnabled`:
+Each resource options type carries `Name` (defaulting to the logical resource name), `IsEnabled`, and
+`Mode`. `Mode` defaults to the value declared on the attribute (or `All` when nothing is declared):
 
 ```csharp
 public sealed partial class ExampleAPIKitOptions
@@ -102,8 +110,14 @@ public sealed partial class ExampleAPIKitOptions
     public string Name { get; set; } = "api";
 
     public bool IsEnabled { get; set; } = true;
+
+    public global::Purview.Aspire.ResourceKit.ResourceKitMode Mode { get; set; } =
+        global::Purview.Aspire.ResourceKit.ResourceKitMode.Publish;
 }
 ```
+
+The generated host kit and every generated resource kit override `Mode` from those options, so
+`Build` gates on the configured mode before `IsResourceEnabled(builder)` and `BuildResource(...)` run.
 
 `Name` is decorated with `[Required(AllowEmptyStrings = false)]`; the generated extension method calls
 `ValidateOnStart()`.

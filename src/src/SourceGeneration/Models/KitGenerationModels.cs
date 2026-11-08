@@ -76,7 +76,8 @@ readonly record struct HostKitModel(
 	TypeIdentity OptionsType,
 	TypeIdentity ResourceKitBaseType,
 	TypeDeclarationAccessibility? Accessibility,
-	string ExtensionMethodName
+	string ExtensionMethodName,
+	string? Mode
 )
 {
 	public bool ShouldGenerateOptions => OptionsType != TypeIdentity.Empty;
@@ -89,5 +90,6 @@ readonly record struct ResourceKitModel(
 	TypeDeclarationAccessibility? Accessibility,
 	string PropertyName,
 	string ResourceName,
-	bool HasExplicitBaseType
+	bool HasExplicitBaseType,
+	string? Mode
 );

@@ -10,8 +10,14 @@ public sealed class ExampleAppHostCustomOptionsIntegrationTests(CustomOptionsExa
 	[Test]
 	public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(CancellationToken cancellationToken)
 	{
+		// Arrange
+		// CustomOptionsExampleAppHostFixture starts the AppHost with the options below as command-line
+		// arguments, so ResourceKit should bind the Azure Storage name it is given and disable Redis.
+
+		// Act
 		await fixture.ConnectionStringIsUnavailableAsync(Platform.ResourceKits.Redis, cancellationToken);
 
+		// Assert
 		await Assert
 			.That(fixture.GetResourceSnapshot(CustomOptionsExampleAppHostFixture.AzureStorageName))
 			.IsNotNull()

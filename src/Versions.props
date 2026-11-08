@@ -1,6 +1,14 @@
 <Project>
 	<PropertyGroup>
-		<DefaultTargetFramework>net8.0</DefaultTargetFramework>
-		<AllTargetFrameworks>$(DefaultTargetFramework);net9.0;net10.0</AllTargetFrameworks>
+		<!--
+			.NET 10 is the minimum the runtime supports, and the only leg built.
+
+			It is declared here, once, and every project inherits it through
+			Directory.Build.props. Re-introducing multi-targeting is a product decision, not a default:
+			declare TargetFrameworks in the projects that need it and give each framework its own
+			lowest-compatible Microsoft.Extensions.* floor, because the floor a published package
+			declares becomes the floor every consumer inherits.
+		-->
+		<DefaultTargetFramework>net10.0</DefaultTargetFramework>
 	</PropertyGroup>
 </Project>

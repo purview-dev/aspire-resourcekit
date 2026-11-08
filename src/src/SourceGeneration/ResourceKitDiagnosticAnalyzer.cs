@@ -136,7 +136,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			);
 		}
 
-		Dictionary<string, int> seenPropertyNames = new(StringComparer.Ordinal);
+		Dictionary<string, int> seenPropertyNames = [with(StringComparer.Ordinal)];
 		foreach (var resourceKit in resourceKitArray)
 		{
 			var allAttributes = ResourceDefinitionAttributeData.AllAttributeData(resourceKit).ToArray();

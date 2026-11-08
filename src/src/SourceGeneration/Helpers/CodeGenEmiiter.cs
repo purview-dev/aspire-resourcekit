@@ -30,4 +30,32 @@ static partial class CodeGenEmiiter
 
 		return writer;
 	}
+
+	// Attribute-supplied modes arrive as a fully-qualified enum member name (for example
+	// "global::Purview.Aspire.ResourceKit.ResourceKitMode.Publish"). Normalise them so the value can be used
+	// as generated code, and fall back to the default when no mode was supplied.
+	static string ModeExpression(string? mode)
+	{
+		if (mode is null || mode.Trim().Length == 0)
+			return $"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode}.All";
+
+		// Ensure the mode is fully-qualified.
+		return mode.StartsWith("global::", StringComparison.Ordinal) ? mode : $"global::{mode}";
+	}
+
+	static CodeWriter ModeOverride(CodeWriter writer, string expression) =>
+		writer
+			.NewLine()
+			.XmlInheritDoc()
+			.Property(
+				new(
+					"Mode",
+					TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitMode,
+					TypeDeclarationAccessibility.Protected
+				)
+				{
+					IsOverride = true,
+					ExpressionBody = expression,
+				}
+			);
 }

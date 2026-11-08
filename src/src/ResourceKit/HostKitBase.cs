@@ -20,6 +20,16 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	protected ImmutableArray<IResourceKit<THostKit>> Resources { get; private set; } = [];
 
 	/// <summary>
+	/// Gets the execution mode in which this host kit, and therefore every resource it composes, participates.
+	/// </summary>
+	/// <remarks>
+	/// Defaults to <see cref="ResourceKitMode.All"/>. Generated host kits override this member to surface the
+	/// configured host <c>Mode</c> option. When the mode does not participate in the current run, every resource
+	/// is disabled before it is built, so <see cref="Build"/> and <see cref="Configure"/> both skip them.
+	/// </remarks>
+	protected virtual ResourceKitMode Mode => ResourceKitMode.All;
+
+	/// <summary>
 	/// Adds a resource to the host kit.
 	/// </summary>
 	/// <param name="resource">The resource to add.</param>
@@ -48,11 +58,20 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	/// <inheritdoc/>
 	public virtual void Build(IDistributedApplicationBuilder builder)
 	{
+		ArgumentNullException.ThrowIfNull(builder);
+
 		if (!SealResources())
 			return;
 
+		var modeEnabled = Mode.IsEnabledFor(builder);
+
 		foreach (var resource in Resources)
+		{
+			if (!modeEnabled)
+				resource.IsEnabled = false;
+
 			resource.Build(builder);
+		}
 	}
 
 	/// <inheritdoc/>

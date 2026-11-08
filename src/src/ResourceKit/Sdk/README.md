@@ -4,6 +4,10 @@ This package contains the runtime abstractions and source-generator contracts fo
 
 Use this README when integrating the **`Purview.Aspire.ResourceKit` NuGet package** into your host project.
 
+> [!IMPORTANT]
+> Requires **.NET 10**. The package ships a single `lib/net10.0` asset — there is no `net8.0` or
+> `net9.0` target to fall back to.
+
 ## Package goals
 
 - Keep AppHost resource composition explicit and testable.
@@ -126,13 +130,18 @@ This happens before `DistributedApplication.Build()` completes.
 
 This separation keeps creation and cross-resource wiring explicit and deterministic.
 
-### How `IsEnabled` and `IsResourceEnabled(...)` interact
+### How `Mode`, `IsEnabled` and `IsResourceEnabled(...)` interact
 
-- `IsEnabled` is the current enablement flag (usually sourced from generated options).
-- During `Build`, ResourceKit evaluates `IsResourceEnabled(builder)` and assigns that result to `IsEnabled`.
+- `Mode` selects which AppHost execution the kit participates in: `All` (default), `LocalDevelopment`,
+  `Run`, or `Publish`. It is bound from the generated options (`Mode`) and declared on the attribute.
+- `IsEnabled` is the current enablement flag (usually sourced from generated options) and the single
+  member consumers need to check.
+- During `Build`, ResourceKit evaluates the `Mode` first, then `IsResourceEnabled(builder)`, and assigns
+  the combined result to `IsEnabled`.
 - If disabled, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
 
-Override `IsResourceEnabled(builder)` when enablement should react to runtime state rather than only static options.
+Use `Mode` for publish-only or local-development-only resources. Override `IsResourceEnabled(builder)`
+when enablement should react to runtime state beyond an execution mode.
 
 ## Options and configuration
 
@@ -141,6 +150,7 @@ When options are generated:
 - Host options root section is the generated host options type name (or configured section).
 - Resource options are nested by generated resource property name.
 - `IsEnabled` can be used to skip a resource at runtime.
+- `Mode` can be used to restrict a resource (or the whole host) to `LocalDevelopment`, `Run`, or `Publish`.
 
 See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration/) patterns.
 

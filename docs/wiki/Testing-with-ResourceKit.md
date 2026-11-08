@@ -9,10 +9,12 @@ The repository uses [TUnit](https://thomhurst.github.io/TUnit/) with the
 [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/) integration. Test projects live under
 `src/tests`:
 
-- `ResourceKit.UnitTests` — runtime behavior of the kit base types and `OptionsHelper`.
+- `ResourceKit.UnitTests` — runtime behavior of the kit base types, run modes and `OptionsHelper`.
 - `ResourceKit.IntegrationTests` — starts the example AppHosts and asserts against real resources.
 - `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` — generator output, diagnostics,
   suppression, code fixes, and caching.
+- `Repository.UnitTests` — the repository itself: authored skills and the architecture policy.
+- `SharedTestingInfra` — a shared-testing library, referenced rather than executed.
 
 Reports are written to `TestResults/`.
 
@@ -40,16 +42,22 @@ public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example
 	[Test]
 	public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)
 	{
-		var client = fixture.CreateHttpClient("api");
-		var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
+		// Arrange
+		// The fixture is a running AppHost, started once for the test session by TUnit.Aspire.
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+		// Act
+		await fixture.APIIsHealthyAsync(cancellationToken);
+
+		// Assert
+		// APIIsHealthyAsync asserts the API resource's /health endpoint answered 200 OK.
 	}
 }
 ```
 
 `TUnit.Aspire` wires the AppHost lifecycle (start/stop) around the fixture. The example API exposes a
-`/health` endpoint for this purpose.
+`/health` endpoint for this purpose. The assertion lives in the fixture extension so every AppHost suite
+proves the same thing; see
+`src/tests/ResourceKit.IntegrationTests/Extensions/TUnit/Aspire/AspireFixtureExtensions.cs`.
 
 ## Overriding options from tests
 
@@ -79,12 +87,22 @@ Storage is registered under the custom name:
 [Test]
 public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(CancellationToken cancellationToken)
 {
-	await Helpers.ConnectionStringIsUnavailableAsync(fixture, "redis", cancellationToken);
+	// Arrange
+	// CustomOptionsExampleAppHostFixture starts the AppHost with the options below as command-line
+	// arguments, so ResourceKit should bind the Azure Storage name it is given and disable Redis.
 
+	// Act
+	await fixture.ConnectionStringIsUnavailableAsync(Platform.ResourceKits.Redis, cancellationToken);
+
+	// Assert
 	await Assert
 		.That(fixture.GetResourceSnapshot(CustomOptionsExampleAppHostFixture.AzureStorageName))
 		.IsNotNull()
 		.Because("The custom Azure Storage name should be passed to the host kit.");
+	await Assert
+		.That(fixture.GetResourceSnapshot(Platform.ResourceKits.AzureStorage))
+		.IsNull()
+		.Because("The default Azure Storage name should not be passed to the host kit.");
 }
 ```
 

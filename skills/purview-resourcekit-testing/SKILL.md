@@ -17,16 +17,19 @@ AppHost.
 
 ## Test tiers
 
-This repository uses [TUnit](https://thomhurst.github.io/TUnit/) with
-[TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/), under `src/tests`:
+ResourceKit requires **.NET 10** (the package targets `net10.0` only). This repository uses
+[TUnit](https://thomhurst.github.io/TUnit/) with [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/),
+under `src/tests`:
 
 | Project | Covers |
 | --- | --- |
-| `ResourceKit.UnitTests` | runtime behaviour of the kit base types and `OptionsHelper` |
+| `ResourceKit.UnitTests` | runtime behaviour of the kit base types, run modes and `OptionsHelper` |
 | `ResourceKit.IntegrationTests` | starts the example AppHosts and asserts against real resources |
 | `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` | generator output, diagnostics, suppression, code fixes, caching |
+| `Repository.UnitTests` | the repository itself: authored skills and the architecture policy |
 
-Reports land in `TestResults/`.
+Reports land in `TestResults/`. The project **name** sets the tier (`*.UnitTests` → `Category=Unit`);
+nothing is tagged per test.
 
 ## Integration-testing an AppHost
 
@@ -51,9 +54,14 @@ public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example
     [Test]
     public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)
     {
+        // Arrange
+        // The fixture is a running AppHost, started once for the test session.
+
+        // Act
         var client = fixture.CreateHttpClient("api");
         var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
 
+        // Assert
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 }
@@ -99,14 +107,28 @@ Each `Assign` action must set exactly one property path (`SG0020`). The
 `purview-resourcekit-options` skill covers `Assign`, `AsEnvironmentVariables`, `Environment`,
 `PathFor` and `SectionNameFor`.
 
+The same route flips a resource's run mode, which is how a test exercises publish-only or
+local-development-only kits without a second AppHost:
+
+```csharp
+.. OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
+    c => c.KeyVault.Mode = ResourceKitMode.LocalDevelopment
+).Build(),
+```
+
 Assert that the override actually took effect, rather than that the host started:
 
 ```csharp
 [Test]
 public async Task AppHost_WithCustomOptions_IsPassedToTheHostKit(CancellationToken cancellationToken)
 {
-    await Helpers.ConnectionStringIsUnavailableAsync(fixture, "redis", cancellationToken);
+    // Arrange
+    // The fixture starts the AppHost with the options above as command-line arguments.
 
+    // Act
+    await fixture.ConnectionStringIsUnavailableAsync(Platform.ResourceKits.Redis, cancellationToken);
+
+    // Assert
     await Assert
         .That(fixture.GetResourceSnapshot(CustomOptionsExampleAppHostFixture.AzureStorageName))
         .IsNotNull()

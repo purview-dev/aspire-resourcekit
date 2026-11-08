@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
@@ -17,19 +19,18 @@ namespace Testing
 	[Test]
 	public async Task Generate_GivenEmptySource_GeneratesHostKitAttributeSource(CancellationToken cancellationToken)
 	{
+		// Arrange
+		// Nothing to arrange: the attribute sources come from post-initialization output, so an empty
+		// compilation is enough to produce them.
+
+		// Act
 		using var result = await GenerateAsync(EmptySource, cancellationToken);
 
-		var tree = result.GetGeneratedTree("HostKitAttribute.g.cs");
-		tree = await Assert.That(tree).IsNotNull();
-
-		var syntaxTree = await tree.GetTextAsync(cancellationToken);
-		var text = syntaxTree.ToString();
-
-		await Assert.That(text).Contains("class HostKitAttribute");
-		await Assert.That(text).Contains("string? Name");
-		await Assert.That(text).Contains("AttributeTargets.Class");
-		await Assert.That(text).Contains("AllowMultiple = false");
-		await Assert.That(text).Contains("Inherited = false");
+		// Assert
+		await Assert.That(result.GetGeneratedTree("HostKitAttribute.g.cs")).IsNotNull();
+		await Assert
+			.That(result.Generated())
+			.HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute);
 	}
 
 	[Test]
@@ -37,7 +38,13 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
+		// Nothing to arrange: an empty compilation is enough for the generator's attribute output.
+
+		// Act
 		using var result = await GenerateAsync(EmptySource, cancellationToken);
+
+		// Assert
 		var query = result.Generated();
 
 		await Assert
@@ -57,7 +64,13 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
+		// Nothing to arrange: an empty compilation is enough for the generator's attribute output.
+
+		// Act
 		using var result = await GenerateAsync(EmptySource, cancellationToken);
+
+		// Assert
 		var query = result.Generated();
 
 		await Assert.That(query).HasGeneratedClass(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute);
@@ -72,7 +85,13 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
+		// Nothing to arrange: the option requests a compiled assembly, which is the artefact under test.
+
+		// Act
 		using var result = await GenerateAsync(EmptySource, cancellationToken);
+
+		// Assert
 		var query = result.Generated();
 
 		foreach (
@@ -91,7 +110,13 @@ namespace Testing
 	[Test]
 	public async Task Compile_GivenEmptySource_HostKitAttributeHasExpectedMembers(CancellationToken cancellationToken)
 	{
+		// Arrange
+		// Nothing to arrange: an empty compilation is enough for the generator's attribute output.
+
+		// Act
 		using var result = await GenerateAsync(EmptySource, cancellationToken);
+
+		// Assert
 		var query = result.Generated();
 
 		var attributeClass = await Assert
@@ -106,11 +131,17 @@ namespace Testing
 		CancellationToken cancellationToken
 	)
 	{
+		// Arrange
+		// Nothing to arrange: the option requests a compiled assembly, so the attributes can be reflected over.
+
+		// Act
 		using var result = await GenerateAsync(
 			EmptySource,
 			ResourceKitSourceGeneratorTestOptions.Compile,
 			cancellationToken
 		);
+
+		// Assert
 		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 		var type = assembly.GetType(
 			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.MetadataFullName
@@ -131,35 +162,34 @@ namespace Testing
 	[Test]
 	public async Task Compile_GivenEmptySource_AttributesHaveExpectedAttributeUsage(CancellationToken cancellationToken)
 	{
+		// Arrange
+		var attributeTypes = new[]
+		{
+			TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
+			TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
+		};
+
+		// Act
 		using var result = await GenerateAsync(
 			EmptySource,
 			ResourceKitSourceGeneratorTestOptions.Compile,
 			cancellationToken
 		);
-		//var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
-		var query = result.Generated();
+		// Assert
+		var assembly = await Assert.That(result.CompilationResult.Assembly).IsNotNull();
 
-		foreach (
-			var attributeType in new[]
-			{
-				TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute,
-				TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute,
-				TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute,
-			}
-		)
+		foreach (var attributeType in attributeTypes)
 		{
-			var classNode = query.GetClass(attributeType);
+			var type = assembly.GetType(attributeType.MetadataFullName);
+			await Assert.That(type).IsNotNull();
 
-			await Assert.That(classNode).IsNotNull();
-
-			//var type = assembly.GetType(attributeType)!;
-			//var usage = type.GetCustomAttribute<AttributeUsageAttribute>();
-
-			//await Assert.That(usage).IsNotNull();
-			//await Assert.That(usage.ValidOn.HasFlag(AttributeTargets.Class)).IsTrue();
-			//await Assert.That(usage.AllowMultiple).IsFalse();
-			//await Assert.That(usage.Inherited).IsFalse();
+			var usage = type!.GetCustomAttribute<AttributeUsageAttribute>();
+			await Assert.That(usage).IsNotNull();
+			await Assert.That(usage!.ValidOn.HasFlag(AttributeTargets.Class)).IsTrue();
+			await Assert.That(usage.AllowMultiple).IsFalse();
+			await Assert.That(usage.Inherited).IsFalse();
 		}
 	}
 }

@@ -19,8 +19,9 @@ one resource kit per resource, and a generated extension method that wires them 
 dotnet add package Purview.Aspire.ResourceKit
 ```
 
-Both public attributes are **generated into the consuming compilation** by the bundled source
-generator — there is no separate attribute package to reference.
+Requires **.NET 10**: the package ships a single `lib/net10.0` asset, and the two attributes below are
+generated into the consuming compilation by the bundled source generator — there is no separate
+attribute package to reference.
 
 ## The shape
 
@@ -59,6 +60,7 @@ need more. Every participating class must be `partial` (`SG0001`).
 | `Name` | `string?` | `null` | controls generated naming |
 | `ExtensionMethodName` | `string?` | derived from the host kit name | renames the generated builder extension |
 | `GenerateOptions` | `bool` | `true` | enables generated host options |
+| `Mode` | `ResourceKitMode` | `All` | execution mode for the host and every resource it composes |
 
 ## `[ResourceDefinition]`
 
@@ -66,7 +68,16 @@ need more. Every participating class must be `partial` (`SG0001`).
 | --- | --- | --- | --- |
 | `Name` | `string?` | derived from the class name, suffix trimmed | the logical Aspire resource name |
 | `PropertyName` | `string?` | derived from the class name | the generated host property name; must be a valid C# identifier (`SG0008`) |
+| `Mode` | `ResourceKitMode` | `All` | execution mode for this resource |
 | `AspireResourceType` | generic type argument | `null` | the Aspire `IResource` type — generic style only |
+
+`Mode` accepts a named property or a constructor argument on both attributes, and configuration can
+override the generated default:
+
+```csharp
+[ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]  // publish only
+[ResourceDefinition<ProjectResource>(Mode = ResourceKitMode.LocalDevelopment)]  // local dev only
+```
 
 ### Two styles, and you pick exactly one per class
 
@@ -177,10 +188,11 @@ override instead of losing the host kit output.
 
 ## Enablement gates both phases
 
-Before `BuildResource(...)` runs, `IsResourceEnabled(builder)` is evaluated — **only when `IsEnabled`
-is already `true`** — and its result is assigned back to `IsEnabled`. A `false` result skips both
-`BuildResource(...)` and `ConfigureResource()`. The `purview-resourcekit-options` skill covers the
-full model, including why a kit disabled through options is never re-enabled by the hook.
+Before `BuildResource(...)` runs, the configured `Mode` (`All`, `LocalDevelopment`, `Run`, `Publish`) is
+evaluated first, then `IsResourceEnabled(builder)` — **only when `IsEnabled` is already `true`** — and
+the combined result is assigned back to `IsEnabled`. A `false` result skips both `BuildResource(...)`
+and `ConfigureResource()`. The `purview-resourcekit-options` skill covers the full model, including why
+a kit disabled through options is never re-enabled by the hook.
 
 ## Growing a composition
 
