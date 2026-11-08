@@ -23,6 +23,14 @@ This is a .NET repository centered on Aspire and source generation.
 - Uses centrally-managed package versions (`Directory.Packages.props`).
 - Uses **TUnit** and **TUnit.Mocks** for testing.
 - Uses `Microsoft.Testing.Platform` via package-managed tooling.
+- **No build needs the Aspire CLI installed.** The example AppHosts set
+  `AspireUseCliBundle=false`, so they build against the NuGet-delivered DCP and dashboard packages
+  (`Aspire.Dashboard.Sdk.<rid>` / `Aspire.Hosting.Orchestration.<rid>`, added by the AppHost SDK for the
+  build machine's RID). Do not put `AspireUseCliBundle=true` back in a project file: it makes a *build*
+  require a resolvable CLI bundle, and resolving one is a network install performed mid-build once per
+  AppHost — two of which race on the NuGet cache and fail each other with ASPIRE009. That is what broke
+  the release pipeline. `ExampleAppHostTests` guards the invariant; pass `-p:AspireUseCliBundle=true` for
+  a one-off build that wants the bundle path.
 
 The skills this repository **authors** live in the root `skills/` folder — read them there, at
 `skills/<name>/SKILL.md`. Skills a *package* ships are installed into `.agents/skills/` by the skills

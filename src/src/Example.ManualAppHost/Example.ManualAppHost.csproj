@@ -5,7 +5,16 @@
 			without the source generator.
 		-->
 		<DisablePurviewAspireResourceKitSourceGenerator>true</DisablePurviewAspireResourceKitSourceGenerator>
-		<AspireUseCliBundle>true</AspireUseCliBundle>
+		<!--
+			Same choice as Example.AppHost, for the same reason: opting in to the Aspire CLI bundle makes a
+			*build* require one, and both AppHosts then run `dnx aspire.cli@<version> setup` at the same
+			time, which is what made the release pipeline fail with ASPIRE009. The examples use the
+			NuGet-delivered DCP and dashboard packages instead, which is reported as ASPIRE010 and
+			suppressed here because it is deliberate. Opt back in with:
+			dotnet build -p:AspireUseCliBundle=true
+		-->
+		<AspireUseCliBundle Condition="'$(AspireUseCliBundle)' == ''">false</AspireUseCliBundle>
+		<NoWarn Condition="'$(AspireUseCliBundle)' != 'true'">$(NoWarn);ASPIRE010</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Example.Service\Example.Service.csproj" />
