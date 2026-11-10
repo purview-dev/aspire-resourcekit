@@ -83,6 +83,28 @@ partial class APIResourceKit : ResourceKitBase<ProjectResource>
 
 Do not mix both attribute styles on the same class.
 
+### Resource groups and dashboard URLs
+
+`[ResourceGroup]` marks a partial class as a named, nestable group (`[ResourceGroup<TParent>]` or
+`Parent = typeof(TParent)`), and
+`[InGroup<TGroup>]` adds a resource kit to it. A group can be switched off or given a `Mode` from
+`<HostKit>:Groups:<Group>`, which applies to every kit in it. In run mode each group appears as a
+dashboard node with its kits nested underneath.
+
+`[ResourceUrl(name, url)]` adds a named dashboard URL: absolute, or relative to an endpoint.
+`[EndpointUrl(endpoint)]` renames an endpoint's own URL. Each URL becomes a `ResourceKitUrl` option under
+`<HostKit>:<Kit>:Urls:<Name>`.
+
+```csharp
+[ResourceGroup("data")]
+sealed partial class DataGroup;
+
+[ResourceDefinition<ProjectResource>("api")]
+[InGroup<DataGroup>]
+[ResourceUrl("Health", "/health", DisplayText = "Health")]
+[EndpointUrl("https", DisplayText = "API")]
+partial class APIResourceKit { /* ... */ }
+```
 ## Minimal package usage
 
 ```csharp
@@ -250,8 +272,18 @@ variables.
 | SG0018 | Warning | Project resource kit does not add the declared project via `AddProject<T>()` (execution-only) |
 | SG0019 | Warning | Project resource kit explicit base does not use `ProjectResource` (execution-only) |
 | SG0020 | Error | `OptionsHelper.Assign` action sets more than one property path |
-
-SG0017–SG0019 are execution-only warnings: they indicate the resource will fail at runtime but never
+| SG0021 | Error | `[InGroup<TGroup>]` type or group `Parent` is not a `[ResourceGroup]` class |
+| SG0022 | Error | Resource group parent cycle |
+| SG0023 | Error | Duplicate resource group name |
+| SG0024 | Warning | More than one primary group on a resource kit (execution-only) |
+| SG0025 | Error | Resource group declares a base type |
+| SG0026 | Error | Duplicate URL name on a resource kit or group |
+| SG0027 | Error | Endpoint URL on a resource or group without endpoints |
+| SG0028 | Warning | Relative URL on a resource or group without endpoints (execution-only) |
+| SG0029 | Error | Resource group declares its parent more than once |
+| SG0030 | Error | Resource group is generic |
+| SG0031 | Error | Resource group is also a resource kit or a group member |
+SG0017–SG0019, SG0024 and SG0028 are execution-only warnings: they indicate the resource will fail at runtime but never
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 

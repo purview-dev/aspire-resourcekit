@@ -40,6 +40,31 @@ static class SourceGenLibrary
 		var resourceDefinitions = GetResourceDefinitionPipeline(context);
 		var genericResourceDefinitions = GetGenerationResourceDefinitionPipeline(context);
 		var allResourceKits = GetCombineResourceDefinitionsPipeline(resourceDefinitions, genericResourceDefinitions);
+		var resourceGroups = GetResourceGroupPipeline(
+				context,
+				TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute,
+				GeneratorTrackingNames.ResourceGroupTargets
+			)
+			.CollectWith(
+				GetResourceGroupPipeline(
+					context,
+					TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceGroupAttribute,
+					GeneratorTrackingNames.GenericResourceGroupTargets
+				),
+				static (groups, genericGroups, _) =>
+					EquatableArray<GeneratorResult<ResourceGroupModel>>.Create([
+						.. groups
+							.Concat(genericGroups)
+							.Where(static g => !g.IsEmpty)
+							// A class carrying both attributes arrives from both pipelines; SG0029 blocks it, so
+							// keep one model per type and let the diagnostic speak.
+							.GroupBy(static g => g.Value.GroupType.MetadataFullName, StringComparer.Ordinal)
+							.Select(static g => g.First())
+							// Order by type so the aggregate is deterministic whatever order the groups arrive in.
+							.OrderBy(static g => g.Value.GroupType.MetadataFullName, StringComparer.Ordinal),
+					]),
+				GeneratorTrackingNames.CombineResourceGroups
+			);
 
 		var provider = generationContext
 			.CollectWith(
@@ -51,6 +76,11 @@ static class SourceGenLibrary
 				allResourceKits,
 				CombineResourceDefinitionsPipeline(),
 				GeneratorTrackingNames.CollectResourceKits
+			)
+			.CombineWith(
+				resourceGroups,
+				static (model, groups, _) => model with { ResourceGroups = groups },
+				GeneratorTrackingNames.CollectResourceGroups
 			);
 
 		return new(provider, generationContext);
@@ -122,6 +152,19 @@ static class SourceGenLibrary
 			transform: static (ctx, ct) => GetResourceKitModel(ctx, ct),
 			predicate: static (s, _) => s is ClassDeclarationSyntax,
 			trackingName: GeneratorTrackingNames.ResourceDefinitionTargets
+		);
+
+	static IncrementalValuesProvider<GeneratorResult<ResourceGroupModel>> GetResourceGroupPipeline(
+		IncrementalGeneratorInitializationContext context,
+		TypeIdentity attribute,
+		string trackingName
+	) =>
+		IncrementalPipeline.ForAttributeWithMetadataName(
+			context,
+			attribute,
+			transform: static (ctx, ct) => GetResourceGroupModel(ctx, ct),
+			predicate: static (s, _) => s is ClassDeclarationSyntax,
+			trackingName: trackingName
 		);
 
 	static IncrementalValuesProvider<GeneratorResult<HostKitModel>> GetHostKitPipeline(
@@ -204,9 +247,50 @@ static class SourceGenLibrary
 				PropertyName: propertyName,
 				ResourceName: resourceName ?? "<unknown>",
 				HasExplicitBaseType: hasExplicitBaseType,
-				Mode: matchedAttribute.Instance.Mode
+				Mode: matchedAttribute.Instance.Mode,
+				Groups: EquatableArray<TypeIdentity>.Create([
+					.. ResourceKitRules.GetGroups(symbol).Select(static g => new TypeIdentity(g)),
+				]),
+				Urls: GetUrlModels(symbol)
 			),
 			diagnostics
 		);
 	}
+
+	static GeneratorResult<ResourceGroupModel> GetResourceGroupModel(
+		GeneratorAttributeSyntaxContext context,
+		CancellationToken cancellationToken
+	)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		var symbol = (INamedTypeSymbol)context.TargetSymbol;
+		var data = ResourceGroupAttributeData.FromAttributeData(context.Attributes);
+		var parent = ResourceKitRules.GetGroupParent(symbol);
+
+		TypeIdentity groupType = new(symbol);
+
+		var diagnostics = ResourceKitRules
+			.EvaluateResourceGroup(symbol, cancellationToken)
+			.Select(static rule => rule.ToDiagnosticInfo())
+			.ToImmutableArray();
+
+		return GeneratorResult<ResourceGroupModel>.Create(
+			new(
+				GroupType: groupType,
+				OptionsType: groupType.Nested(symbol.Name + TypeLibraryGenerator.OptionsBaseClassSuffix),
+				ParentType: parent is null ? TypeIdentity.Empty : new(parent),
+				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
+				Name: ResourceKitRules.GroupName(symbol),
+				PropertyName: ResourceKitRules.GroupPropertyName(symbol),
+				ShowInDashboard: data.ShowInDashboard,
+				Mode: data.Mode,
+				Urls: GetUrlModels(symbol)
+			),
+			diagnostics
+		);
+	}
+
+	static EquatableArray<UrlModel> GetUrlModels(INamedTypeSymbol symbol) =>
+		EquatableArray<UrlModel>.Create([.. ResourceKitRules.GetUrls(symbol).Select(static u => u.Model)]);
 }

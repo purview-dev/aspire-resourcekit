@@ -1,12 +1,16 @@
 using System.ComponentModel.DataAnnotations;
+using Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Groups;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
 [ResourceDefinition<Projects.Example_Service>(Platform.ResourceKits.API)]
+[InGroup<ServicesGroup>]
+[ResourceUrl("Health", Platform.EndpointsDefinitions.Health, DisplayText = "Health")]
+[EndpointUrl("https", DisplayText = "API")]
 sealed partial class ExampleAPIKit
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddProject<Projects.Example_Service>(Name).WithUrl("/health", "Health");
+		builder.AddProject<Projects.Example_Service>(Name);
 
 	protected override void ConfigureResource()
 	{

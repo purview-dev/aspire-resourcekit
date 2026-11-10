@@ -57,10 +57,13 @@ options object to a destination resource:
 
 ```csharp
 [ResourceDefinition<Projects.Example_Service>(Platform.ResourceKits.API)]
+[InGroup<ServicesGroup>]
+[ResourceUrl("Health", Platform.EndpointsDefinitions.Health, DisplayText = "Health")]
+[EndpointUrl("https", DisplayText = "API")]
 sealed partial class ExampleAPIKit
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddProject<Projects.Example_Service>(Name).WithUrl("/health", "Health");
+		builder.AddProject<Projects.Example_Service>(Name);
 
 	protected override void ConfigureResource()
 	{

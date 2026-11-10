@@ -94,13 +94,16 @@ Typical keys (example):
 - `ShopHostKit:API:Name`
 - `ShopHostKit:API:IsEnabled`
 - `ShopHostKit:API:Mode`
+- `ShopHostKit:API:Urls:Health:IsEnabled` (a declared `[ResourceUrl("Health", ...)]`)
 - `ShopHostKit:Mode`
+- `ShopHostKit:Groups:Data:IsEnabled`, `:Mode`, `:ShowInDashboard` (a `[ResourceGroup]`)
 
 Configuration is bound by the generated extension method:
 
 - Host options bind to `ShopHostKitOptions.SectionName` (for example `ShopHostKit`) and
   `ValidateOnStart()` is called.
 - Resource options are nested by generated resource property name.
+- Group options are nested under `Groups`, by group property name. See [Groups and URLs](Groups-and-URLs.md).
 
 ## Disable a resource
 

@@ -98,6 +98,30 @@ partial class CodeGenEmiiter
 						context.Writer,
 						context.HostKit.ShouldGenerateOptions ? "Options.Mode" : ModeExpression(resourceKit.Mode)
 					);
+
+					// Surface the declared dashboard URLs, as bound from options when the host kit has them.
+					if (!resourceKit.Urls.IsEmpty)
+					{
+						context
+							.Writer.NewLine()
+							.XmlInheritDoc()
+							.Property(
+								new(
+									"Urls",
+									TypeLibrary.System.Collections.Generic.IEnumerable.MakeGeneric(
+										TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitUrl
+									),
+									TypeDeclarationAccessibility.Protected
+								)
+								{
+									IsOverride = true,
+									ExpressionBody = UrlsExpression(
+										resourceKit.Urls,
+										context.HostKit.ShouldGenerateOptions
+									),
+								}
+							);
+					}
 				}
 			}
 
@@ -167,6 +191,22 @@ partial class CodeGenEmiiter
 						Initializer = ModeExpression(resourceKit.Mode),
 					}
 				);
+
+			if (!resourceKit.Urls.IsEmpty)
+			{
+				context
+					.Writer.NewLine()
+					.XmlSummary("Gets or sets the dashboard URLs declared for the resource.")
+					.Property(
+						new("Urls", resourceKit.OptionsType.Nested("UrlsOptions"), TypeDeclarationAccessibility.Public)
+						{
+							HasSetter = true,
+							Initializer = "new()",
+						}
+					);
+
+				GenerateUrlsOptionsClass(context.Writer, resourceKit.Urls);
+			}
 		}
 	}
 }

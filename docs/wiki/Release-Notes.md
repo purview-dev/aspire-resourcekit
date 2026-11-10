@@ -10,6 +10,13 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
 - **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost
   must be on `net10.0`, and the package ships a single `lib/net10.0` asset. See
   [Supported target frameworks](Versioning.md#supported-target-frameworks).
+- **Resource groups.** `[ResourceGroup]` and `[InGroup<TGroup>]` gather kits under named, nestable groups.
+  A group can be switched off or given a mode from configuration, and in run mode it appears as a node in the dashboard
+  with its kits nested underneath. See [Groups and URLs](Groups-and-URLs.md).
+- **Named dashboard URLs.** `[ResourceUrl]` and `[EndpointUrl]` declare a kit's or group's dashboard links as
+  options. A relative URL adds one link for one endpoint, instead of rewriting every endpoint URL as
+  `WithUrl("/path")` does.
+- **Diagnostics SG0021-SG0031** for groups and URLs. A group can never become its own ancestor or member.
 
 ## 1.0.0
 

@@ -3,6 +3,12 @@ namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 	: ResourceKitBase<ExampleHostKit, ProjectResource>(hostKit, Platform.ResourceKits.API)
 {
+	protected override IEnumerable<ResourceKitUrl> Urls =>
+		[
+			new() { Url = Platform.EndpointsDefinitions.Health, DisplayText = "Health" },
+			new() { Endpoint = "https", DisplayText = "API" },
+		];
+
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
