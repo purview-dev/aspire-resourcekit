@@ -17,7 +17,7 @@ AppHost.
 
 ## Test tiers
 
-ResourceKit requires **.NET 10** (the package targets `net10.0` only). This repository uses
+ResourceKit requires **.NET 10** (the floor; the package also ships a `net11.0` asset). This repository uses
 [TUnit](https://thomhurst.github.io/TUnit/) with [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/),
 under `src/tests`:
 

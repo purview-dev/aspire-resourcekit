@@ -8,7 +8,9 @@
 If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
 
 > [!IMPORTANT]
-> Requires **.NET 10**. The package targets `net10.0` only — there is no `net8.0` or `net9.0` asset.
+> Requires **.NET 10**. The package ships `net10.0` and `net11.0` assets — there is no `net8.0` or
+> `net9.0` asset. A .NET 10 AppHost resolves the `net10.0` asset; a .NET 11 AppHost resolves the
+> `net11.0` asset.
 > See [Versioning and compatibility](docs/wiki/Versioning.md#supported-target-frameworks).
 >
 > For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
@@ -102,6 +104,7 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Examples: generated vs manual](docs/wiki/Examples.md)
 - [Release notes](docs/wiki/Release-Notes.md)
 - [Versioning and compatibility](docs/wiki/Versioning.md)
+- [.NET 11 toolchain and feature adoption](docs/wiki/Toolchain.md)
 - [Changelog](CHANGELOG.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)

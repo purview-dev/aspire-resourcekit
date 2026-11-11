@@ -18,13 +18,16 @@ carry no stability guarantee. `1.0.0` is the first stable release.
 
 ## Supported target frameworks
 
-The runtime targets **`.NET 10`** and nothing lower, so a consumer needs a `net10.0` AppHost. The
-package ships a single `lib/net10.0` asset; there is no `net8.0` or `net9.0` leg to fall back to.
+The runtime targets **`.NET 10`** and **`.NET 11`** and nothing lower, so a consumer needs a
+`net10.0` or `net11.0` AppHost. The package ships `lib/net10.0` (the floor) and `lib/net11.0` (the
+newest leg); there is no `net8.0` or `net9.0` leg to fall back to.
 
 Raising the floor is a MAJOR version, because a consumer on an older framework cannot take the
-package at all. The reverse — adding a framework — is additive as long as each leg declares its own
-lowest-compatible `Microsoft.Extensions.*` floor, since the floor a published package declares becomes
-the floor every consumer inherits.
+package at all. Adding a framework is additive, but the new leg does **not** get to raise the
+dependency floor: both legs declare the lowest-compatible `Microsoft.Extensions.*` 10.x band, because
+the floor a published package declares becomes the floor every consumer inherits. The net11.0 leg
+consumes the net10.0 assets of those packages deliberately. `PackageToolchainTests` fails the build
+if a `Microsoft.Extensions.*` reference drifts into the 11.x band.
 
 The Roslyn components (`SourceGeneration`, `SourceGeneration.CodeFixes`) target `netstandard2.0`
 regardless: a generator runs inside the compiler and IDE host, where the consumer's target framework
@@ -60,5 +63,6 @@ release-time procedure.
 
 ## See also
 
+- [.NET 11 toolchain and feature adoption](Toolchain.md)
 - [Release notes](Release-Notes.md)
 - [Release flow](Release-Flow.md)

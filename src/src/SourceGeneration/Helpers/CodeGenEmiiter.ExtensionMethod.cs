@@ -129,20 +129,17 @@ partial class CodeGenEmiiter
 
 				writer
 					.Comment("Bind the host kit options from configuration, or create a new instance if not found.")
-					.Assignment(
-						"var",
-						"optionsBuilder",
-						assignment =>
-							assignment.MethodCallChain(
-								"builder.Services.AddOptions",
-								[],
-								chain =>
-									chain.Method(
-										"BindConfiguration",
-										arguments: [$"{context.HostKit.OptionsType}.SectionName"]
-									),
-								genericArguments: [context.HostKit.OptionsType]
-							)
+					.Assignment("var", "optionsBuilder", assignment =>
+						assignment.MethodCallChain(
+							"builder.Services.AddOptions",
+							[],
+							chain =>
+								chain.Method(
+									"BindConfiguration",
+									arguments: [$"{context.HostKit.OptionsType}.SectionName"]
+								),
+							genericArguments: [context.HostKit.OptionsType]
+						)
 					);
 
 				writer
@@ -151,31 +148,25 @@ partial class CodeGenEmiiter
 					.MethodCallOn("optionsBuilder", "ValidateOnStart")
 					.NewLine();
 
-				writer.Assignment(
-					"var",
-					"hostKitOptions",
-					assignment =>
-						assignment.MethodCallChain(
-							"builder.Configuration.GetSection",
-							[$"{context.HostKit.OptionsType}.SectionName"],
-							configure: chain =>
-								chain.Method("Get", genericArguments: [context.HostKit.OptionsType]).Postfix("?? new()")
-						)
+				writer.Assignment("var", "hostKitOptions", assignment =>
+					assignment.MethodCallChain(
+						"builder.Configuration.GetSection",
+						[$"{context.HostKit.OptionsType}.SectionName"],
+						configure: chain =>
+							chain.Method("Get", genericArguments: [context.HostKit.OptionsType]).Postfix("?? new()")
+					)
 				);
 			}
 
 			writer
 				.Comment("Create an instance of the generated host kit and configure it.")
-				.Assignment(
-					context.HostKit.HostKitType,
-					"hostKit",
-					assignment =>
-						assignment.New(
-							context.HostKit.HostKitType,
-							context.HostKit.ShouldGenerateOptions
-								? ["onBuilt", "onConfigured", "hostKitOptions"]
-								: ["onBuilt", "onConfigured"]
-						)
+				.Assignment(context.HostKit.HostKitType, "hostKit", assignment =>
+					assignment.New(
+						context.HostKit.HostKitType,
+						context.HostKit.ShouldGenerateOptions
+							? ["onBuilt", "onConfigured", "hostKitOptions"]
+							: ["onBuilt", "onConfigured"]
+					)
 				);
 
 			writer

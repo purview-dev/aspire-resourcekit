@@ -74,10 +74,15 @@ clean *args:
     dotnet clean {{ solution }} -c {{ build_configuration }} {{ args }}
 
 # Run tests with the specified configuration, defaulting to "Debug"
+#
+# --timeout, --maximum-failed-tests and --results-directory-layout are .NET 11 SDK run-level
+# options: a hung Aspire fixture or a cascading failure stops the whole run instead of waiting for
+# every test application, and each module/TFM gets its own results directory so reports cannot
+# overwrite one another. See docs/wiki/Toolchain.md.
 [group('Build and Test')]
 test filter=default_test_filter *args:
     echo "Running tests for {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} and filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
-    dotnet test {{ solution }} -c {{ build_configuration }} --treenode-filter "{{ filter }}" -- {{ args }}
+    dotnet test {{ solution }} -c {{ build_configuration }} --treenode-filter "{{ filter }}" --timeout 30m --maximum-failed-tests 25 --results-directory-layout per-module --nologo -- {{ args }}
 
 # Run unit tests only
 [group('Build and Test')]

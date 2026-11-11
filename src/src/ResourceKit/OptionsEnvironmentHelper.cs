@@ -37,7 +37,7 @@ static class OptionsEnvironmentHelper
 		TOptions options,
 		string? sectionNameOverride = null,
 		IEnumerable<Action<TOptions>>? overrides = null,
-		IEnumerable<Expression<Func<TOptions, object?>>>? ignores = null
+		IEnumerable<string>? ignorePaths = null
 	)
 	{
 		ArgumentNullException.ThrowIfNull(options);
@@ -60,13 +60,12 @@ static class OptionsEnvironmentHelper
 			}
 		}
 
-		if (ignores is not null)
+		if (ignorePaths is not null)
 		{
-			foreach (var selector in ignores)
+			foreach (var memberPath in ignorePaths)
 			{
-				ArgumentNullException.ThrowIfNull(selector);
-				var path =
-					$"{sectionName}__{OptionsHelper.PathFor(selector).Replace(".", "__", StringComparison.Ordinal)}";
+				ArgumentException.ThrowIfNullOrWhiteSpace(memberPath);
+				var path = $"{sectionName}__{memberPath.Replace(".", "__", StringComparison.Ordinal)}";
 				RemovePath(values, path);
 			}
 		}
@@ -186,7 +185,7 @@ sealed class OptionsEnvironmentBuilder<TOptions>(TOptions options, string? secti
 	: IOptionsEnvironmentBuilder<TOptions>
 {
 	readonly List<Action<TOptions>> _overrides = [];
-	readonly List<Expression<Func<TOptions, object?>>> _ignores = [];
+	readonly List<string> _ignorePaths = [];
 
 	public IOptionsEnvironmentBuilder<TOptions> Override(params Action<TOptions>[] assignments)
 	{
@@ -204,12 +203,22 @@ sealed class OptionsEnvironmentBuilder<TOptions>(TOptions options, string? secti
 		if (selectors.Length == 0)
 			throw new ArgumentException("At least one selector is required.", nameof(selectors));
 
-		_ignores.AddRange(selectors);
+		foreach (var selector in selectors)
+		{
+			ArgumentNullException.ThrowIfNull(selector);
+			_ignorePaths.Add(OptionsHelper.PathFor(selector));
+		}
+
 		return this;
 	}
 
 	public IReadOnlyDictionary<string, string> Build()
 	{
-		return OptionsEnvironmentHelper.BuildEnvironmentVariables(options, sectionNameOverride, _overrides, _ignores);
+		return OptionsEnvironmentHelper.BuildEnvironmentVariables(
+			options,
+			sectionNameOverride,
+			_overrides,
+			_ignorePaths
+		);
 	}
 }

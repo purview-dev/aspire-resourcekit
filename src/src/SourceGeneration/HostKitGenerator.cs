@@ -22,41 +22,35 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 
 		var outputProvider = pipelines.Outputs.Combine(pipelines.Context);
 
-		context.RegisterSourceOutput(
-			outputProvider,
-			static (sourceProductionContext, combined) =>
-			{
-				var (generationModel, generationContext) = combined;
-				if (generationContext.Settings.IsSourceGeneratorDisabled)
-					return;
+		context.RegisterSourceOutput(outputProvider, static (sourceProductionContext, combined) =>
+		{
+			var (generationModel, generationContext) = combined;
+			if (generationContext.Settings.IsSourceGeneratorDisabled)
+				return;
 
-				// If there are any fatal diagnostics, report them and skip generation
-				if (ReportDiagnostics(sourceProductionContext, generationModel))
-					return;
-				if (!generationModel.HasHostKit)
-					return;
+			// If there are any fatal diagnostics, report them and skip generation
+			if (ReportDiagnostics(sourceProductionContext, generationModel))
+				return;
+			if (!generationModel.HasHostKit)
+				return;
 
-				var validResourceKits = generationModel
-					.ResourceKits.AsImmutableArray()
-					.Select(static m => new ResourceKitModelGroup(
-						m.Namespace,
-						EquatableArray<ResourceKitModel>.Create([
-							.. m
-								.Items.AsImmutableArray()
-								.Where(static m => m.ShouldProcess)
-								.Select(static m => m.Value),
-						])
-					))
-					.ToImmutableArray();
+			var validResourceKits = generationModel
+				.ResourceKits.AsImmutableArray()
+				.Select(static m => new ResourceKitModelGroup(
+					m.Namespace,
+					EquatableArray<ResourceKitModel>.Create([
+						.. m.Items.AsImmutableArray().Where(static m => m.ShouldProcess).Select(static m => m.Value),
+					])
+				))
+				.ToImmutableArray();
 
-				var writer = CodeGenEmiiter.Emit(
-					new(generationModel, validResourceKits, generationContext),
-					sourceProductionContext.CancellationToken
-				);
-				var hintName = HintNameHelper.ForHost(generationModel.HostKit.Value.HostKitType.MetadataFullName);
-				sourceProductionContext.AddSource(hintName, writer);
-			}
-		);
+			var writer = CodeGenEmiiter.Emit(
+				new(generationModel, validResourceKits, generationContext),
+				sourceProductionContext.CancellationToken
+			);
+			var hintName = HintNameHelper.ForHost(generationModel.HostKit.Value.HostKitType.MetadataFullName);
+			sourceProductionContext.AddSource(hintName, writer);
+		});
 	}
 
 	static bool ReportDiagnostics(SourceProductionContext sourceProductionContext, KitGenerationModel outputContext)

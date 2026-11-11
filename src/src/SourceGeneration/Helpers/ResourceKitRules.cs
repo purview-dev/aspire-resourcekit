@@ -167,8 +167,8 @@ static class ResourceKitRules
 			hasExplicitBaseType
 			&& TypeHelpers.IsDerivedFromExpectedBase(symbol, TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase);
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
-		var propertyName =
-			matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
+		var propertyName = matchedAttribute.Instance.PropertyName
+			?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
 		var (_, isValidResourceType, declaredProject) = ResolveResourceType(matchedAttribute, symbol);
 
 		if (allAttributes.Length > 1)

@@ -14,19 +14,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `[ResourceDefinition]` (named property or constructor argument), override it from configuration
   (`<HostKit>:Mode`, `<HostKit>:<Resource>:Mode`), and `Build` gates on it before `IsEnabled` and
   `IsResourceEnabled(builder)`, so publish-only and local-development-only resources need no code.
+- **.NET 11 runtime leg** — the package now ships `lib/net11.0` alongside `lib/net10.0`. A .NET 11
+  AppHost resolves the net11.0 asset; .NET 10 consumers keep the floor. `verify-consumers` builds a
+  multi-targeted consumer and asserts both assets and the generated output on both frameworks.
+- **`OptionsHelper.PathFor<TOptions, TValue>`** — a non-boxing selector overload. The existing
+  `object?`-returning overload forces a boxing conversion into the expression tree for value-type
+  members; the generic overload keeps the member in its natural type. `Ignore` now resolves selectors
+  to paths once, at call time, rather than re-walking the expression at `Build()`.
+- **Package validation** — `pack` compares the package with the published `1.1.0` baseline and fails
+  on a removed or changed public API, the way a test fails on a behaviour change.
 
 ### Changed
 
-- **Breaking: .NET 10 is now the minimum.** The runtime targets `net10.0` only — the `net8.0` and
-  `net9.0` legs are removed, so a consuming AppHost must be on .NET 10. This also drops the
-  `Microsoft.Extensions.*` 10.x floor those legs previously forced onto `net8.0` consumers, which was
-  the whole point: a package should not vendor a framework's abstractions to consumers on an older
-  framework. Raising a framework floor requires a **major** version.
+- **Breaking: .NET 10 is now the minimum.** The `net8.0` and `net9.0` legs are removed, so a consuming
+  AppHost must be on .NET 10 or .NET 11; the package ships `lib/net10.0` (the floor) and `lib/net11.0`
+  (the newest leg). Both legs declare the `Microsoft.Extensions.*` 10.x servicing band — the net11.0
+  leg deliberately does not raise a .NET 10 consumer's floor.
+- **.NET 11 GA toolchain** — SDK `11.0.100`, `Purview.BuildSdk` 2.0.0, `Aspire.AppHost.Sdk` 13.6.5,
+  `Purview.SourceGeneratorFramework` 2.0.0, `Purview.Telemetry.SourceGenerator` 5.3.0, TUnit 1.83.0,
+  `Microsoft.Extensions.*` at the 10.0.15 / 10.11.0 servicing band, and SourceLink 11.0.100. The
+  net11.0 leg gets Runtime Async and `MemorySafetyRules=2` from the SDK; `Aspire.Hosting` 13.6.5
+  also takes the security fix the previous pin lacked. The test suite runs on both frameworks, with
+  `--timeout`, `--maximum-failed-tests` and per-module report directories.
 - **Repository guardrails** — `.config/architecture-policy.json` plus
-  `src/tests/Repository.UnitTests/ArchitectureTests.cs` now enforce the dependency direction between the
-  runtime, the Roslyn components and the samples, and `just verify-consumers` packs the package and builds
-  a real consumer against it (one that installs it by `PackageReference` and is generated into, which no
-  test in this repository previously proved).
+  `src/tests/Repository.UnitTests/ArchitectureTests.cs` enforce the dependency direction between the
+  runtime, the Roslyn components and the samples; `just verify-consumers` packs the package and builds
+  a real consumer against it (one that installs it by `PackageReference` and is generated into, which
+  no test in this repository previously proved); and `PackageToolchainTests` fails the build if a
+  `net8.0`/`net9.0` declaration reappears or a `Microsoft.Extensions.*` reference drifts into the
+  11.x band. The decision record for the feature adoption and the union/`closed` assessment is
+  [`docs/wiki/Toolchain.md`](docs/wiki/Toolchain.md).
 - **Agent skill delivery documented correctly** — `README.md` no longer claims the package installs skills
   into a consuming repository on build. That mirror was removed in `Purview.BuildSdk` 1.0.6; the skills CLI
   is the only installer.
@@ -41,7 +58,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **The repository builds without the Aspire CLI installed.** `Example.AppHost` and
   `Example.ManualAppHost` set `AspireUseCliBundle=true`, which makes a *build* require a resolvable CLI
-  bundle: with none present, `Aspire.Hosting.AppHost.targets` runs `dnx aspire.cli@13.6.4 setup` once per
+  bundle: with none present, `Aspire.Hosting.AppHost.targets` runs `dnx aspire.cli@<version> setup` once per
   AppHost, so one solution build restores and extracts the same CLI twice, and the loser dies on the
   locked NuGet cache file with exit code 1. MSBuild reports that only as ASPIRE009 ("Automatic Aspire CLI
   bundle setup failed with exit code 1"), which failed the release pipeline on sources the PR pipeline had

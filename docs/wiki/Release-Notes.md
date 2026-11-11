@@ -8,8 +8,15 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
 ## Next (unreleased)
 
 - **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost
-  must be on `net10.0`, and the package ships a single `lib/net10.0` asset. See
-  [Supported target frameworks](Versioning.md#supported-target-frameworks).
+  must be on `net10.0` or `net11.0`, and the package ships `lib/net10.0` (the floor) and
+  `lib/net11.0` (the newest leg). See
+  [Supported target frameworks](Versioning.md#supported-target-frameworks) and
+  [.NET 11 toolchain and feature adoption](Toolchain.md).
+- **.NET 11 leg and tooling** — the repository builds with the .NET 11 GA SDK, `Purview.BuildSdk` 2.x
+  and TUnit 1.83. The net11.0 leg uses the SDK's Runtime Async and memory-safety opt-ins; the net10.0
+  leg keeps the 10.0.15 `Microsoft.Extensions.*` floor. `OptionsHelper.PathFor<TOptions, TValue>` adds
+  a non-boxing selector overload, and pack validation now compares against the published 1.1.0
+  baseline.
 
 ## 1.0.0
 

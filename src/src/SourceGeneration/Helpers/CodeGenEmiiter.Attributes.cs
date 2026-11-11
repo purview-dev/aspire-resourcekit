@@ -17,9 +17,8 @@ partial class CodeGenEmiiter
 				{
 					attributeBody
 						.XmlSummary("Initializes a new instance of the HostKitAttribute class.")
-						.Constructor(
-							new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute),
-							static ctor => ctor.Comment("Empty")
+						.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute), static ctor =>
+							ctor.Comment("Empty")
 						);
 
 					attributeBody
@@ -158,9 +157,8 @@ partial class CodeGenEmiiter
 			{
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
-					.Constructor(
-						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute),
-						static ctor => ctor.Comment("Empty")
+					.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute), static ctor =>
+						ctor.Comment("Empty")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
@@ -277,9 +275,8 @@ partial class CodeGenEmiiter
 			{
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")
-					.Constructor(
-						new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute),
-						static ctor => ctor.Comment("Empty")
+					.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute), static ctor =>
+						ctor.Comment("Empty")
 					);
 				attributeBody
 					.XmlSummary("Initializes a new instance of the ResourceDefinitionAttribute class.")

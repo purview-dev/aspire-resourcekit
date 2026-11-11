@@ -19,9 +19,9 @@ one resource kit per resource, and a generated extension method that wires them 
 dotnet add package Purview.Aspire.ResourceKit
 ```
 
-Requires **.NET 10**: the package ships a single `lib/net10.0` asset, and the two attributes below are
-generated into the consuming compilation by the bundled source generator — there is no separate
-attribute package to reference.
+Requires **.NET 10** or **.NET 11**: the package ships `lib/net10.0` and `lib/net11.0` assets, and the
+two attributes below are generated into the consuming compilation by the bundled source generator —
+there is no separate attribute package to reference.
 
 ## The shape
 

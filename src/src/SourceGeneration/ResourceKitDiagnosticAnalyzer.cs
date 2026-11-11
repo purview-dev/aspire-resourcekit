@@ -144,8 +144,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			if (matchedAttribute.Attribute is null)
 				continue;
 
-			var propertyName =
-				matchedAttribute.Instance.PropertyName
+			var propertyName = matchedAttribute.Instance.PropertyName
 				?? resourceKit.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes);
 			if (string.IsNullOrWhiteSpace(propertyName))
 				continue;

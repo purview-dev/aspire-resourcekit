@@ -98,6 +98,15 @@ var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions>(f => f.API.Name
 // "API.Name"
 ```
 
+When the selected member is a value type, use the two-type-parameter overload. The `object?`-returning
+overload boxes the value into the expression tree; the generic overload keeps the member in its
+natural type:
+
+```csharp
+var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions, bool>(f => f.API.IsEnabled);
+// "API.IsEnabled"
+```
+
 ## SectionNameFor
 
 Look up the resolved section name for any options type directly:

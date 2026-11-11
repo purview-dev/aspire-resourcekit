@@ -183,8 +183,8 @@ static class SourceGenLibrary
 		var resourceName = matchedAttribute.Instance.Name ?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes);
 		var hasExplicitBaseType = TypeHelpers.HasExplicitBaseType(symbol);
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
-		var propertyName =
-			matchedAttribute.Instance.PropertyName ?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
+		var propertyName = matchedAttribute.Instance.PropertyName
+			?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
 		var (aspireResourceType, _, _) = ResourceKitRules.ResolveResourceType(matchedAttribute, symbol);
 
 		TypeIdentity resourceKitType = new(symbol);

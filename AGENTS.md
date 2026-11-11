@@ -14,9 +14,15 @@ At a high level:
 
 This is a .NET repository centered on Aspire and source generation.
 
-- **.NET 10 is the floor and the only leg**: `src/Versions.props` declares `DefaultTargetFramework`,
-  every project inherits it, and the package ships a single `lib/net10.0` asset. Do not add a
-  multi-targeting leg without giving it its own lowest-compatible `Microsoft.Extensions.*` floor.
+- **.NET 10 is the floor; .NET 11 is the newest leg**: `src/Versions.props` declares
+  `DefaultTargetFramework` (`net10.0`) and `LatestTargetFramework` (`net11.0`).
+  `Purview.BuildSdk` 2.x resolves the build from its `Current` set (`net10.0;net11.0`), and the package
+  ships `lib/net10.0` and `lib/net11.0`. The .NET 10 leg declares the lowest-compatible
+  `Microsoft.Extensions.*` floor; do not raise it to the 11.x band just because the net11.0 leg exists.
+- **.NET 11 opt-ins come from the SDK**: BuildSdk 2.x gives a `net11.0` target Runtime Async
+  (`runtime-async=on`) and `MemorySafetyRules=2` by default. Do not set either by hand, and do not
+  expect a `net10.0` target to compile C# 15 union/closed declarations: the runtime types those
+  features require are not in the .NET 10 framework.
 - The two Roslyn components (`SourceGeneration`, `SourceGeneration.CodeFixes`) target `netstandard2.0`
   by SDK rule — a generator runs inside the compiler and IDE host, not on the consumer's framework.
 - Uses the **Purview DotNet Project SDK** (`Purview.BuildSdk`) for project defaults and conventions.

@@ -347,6 +347,19 @@ public sealed class OptionsHelperTests
 	}
 
 	[Test]
+	public async Task PathFor_GivenValueTypeSelector_ReturnsMemberPathWithoutBoxing()
+	{
+		// Arrange
+		// The two-type-parameter overload is the non-boxing shape: TValue stays int rather than
+		// becoming object?, so the compiler does not insert a boxing conversion into the expression.
+		// Act
+		var path = OptionsHelper.PathFor<SampleStoreOptions, int>(static f => f.Count);
+
+		// Assert
+		await Assert.That(path).IsEqualTo("Count");
+	}
+
+	[Test]
 	public async Task PathFor_GivenInvalidSelector_Throws()
 	{
 		// Arrange
@@ -467,6 +480,23 @@ public sealed class OptionsHelperTests
 		// Assert
 		await Assert.That(envVars["HostKit__Redis__Name"]).IsEqualTo("redis-overridden");
 		await Assert.That(envVars).DoesNotContainKey("HostKit__API__Name");
+	}
+
+	[Test]
+	public async Task Environment_GivenValueTypeIgnore_RemovesValue()
+	{
+		// Arrange
+		HostKitOptions options = new()
+		{
+			Redis = new RedisOptions { Name = "redis-a", IsEnabled = true },
+		};
+
+		// Act
+		var envVars = OptionsHelper.Environment(options).Ignore(static o => o.Redis.IsEnabled).Build();
+
+		// Assert
+		await Assert.That(envVars).DoesNotContainKey("HostKit__Redis__IsEnabled");
+		await Assert.That(envVars["HostKit__Redis__Name"]).IsEqualTo("redis-a");
 	}
 
 	[Test]

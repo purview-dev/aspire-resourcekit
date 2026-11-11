@@ -5,8 +5,9 @@ This package contains the runtime abstractions and source-generator contracts fo
 Use this README when integrating the **`Purview.Aspire.ResourceKit` NuGet package** into your host project.
 
 > [!IMPORTANT]
-> Requires **.NET 10**. The package ships a single `lib/net10.0` asset — there is no `net8.0` or
-> `net9.0` target to fall back to.
+> Requires **.NET 10**. The package ships `lib/net10.0` and `lib/net11.0` assets — there is no
+> `net8.0` or `net9.0` target to fall back to. A .NET 10 AppHost resolves the net10.0 asset; a
+> .NET 11 AppHost resolves the net11.0 asset.
 
 ## Package goals
 
