@@ -113,6 +113,9 @@ and the `.agents/**.*` entry in `.config/purview-build.json` went with it.
 gitignored. This repository's own skills are never installed into it — that would leave two copies to
 drift apart. Read them at their authored path, `skills/<name>/SKILL.md`.
 
+The installed set is maintained with `just skills-update` and checked with `just skills-check`
+(`Justfile.skills.just`); both need a restore first, and neither runs as part of a build.
+
 ```bash
 npx skills add purview-dev/aspire-resourcekit
 ```

@@ -93,6 +93,18 @@ copies would drift. `skills-lock.json` is committed: it pins what this repositor
 npx skills add purview-dev/aspire-resourcekit
 ```
 
+Maintain the installed set through the BuildSdk targets, which run once for the whole solution:
+
+```bash
+just restore          # the targets read the restore graph and never restore on their own
+just skills-update    # re-add every source in skills-lock.json
+just skills-check     # fail if an agent directory other than .agents/skills and .claude/skills exists
+```
+
+`PurviewSkillsAgents` in `src/Directory.Build.props` names the two agents thus allowed; `just skills-fix`
+removes a directory it does not select. These are run on purpose, never from a build, a git hook or a
+CI job that commits.
+
 ## Architecture
 
 The dependency direction between the three layers is a policy, not a diagram:

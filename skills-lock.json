@@ -17,49 +17,61 @@
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-adoption/SKILL.md",
-      "computedHash": ""
+      "computedHash": "5e558c891ea2ca54996cea1732ad84bea83272b1a9cf78a38845f1db5a6b92e3"
     },
     "purview-buildsdk-configuration": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-configuration/SKILL.md",
-      "computedHash": ""
+      "computedHash": "444913aef1ae054c1e0180561baf7a64ec2e5e0b92aa36f3324f20b5363663db"
     },
     "purview-buildsdk-project-detection": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-project-detection/SKILL.md",
-      "computedHash": ""
+      "computedHash": "4437caebe6d9b52169054197841b58911ebee1694c9a6cdc00ce526d489352ac"
     },
     "purview-buildsdk-project-layout": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-project-layout/SKILL.md",
-      "computedHash": ""
+      "computedHash": "5ac9588f2a560cb6c4c28ae4c5b3cf9da1921ca7d2cfac4068287b13b4c71359"
     },
     "purview-buildsdk-repository-review": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-repository-review/SKILL.md",
-      "computedHash": ""
+      "computedHash": "182d6f303eebb3f719a07571891c6b2ed4f727d3e27fa6a29abe42bef6c2347b"
+    },
+    "purview-buildsdk-settings-docs-sync": {
+      "source": "purview-dev/build-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/purview-buildsdk-settings-docs-sync/SKILL.md",
+      "computedHash": "8942afe7ae121b2e2e33f9ee354714edd9664546eba53bfeae5b94b09c44bd8f"
     },
     "purview-buildsdk-skill-installation": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-skill-installation/SKILL.md",
-      "computedHash": ""
+      "computedHash": "8e1dc7c0f499eb742264d5cc293784758c5f0499f849671a0be3353f91f89491"
     },
     "purview-buildsdk-skill-tests": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-skill-tests/SKILL.md",
-      "computedHash": ""
+      "computedHash": "27b3520ced5c5a8009cfb47149f0fc1826246275d3ec2991667e1543b011d657"
+    },
+    "purview-buildsdk-skills-justfile": {
+      "source": "purview-dev/build-sdk",
+      "sourceType": "github",
+      "skillPath": "skills/purview-buildsdk-skills-justfile/SKILL.md",
+      "computedHash": "a41f7bbd28333e7f2e40cadbbdd35a75b2f626d72e53901cbc79c7325ac2e50c"
     },
     "purview-buildsdk-testing": {
       "source": "purview-dev/build-sdk",
       "sourceType": "github",
       "skillPath": "skills/purview-buildsdk-testing/SKILL.md",
-      "computedHash": ""
+      "computedHash": "925e520ec96b4822b66cd384c2137dcb0d21d317d3406a1d7f1e095c7888200e"
     },
     "purview-component-compatibility": {
       "source": "purview-dev/engineering-playbook",
