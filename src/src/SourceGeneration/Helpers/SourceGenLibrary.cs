@@ -114,6 +114,7 @@ static class SourceGenLibrary
 			var hierarchyDiagnostics = ResourceKitRules
 				.EvaluateHierarchy(hierarchyNodes)
 				.Select(finding => ToHierarchyDiagnostic(finding, models))
+				.Concat(EvaluateChildGroupDiagnostics(models))
 				.ToImmutableArray();
 
 			var groupedResourceKits = allKits
@@ -154,6 +155,44 @@ static class SourceGenLibrary
 		var location = model.Location.IsEmpty ? Location.None : model.Location.ToLocation();
 
 		return ReportableDiagnostic.Create(finding.Descriptor, isBlocking: true, location, [.. finding.MessageArgs]);
+	}
+
+	// A warning, not an error: an explicit child group is allowed, but it silently changes visual placement.
+	// A child with no [InGroup] inherits the parent's primary group and never reaches this check.
+	static ImmutableArray<ReportableDiagnostic> EvaluateChildGroupDiagnostics(ImmutableArray<ResourceKitModel> models)
+	{
+		var byType = models
+			.GroupBy(static model => model.ResourceKitType.MetadataFullName, StringComparer.Ordinal)
+			.ToDictionary(static group => group.Key, static group => group.First(), StringComparer.Ordinal);
+
+		List<ReportableDiagnostic> diagnostics = [];
+		foreach (var child in models)
+		{
+			if (!child.HasParent || child.Groups.IsEmpty)
+				continue;
+
+			if (!byType.TryGetValue(child.ParentType.MetadataFullName, out var parent) || parent.Groups.IsEmpty)
+				continue;
+
+			var childGroup = child.Groups[0];
+			var parentGroup = parent.Groups[0];
+			if (childGroup == parentGroup)
+				continue;
+
+			diagnostics.Add(
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.ResourceKitChildGroupDiffersFromParent,
+					isBlocking: false,
+					child.Location.IsEmpty ? Location.None : child.Location.ToLocation(),
+					child.ResourceKitType.Name,
+					childGroup.Name,
+					parent.ResourceKitType.Name,
+					parentGroup.Name
+				)
+			);
+		}
+
+		return [.. diagnostics];
 	}
 
 	static IncrementalValueProvider<

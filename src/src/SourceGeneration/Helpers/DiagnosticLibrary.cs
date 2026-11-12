@@ -250,6 +250,16 @@ static class DiagnosticLibrary
 		isEnabledByDefault: true
 	);
 
+	public static readonly DiagnosticDescriptor ResourceKitChildGroupDiffersFromParent = new(
+		id: "SG0039",
+		title: "Child resource kit uses a different primary group than its parent",
+		messageFormat: "The '{0}' resource kit uses primary group '{1}', but its parent '{2}' uses '{3}'. The child renders in its own group unless an Aspire parent relationship places it under the parent.",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "ResourceKit parentage is lifecycle ownership; group membership is visual placement. A child with no [InGroup] inherits the parent's primary group. An explicit child group overrides that, so a mismatch is easy to miss."
+	);
+
 	public static readonly DiagnosticDescriptor AssignSetsMultiplePropertyPaths = new(
 		id: "SG0020",
 		title: "OptionsHelper.Assign action must set exactly one property path",

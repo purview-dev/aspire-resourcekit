@@ -46,6 +46,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Diagnostics SG0032–SG0038** for self-parenting, parent cycles, unavailable or non-kit parents, child
   property collisions, duplicate child property names, and generated `Parent` member collisions. Invalid
   graphs block generation; manual graphs are rejected at runtime before resource creation.
+- **SG0039** warns when a child's explicit primary group differs from its parent's. The child still builds,
+  but visual placement follows its own group (or an existing Aspire parent chain), which is easy to miss.
 
 ### Changed
 

@@ -58,6 +58,34 @@ public sealed class ResourceKitHierarchyGroupTests
 		await Assert.That(services.Resources).Contains(child);
 		await Assert.That(parent.IsEnabled).IsTrue();
 		await Assert.That(child.IsEnabled).IsTrue();
+
+		// The child renders in its own group, not under the parent's group: ResourceKit parentage is not an
+		// Aspire visual parent relationship.
+		await Assert.That(ParentOf(parent.Resource)).IsSameReferenceAs(data.DashboardResource!.Resource);
+		await Assert.That(ParentOf(child.Resource)).IsSameReferenceAs(services.DashboardResource!.Resource);
+	}
+
+	[Test]
+	public async Task Configure_GivenChildWithAnAspireParentAndAnotherGroup_RendersUnderParentAndLeavesGroupNode()
+	{
+		// Arrange
+		var builder = DistributedApplication.CreateBuilder();
+		HierarchyHostKit host = new();
+		ResourceKitGroup<HierarchyHostKit> data = new("data");
+		ResourceKitGroup<HierarchyHostKit> services = new("services");
+		HierarchyTestKit parent = new(host, "parent", []);
+		HierarchyTestKit child = new(host, parent, "child", [], visualParent: true);
+		host.AddResource(parent, data);
+		host.AddResource(child, services);
+
+		// Act
+		host.Build(builder);
+		host.Configure();
+
+		// Assert — Aspire has one visual parent, so the existing chain wins over the child's group.
+		await Assert.That(ParentOf(child.Resource)).IsSameReferenceAs(parent.Resource);
+		await Assert.That(services.DashboardResource).IsNotNull();
+		await Assert.That(services.Resources).Contains(child);
 	}
 
 	[Test]
@@ -165,11 +193,19 @@ public sealed class ResourceKitHierarchyGroupTests
 	sealed class HierarchyTestKit : ResourceKitBase<HierarchyHostKit, HierarchyResource>
 	{
 		readonly List<string> _events;
+		readonly bool _visualParent;
 
-		public HierarchyTestKit(HierarchyHostKit hostKit, string name, List<string> events, bool enabled = true)
+		public HierarchyTestKit(
+			HierarchyHostKit hostKit,
+			string name,
+			List<string> events,
+			bool enabled = true,
+			bool visualParent = false
+		)
 			: base(hostKit, name)
 		{
 			_events = events;
+			_visualParent = visualParent;
 			IsEnabled = enabled;
 		}
 
@@ -178,9 +214,10 @@ public sealed class ResourceKitHierarchyGroupTests
 			HierarchyTestKit parent,
 			string name,
 			List<string> events,
-			bool enabled = true
+			bool enabled = true,
+			bool visualParent = false
 		)
-			: this(hostKit, name, events, enabled)
+			: this(hostKit, name, events, enabled, visualParent)
 		{
 			ParentKit = parent;
 		}
@@ -191,7 +228,16 @@ public sealed class ResourceKitHierarchyGroupTests
 		{
 			BuildCalled = true;
 			_events.Add($"Build:{Name}");
-			return builder.AddResource(new HierarchyResource(Name));
+
+			var resource = builder.AddResource(new HierarchyResource(Name));
+			if (_visualParent)
+			{
+				resource.Resource.Annotations.Add(
+					new ResourceRelationshipAnnotation(((HierarchyTestKit)ParentKit!).Resource, "Parent")
+				);
+			}
+
+			return resource;
 		}
 	}
 

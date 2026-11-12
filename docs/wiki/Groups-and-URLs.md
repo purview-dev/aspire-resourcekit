@@ -77,6 +77,10 @@ ResourceKit does not add an Aspire visual parent relationship for you. If a chil
 under the parent's resource, add `WithParentRelationship` in `BuildResource`; the group placement rules then
 respect that existing chain. See [Parent and child resource kits](Hierarchies.md).
 
+An explicit child group whose primary group differs from its parent's raises **SG0039** (warning). The
+child still builds, but visual placement follows its own group, or the existing Aspire parent chain when one
+is present. A child with no `[InGroup]` inherits the parent's primary group and does not warn.
+
 ### The dashboard
 
 In run mode, at the end of `Configure` (after every `ConfigureResource`, so a resource added there is never

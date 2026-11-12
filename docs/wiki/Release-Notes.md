@@ -32,6 +32,8 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
 - **Diagnostics SG0032-SG0038** for self-parenting, cycles, unavailable parents, child property collisions,
   duplicate child property names, and generated `Parent` member collisions. Manual graphs are validated at
   runtime before any Aspire resource is created.
+- **SG0039** warns when a child's explicit primary group differs from its parent's, because visual placement
+  follows the child's group (or an existing Aspire parent chain), not the ResourceKit hierarchy.
 
 ## 1.0.0
 

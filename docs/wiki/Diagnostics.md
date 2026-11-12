@@ -51,6 +51,7 @@ exiting the constructor" warning does not apply.
 | SG0036 | Error | The generated child property collides with a member on the parent |
 | SG0037 | Error | Two children of the same parent use the same generated property name |
 | SG0038 | Error | The generated `Parent` member collides with a user-authored member |
+| SG0039 | Warning | A child uses an explicit primary group different from its parent's; visual placement follows the child's group |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
 [Project Resources](Project-Resources.md) for SG0018/SG0019 specifics,

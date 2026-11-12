@@ -1035,6 +1035,11 @@ static class ResourceKitRules
 		var diagnostics = ImmutableArray.CreateBuilder<RuleEvaluation>();
 		var parent = GetParent(symbol);
 
+		// These checks only describe generated members on a *child* kit. A root kit may legitimately be named
+		// ParentKit (property "Parent") and has neither a generated Parent member nor a parent property slot.
+		if (parent is null)
+			return diagnostics.ToImmutable();
+
 		if (GeneratedKitMemberNames.Contains(propertyName) || GeneratedOptionsMemberNames.Contains(propertyName))
 		{
 			diagnostics.Add(
@@ -1042,16 +1047,11 @@ static class ResourceKitRules
 					DiagnosticLibrary.ResourceKitChildPropertyCollision,
 					IsBlocking: true,
 					GetLocation(symbol),
-					[propertyName, parent?.Name ?? symbol.Name]
+					[propertyName, parent.Name]
 				)
 			);
 		}
-		else if (
-			parent is not null
-			&& parent
-				.GetMembers(propertyName)
-				.Any(member => !member.IsImplicitlyDeclared && GeneratedUserMember(member))
-		)
+		else if (parent.GetMembers(propertyName).Any(static member => !member.IsImplicitlyDeclared))
 		{
 			diagnostics.Add(
 				new(
@@ -1077,11 +1077,6 @@ static class ResourceKitRules
 
 		return diagnostics.ToImmutable();
 	}
-
-	static bool GeneratedUserMember(ISymbol member) =>
-		member.DeclaringSyntaxReferences.Any(reference =>
-			reference.SyntaxTree.FilePath.EndsWith(".cs", StringComparison.Ordinal)
-		);
 
 	/// <summary>
 	/// Evaluates <c>SG0017</c> for every <c>IResourceBuilder&lt;T&gt;</c> property that is never assigned in

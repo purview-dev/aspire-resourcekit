@@ -444,6 +444,114 @@ public sealed class ResourceKitHierarchyGenerationTests : ResourceKitSourceGener
 	}
 
 	[Test]
+	public async Task Generate_GivenChildInADifferentPrimaryGroup_WarnsAboutVisualPlacement()
+	{
+		// Arrange
+		var source = $$"""
+			namespace Testing;
+
+			[HostKit]
+			partial class TestingHostKit;
+
+			[ResourceGroup]
+			sealed partial class DataGroup;
+
+			[ResourceGroup]
+			sealed partial class ServicesGroup;
+
+			[ResourceDefinition<DefaultAspireResource>("parent")]
+			[InGroup<DataGroup>]
+			sealed partial class ParentKit
+			{
+				{{Kit}}
+			}
+
+			[ResourceDefinition<DefaultAspireResource>("child", Parent = typeof(ParentKit))]
+			[InGroup<ServicesGroup>]
+			sealed partial class ChildKit
+			{
+				{{Kit}}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, CancellationToken.None);
+
+		// Assert — a warning, so generation still succeeds.
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ResourceKitChildGroupDiffersFromParent);
+		await Assert.That(result).HasNoErrorDiagnostics();
+	}
+
+	[Test]
+	public async Task Generate_GivenChildInTheParentsPrimaryGroup_DoesNotWarnAboutVisualPlacement()
+	{
+		// Arrange
+		var source = $$"""
+			namespace Testing;
+
+			[HostKit]
+			partial class TestingHostKit;
+
+			[ResourceGroup]
+			sealed partial class DataGroup;
+
+			[ResourceDefinition<DefaultAspireResource>("parent")]
+			[InGroup<DataGroup>]
+			sealed partial class ParentKit
+			{
+				{{Kit}}
+			}
+
+			[ResourceDefinition<DefaultAspireResource>("child", Parent = typeof(ParentKit))]
+			[InGroup<DataGroup>]
+			sealed partial class ChildKit
+			{
+				{{Kit}}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, CancellationToken.None);
+
+		// Assert
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourceKitChildGroupDiffersFromParent);
+	}
+
+	[Test]
+	public async Task Generate_GivenChildWithoutAGroup_DoesNotWarnBecauseItInheritsTheParentsGroup()
+	{
+		// Arrange
+		var source = $$"""
+			namespace Testing;
+
+			[HostKit]
+			partial class TestingHostKit;
+
+			[ResourceGroup]
+			sealed partial class DataGroup;
+
+			[ResourceDefinition<DefaultAspireResource>("parent")]
+			[InGroup<DataGroup>]
+			sealed partial class ParentKit
+			{
+				{{Kit}}
+			}
+
+			[ResourceDefinition<DefaultAspireResource>("child", Parent = typeof(ParentKit))]
+			sealed partial class ChildKit
+			{
+				{{Kit}}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, CancellationToken.None);
+
+		// Assert
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ResourceKitChildGroupDiffersFromParent);
+	}
+
+	[Test]
 	public async Task Generate_GivenSelfParent_ReportsCannotParentItself()
 	{
 		// Arrange

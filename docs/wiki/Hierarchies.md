@@ -237,6 +237,17 @@ A child with no `[InGroup]` inherits its parent's **primary** group for membersh
 A child with an explicit `[InGroup]` keeps it instead. Grouping never changes build ordering, and a disabled
 parent still disables descendants even when a child's own group is enabled.
 
+An explicit child group whose primary group differs from the parent's produces **SG0039**, a warning. The
+child still builds; the warning exists because the visual result may not be what the declaration suggests:
+
+- With no Aspire parent relationship, the child renders in **its own** group, not under the parent.
+- With `WithParentRelationship(Parent.ResourceBuilder)`, Aspire has one visual parent, so the child renders
+  under the parent and its declared group is **not** where it appears. The child's group node can still be
+  created because the group has a member. Use the same group, or accept that placement explicitly.
+
+SG0039 does not fire when the child declares no group (it inherits) or when the primary groups already
+match.
+
 ResourceKit does **not** add an Aspire visual parent relationship automatically. If you want a child's
 resource to render under the parent's resource, add it explicitly in `BuildResource`:
 

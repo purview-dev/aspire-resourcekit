@@ -20,3 +20,4 @@ SG0035 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Parent resource ki
 SG0036 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Generated child property collides with a member on the parent
 SG0037 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Duplicate child property name
 SG0038 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Generated Parent member collides with a user-authored member
+SG0039 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | Child resource kit uses a different primary group than its parent

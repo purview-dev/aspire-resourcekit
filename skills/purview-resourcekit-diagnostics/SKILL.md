@@ -62,6 +62,7 @@ assigned.
 | `SG0036` | Error | The generated child property collides with a member on the parent. |
 | `SG0037` | Error | Two children of one parent use the same generated property name. |
 | `SG0038` | Error | The generated `Parent` member collides with a user-authored member. |
+| `SG0039` | Warning | A child's explicit primary group differs from its parent's; visual placement follows the child's group. |
 
 ## Execution-only versus generation-blocking
 
@@ -150,6 +151,11 @@ sealed partial class SqlServerKit
 
 Manual graphs are validated at runtime before any Aspire resource is created; a self-parent, cycle, missing
 parent or foreign-host parent throws `InvalidOperationException` even when the generator was not involved.
+
+`SG0039` is the group/hierarchy warning: a child with no `[InGroup]` inherits its parent's primary group, but
+an explicit child group overrides that. ResourceKit parentage does not add an Aspire visual parent, so the
+child then renders in its own group; if an Aspire parent relationship exists, it renders under the parent and
+the child's group is not where it appears. Use the same primary group or accept the placement deliberately.
 
 ### `SG0020` — one property path per `Assign` action
 
