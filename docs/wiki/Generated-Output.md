@@ -30,6 +30,27 @@ public Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources.ExampleAPI
 }
 ```
 
+### Child properties
+
+A kit that declares `Parent = typeof(TParentKit)` gains a typed `Parent` property, and its parent gains a
+typed child property with an assembly-internal setter:
+
+```csharp
+internal global::Example.PostgresKit Postgres { get; private set; }
+internal global::Example.PostgresDatabaseKit Database { get; internal set; }
+
+internal global::Example.PostgresKit Parent { get; }
+```
+
+The generated host constructs the parent first, then assigns the child through the parent:
+
+```csharp
+Postgres.Database = new(this, Postgres, Options.Postgres.Database);
+AddResource(Postgres.Database);
+```
+
+Root kits are unchanged. See [Parent and child resource kits](Hierarchies.md).
+
 ## Generated host Build/Configure
 
 `Build` instantiates each resource kit from its options, registers it with the base class, invokes the
@@ -97,6 +118,18 @@ public sealed partial class ExampleHostKitOptions
         global::Purview.Aspire.ResourceKit.ResourceKitMode.All;
 
     public ExampleAPIKitOptions ExampleAPI { get; init; } = new();
+}
+```
+
+Only roots are host-level options. A child kit's options are a property on its parent's options, mirroring
+the ownership hierarchy:
+
+```csharp
+public sealed partial class PostgresKitOptions
+{
+    public bool IsEnabled { get; set; } = true;
+
+    public PostgresDatabaseKit.PostgresDatabaseKitOptions Database { get; init; } = new();
 }
 ```
 

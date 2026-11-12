@@ -70,6 +70,12 @@ public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example
 `SharedType.PerTestSession` matters: starting an AppHost per test is slow enough to change how you
 write the suite.
 
+For a hierarchy, assert the parent and child Aspire resources directly instead of only the generated
+property shape: build the real `DistributedApplication` model, check the child resource is created through
+`Parent.ResourceBuilder`, and check that a disabled parent removes the whole subtree. `ResourceKit.UnitTests`
+does this for PostgreSQL, VNET/subnets, storage and Service Bus without provisioning infrastructure. The
+child's options path is nested (`HostKit:Parent:Child:IsEnabled`).
+
 ## Overriding options from a test
 
 The generated extension binds host options from configuration, so a fixture can pass command-line

@@ -63,6 +63,20 @@ ExampleHostKit:Groups:Platform:Mode=Publish       # every group under Platform i
 ExampleHostKit:Groups:Data:ShowInDashboard=false  # data's kits move up to the platform node
 ```
 
+### Parent and child kits in groups
+
+A child kit with no `[InGroup]` inherits its ResourceKit parent's **primary** group when the host seals its
+resources. A child with an explicit `[InGroup]` keeps it instead. The parent's group is registered by the
+parent, so the child's registration order does not matter.
+
+Permission to build is the intersection of every gate: the child's own groups, the parent's groups, the
+host mode, and the parent/child hierarchy. A disabled parent disables descendants even when a child's own
+group is enabled. Group placement never changes the parent-before-child build order.
+
+ResourceKit does not add an Aspire visual parent relationship for you. If a child's resource should render
+under the parent's resource, add `WithParentRelationship` in `BuildResource`; the group placement rules then
+respect that existing chain. See [Parent and child resource kits](Hierarchies.md).
+
 ### The dashboard
 
 In run mode, at the end of `Configure` (after every `ConfigureResource`, so a resource added there is never

@@ -43,6 +43,11 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			DiagnosticLibrary.MultipleResourceGroupParents,
 			DiagnosticLibrary.ResourceGroupCannotBeGeneric,
 			DiagnosticLibrary.ResourceGroupCannotBeResourceKit,
+			DiagnosticLibrary.ResourceKitCannotParentItself,
+			DiagnosticLibrary.ResourceKitParentCycle,
+			DiagnosticLibrary.ResourceKitParentNotResourceKit,
+			DiagnosticLibrary.ResourceKitParentUnavailable,
+			DiagnosticLibrary.DuplicateResourceKitChildPropertyName,
 		];
 
 	public override void Initialize(AnalysisContext context)
@@ -159,9 +164,16 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			);
 		}
 
+		ReportHierarchyRules(context, resourceKitArray);
+
+		// Only roots are host properties. A child property is scoped to its parent, and SG0037 owns duplicates
+		// inside that scope.
 		Dictionary<string, int> seenPropertyNames = [with(StringComparer.Ordinal)];
 		foreach (var resourceKit in resourceKitArray)
 		{
+			if (ResourceKitRules.GetParent(resourceKit) is not null)
+				continue;
+
 			var allAttributes = ResourceDefinitionAttributeData.AllAttributeData(resourceKit).ToArray();
 			var matchedAttribute = allAttributes.FirstOrDefault();
 			if (matchedAttribute.Attribute is null)
@@ -184,6 +196,48 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 					Location.None,
 					duplicatePropertyName.Key
 				)
+			);
+		}
+	}
+
+	static void ReportHierarchyRules(CompilationAnalysisContext context, INamedTypeSymbol[] resourceKitArray)
+	{
+		var ordered = resourceKitArray
+			.OrderBy(static symbol => new TypeIdentity(symbol).MetadataFullName, StringComparer.Ordinal)
+			.ToArray();
+
+		var nodes = ordered
+			.Select(static symbol =>
+			{
+				var matched = ResourceDefinitionAttributeData.AllAttributeData(symbol.GetAttributes()).FirstOrDefault();
+				var propertyName = matched.Instance.PropertyName
+					?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)
+					?? symbol.Name;
+				var parent = ResourceKitRules.GetParent(symbol);
+
+				return new ResourceKitRules.HierarchyNode(
+					new TypeIdentity(symbol),
+					parent is null ? TypeIdentity.Empty : new TypeIdentity(parent),
+					symbol.Name,
+					propertyName
+				);
+			})
+			.ToImmutableArray();
+
+		foreach (var finding in ResourceKitRules.EvaluateHierarchy(nodes))
+		{
+			var symbol = ordered[finding.NodeIndex];
+
+			// SG0034 already explains a parent type that is not a resource kit; do not also call it unavailable.
+			if (finding.Descriptor == DiagnosticLibrary.ResourceKitParentUnavailable)
+			{
+				var parent = ResourceKitRules.GetParent(symbol);
+				if (parent is not null && !ResourceKitRules.HasResourceDefinitionAttribute(parent))
+					continue;
+			}
+
+			context.ReportDiagnostic(
+				Diagnostic.Create(finding.Descriptor, GetLocation(symbol) ?? Location.None, [.. finding.MessageArgs])
 			);
 		}
 	}

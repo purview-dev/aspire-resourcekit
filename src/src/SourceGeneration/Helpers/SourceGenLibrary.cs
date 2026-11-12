@@ -94,8 +94,29 @@ static class SourceGenLibrary
 	> CombineResourceDefinitionsPipeline() =>
 		static (outputContext, resourceKits, cancellationToken) =>
 		{
-			var groupedResourceKits = resourceKits
+			cancellationToken.ThrowIfCancellationRequested();
+
+			var allKits = resourceKits
 				.Where(static r => !r.IsEmpty)
+				.OrderBy(static r => r.Value.ResourceKitType.MetadataFullName, StringComparer.Ordinal)
+				.ToArray();
+
+			var models = allKits.Select(static r => r.Value).ToImmutableArray();
+			var hierarchyNodes = models
+				.Select(static model => new ResourceKitRules.HierarchyNode(
+					model.ResourceKitType,
+					model.ParentType,
+					model.ResourceKitType.Name,
+					model.PropertyName
+				))
+				.ToImmutableArray();
+
+			var hierarchyDiagnostics = ResourceKitRules
+				.EvaluateHierarchy(hierarchyNodes)
+				.Select(finding => ToHierarchyDiagnostic(finding, models))
+				.ToImmutableArray();
+
+			var groupedResourceKits = allKits
 				.GroupBy(static r =>
 				{
 					if (r.Value.ResourceKitType.IsGlobalNamespace)
@@ -111,13 +132,29 @@ static class SourceGenLibrary
 				))
 				.ToArray();
 
-			cancellationToken.ThrowIfCancellationRequested();
+			var order = ResourceKitHierarchyOrdering.ParentsFirst(
+				allKits.Where(static r => r.ShouldProcess).Select(static r => r.Value),
+				cancellationToken
+			);
 
 			return outputContext with
 			{
 				ResourceKits = EquatableArray<ResourceKitGroup>.Create(groupedResourceKits),
+				HierarchyDiagnostics = EquatableArray<ReportableDiagnostic>.Create([.. hierarchyDiagnostics]),
+				HierarchyOrder = order,
 			};
 		};
+
+	static ReportableDiagnostic ToHierarchyDiagnostic(
+		ResourceKitRules.HierarchyFinding finding,
+		ImmutableArray<ResourceKitModel> models
+	)
+	{
+		var model = models[finding.NodeIndex];
+		var location = model.Location.IsEmpty ? Location.None : model.Location.ToLocation();
+
+		return ReportableDiagnostic.Create(finding.Descriptor, isBlocking: true, location, [.. finding.MessageArgs]);
+	}
 
 	static IncrementalValueProvider<
 		EquatableArray<GeneratorResult<ResourceKitModel>>
@@ -229,12 +266,16 @@ static class SourceGenLibrary
 		var propertyName = matchedAttribute.Instance.PropertyName
 			?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
 		var (aspireResourceType, _, _) = ResourceKitRules.ResolveResourceType(matchedAttribute, symbol);
+		var parent = ResourceKitRules.GetParent(symbol);
 
 		TypeIdentity resourceKitType = new(symbol);
 		var optionsType = resourceKitType.Nested(symbol.Name + TypeLibraryGenerator.OptionsBaseClassSuffix);
 
 		var diagnostics = ResourceKitRules
 			.EvaluateResourceKit(symbol, context.SemanticModel.Compilation, cancellationToken)
+			.Concat(
+				ResourceKitRules.EvaluateGeneratedMemberCollisions(symbol, propertyName, resourceName ?? symbol.Name)
+			)
 			.Select(static rule => rule.ToDiagnosticInfo())
 			.ToImmutableArray();
 
@@ -243,6 +284,7 @@ static class SourceGenLibrary
 				ResourceKitType: resourceKitType,
 				OptionsType: optionsType,
 				AspireResourceType: aspireResourceType,
+				ParentType: parent is null ? TypeIdentity.Empty : new(parent),
 				Accessibility: symbol.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
 				PropertyName: propertyName,
 				ResourceName: resourceName ?? "<unknown>",
@@ -251,7 +293,10 @@ static class SourceGenLibrary
 				Groups: EquatableArray<TypeIdentity>.Create([
 					.. ResourceKitRules.GetGroups(symbol).Select(static g => new TypeIdentity(g)),
 				]),
-				Urls: GetUrlModels(symbol)
+				Urls: GetUrlModels(symbol),
+				Location: SourceLocationModel.From(
+					symbol.Locations.FirstOrDefault(static location => location.IsInSource)
+				)
 			),
 			diagnostics
 		);

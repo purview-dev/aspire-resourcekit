@@ -24,6 +24,14 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   options. A relative URL adds one link for one endpoint, instead of rewriting every endpoint URL as
   `WithUrl("/path")` does.
 - **Diagnostics SG0021-SG0031** for groups and URLs. A group can never become its own ancestor or member.
+- **Parent and child resource kits** (issue #57). `Parent = typeof(TParentKit)` gives the child a typed
+  `Parent`, the parent a typed child property, parent-before-child build ordering, inherited enablement, and
+  nested options (`<HostKit>:<Parent>:<Child>`). VNET/subnets, SQL server/database, Service Bus and storage
+  account/container hierarchies are supported without a second composition framework. See
+  [Parent and child resource kits](Hierarchies.md).
+- **Diagnostics SG0032-SG0038** for self-parenting, cycles, unavailable parents, child property collisions,
+  duplicate child property names, and generated `Parent` member collisions. Manual graphs are validated at
+  runtime before any Aspire resource is created.
 
 ## 1.0.0
 

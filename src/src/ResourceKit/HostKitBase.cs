@@ -21,15 +21,21 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	[
 		with(ReferenceEqualityComparer.Instance),
 	];
+
+	Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> _parents = new(ReferenceEqualityComparer.Instance);
+	ImmutableArray<IResourceKit<THostKit>> _orderedResources = [];
 	bool _resourcesSealed;
 
 	// Held from Build to Configure, which adds the group dashboard nodes once and then releases it.
 	IDistributedApplicationBuilder? _builder;
 
 	/// <summary>
-	/// Gets the resources managed by this host kit.
+	/// Gets the resources managed by this host kit, in registration order.
 	/// </summary>
-	/// <remarks>The resources will be empty until <see cref="SealResources"/> is called.</remarks>
+	/// <remarks>
+	/// The resources will be empty until <see cref="SealResources"/> is called. Build and Configure use a
+	/// topologically ordered view of this list, so a parent always precedes its descendants.
+	/// </remarks>
 	protected ImmutableArray<IResourceKit<THostKit>> Resources { get; private set; } = [];
 
 	/// <summary>
@@ -62,7 +68,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	/// <param name="groups">
 	/// The groups the resource belongs to. The first is its primary group, which decides where the resource is
 	/// shown in the dashboard. Groups, and their ancestors, are registered with the host kit if they are not
-	/// already.
+	/// already. A child that declares no groups inherits its parent's primary group when it is sealed.
 	/// </param>
 	/// <exception cref="InvalidOperationException">Thrown when resources have been sealed.</exception>
 	public void AddResource(IResourceKit<THostKit> resource, params ReadOnlySpan<ResourceKitGroup<THostKit>> groups)
@@ -76,14 +82,8 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		{
 			ArgumentNullException.ThrowIfNull(group, nameof(groups));
 
-			AddGroup(group);
-			group.AddMember(resource);
-
-			if (!_memberships.TryGetValue(resource, out var memberships))
-				_memberships[resource] = memberships = [];
-
-			if (!memberships.Contains(group))
-				memberships.Add(group);
+			AddGroupCore(group);
+			AddMembershipCore(resource, group);
 		}
 	}
 
@@ -92,8 +92,9 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	/// </summary>
 	/// <param name="group">The group to register.</param>
 	/// <remarks>
-	/// Only needed for a group no resource is added to; <see cref="AddResource(IResourceKit{THostKit}, ReadOnlySpan{ResourceKitGroup{THostKit}})"/>
-	/// registers the groups it is given.
+	/// Only needed for a group no resource is added to;
+	/// <see cref="AddResource(IResourceKit{THostKit}, ReadOnlySpan{ResourceKitGroup{THostKit}})"/> registers the
+	/// groups it is given.
 	/// </remarks>
 	/// <exception cref="InvalidOperationException">Thrown when resources have been sealed.</exception>
 	public void AddGroup(ResourceKitGroup<THostKit> group)
@@ -101,6 +102,11 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		ThrowIfSealed();
 		ArgumentNullException.ThrowIfNull(group);
 
+		AddGroupCore(group);
+	}
+
+	void AddGroupCore(ResourceKitGroup<THostKit> group)
+	{
 		// Stops at the first ancestor already registered, so each group is visited once however groups arrive.
 		for (var current = group; current is not null; current = current.Parent)
 		{
@@ -109,6 +115,17 @@ public abstract class HostKitBase<THostKit> : IHostKit
 
 			_groups.Add(current);
 		}
+	}
+
+	void AddMembershipCore(IResourceKit<THostKit> resource, ResourceKitGroup<THostKit> group)
+	{
+		if (!_memberships.TryGetValue(resource, out var memberships))
+			_memberships[resource] = memberships = [];
+
+		if (!memberships.Contains(group))
+			memberships.Add(group);
+
+		group.AddMember(resource);
 	}
 
 	/// <summary>
@@ -136,9 +153,175 @@ public abstract class HostKitBase<THostKit> : IHostKit
 
 		_resourcesSealed = true;
 		Resources = [.. _resources];
+
+		(_orderedResources, _parents) = BuildResourceGraph(Resources);
+		InheritGroupMemberships();
 		ResourceGroups = [.. _groups.OrderBy(static g => g.Depth)];
 
 		return true;
+	}
+
+	/// <summary>
+	/// Validates the ownership graph and returns a stable parent-before-child order.
+	/// </summary>
+	/// <remarks>
+	/// Every walk is iterative, so a deep hierarchy cannot exhaust the stack, and validation happens before any
+	/// Aspire resource is created.
+	/// </remarks>
+	(
+		ImmutableArray<IResourceKit<THostKit>> Ordered,
+		Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> Parents
+	) BuildResourceGraph(ImmutableArray<IResourceKit<THostKit>> resources)
+	{
+		Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> parents = [with(ReferenceEqualityComparer.Instance)];
+		HashSet<IResourceKit<THostKit>> registered = [with(ReferenceEqualityComparer.Instance)];
+		var host = this as THostKit;
+
+		foreach (var resource in resources)
+		{
+			ArgumentNullException.ThrowIfNull(resource);
+
+			if (!registered.Add(resource))
+				throw new InvalidOperationException(
+					$"The '{resource.Name}' resource kit is registered with the host kit more than once."
+				);
+
+			if (host is not null && !ReferenceEquals(resource.HostKit, host))
+				throw new InvalidOperationException(
+					$"The '{resource.Name}' resource kit belongs to a different host kit and cannot be composed by this one."
+				);
+
+			if (resource.ParentKit is { } parent)
+			{
+				if (ReferenceEquals(parent, resource))
+					throw new InvalidOperationException(
+						$"The '{resource.Name}' resource kit cannot be its own parent."
+					);
+
+				if (!ReferenceEquals(parent.HostKit, resource.HostKit))
+					throw new InvalidOperationException(
+						$"The '{resource.Name}' resource kit has a parent in a different host kit. Parent and child must belong to the same composition."
+					);
+
+				parents[resource] = parent;
+			}
+		}
+
+		foreach (var (resource, parent) in parents)
+		{
+			if (!registered.Contains(parent))
+				throw new InvalidOperationException(
+					$"The '{resource.Name}' resource kit declares '{parent.Name}' as its parent, but that kit is not registered with this host kit."
+				);
+		}
+
+		ValidateNoCycles(resources, parents);
+		var ordered = OrderParentsFirst(resources, parents);
+
+		return (ordered, parents);
+	}
+
+	static void ValidateNoCycles(
+		ImmutableArray<IResourceKit<THostKit>> resources,
+		Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> parents
+	)
+	{
+		Dictionary<IResourceKit<THostKit>, int> states = [with(ReferenceEqualityComparer.Instance)];
+
+		foreach (var start in resources)
+		{
+			if (states.TryGetValue(start, out var startState) && startState != 0)
+				continue;
+
+			List<IResourceKit<THostKit>> path = [];
+			var current = start;
+			while (current is not null && (!states.TryGetValue(current, out var state) || state == 0))
+			{
+				states[current] = 1;
+				path.Add(current);
+				current = parents.TryGetValue(current, out var parent) ? parent : null;
+			}
+
+			if (current is not null && states[current] == 1)
+			{
+				var cycleStart = path.FindIndex(node => ReferenceEquals(node, current));
+				var cycle = path.Skip(cycleStart).ToArray();
+				var description = string.Join(" -> ", cycle.Select(static kit => kit.Name));
+				throw new InvalidOperationException(
+					$"Resource kits form a parent cycle: {description} -> {cycle[0].Name}."
+				);
+			}
+
+			foreach (var node in path)
+				states[node] = 2;
+		}
+	}
+
+	ImmutableArray<IResourceKit<THostKit>> OrderParentsFirst(
+		ImmutableArray<IResourceKit<THostKit>> resources,
+		Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> parents
+	)
+	{
+		Dictionary<IResourceKit<THostKit>, int> registrationIndex = [with(ReferenceEqualityComparer.Instance)];
+		Dictionary<IResourceKit<THostKit>, List<IResourceKit<THostKit>>> children =
+		[
+			with(ReferenceEqualityComparer.Instance),
+		];
+
+		for (var index = 0; index < resources.Length; index++)
+			registrationIndex[resources[index]] = index;
+
+		foreach (var (child, parent) in parents)
+		{
+			if (!children.TryGetValue(parent, out var siblings))
+				children[parent] = siblings = [];
+
+			siblings.Add(child);
+		}
+
+		PriorityQueue<IResourceKit<THostKit>, int> ready = new();
+		foreach (var resource in resources)
+		{
+			if (!parents.ContainsKey(resource))
+				ready.Enqueue(resource, registrationIndex[resource]);
+		}
+
+		var ordered = ImmutableArray.CreateBuilder<IResourceKit<THostKit>>(resources.Length);
+
+		while (ready.TryDequeue(out var resource, out _))
+		{
+			ordered.Add(resource);
+
+			if (!children.TryGetValue(resource, out var siblings))
+				continue;
+
+			foreach (var child in siblings)
+				ready.Enqueue(child, registrationIndex[child]);
+		}
+
+		if (ordered.Count != resources.Length)
+			throw new InvalidOperationException("The resource kit ownership graph is not acyclic.");
+
+		return ordered.ToImmutable();
+	}
+
+	void InheritGroupMemberships()
+	{
+		// Ordered parents first, so a grandchild inherits the membership its parent inherited.
+		foreach (var resource in _orderedResources)
+		{
+			if (_memberships.ContainsKey(resource))
+				continue;
+
+			if (!_parents.TryGetValue(resource, out var parent))
+				continue;
+
+			var parentGroups = GetGroups(parent);
+			if (parentGroups.Count == 0)
+				continue;
+
+			AddMembershipCore(resource, parentGroups[0]);
+		}
 	}
 
 	/// <inheritdoc/>
@@ -151,10 +334,24 @@ public abstract class HostKitBase<THostKit> : IHostKit
 
 		var modeEnabled = Mode.IsEnabledFor(builder);
 
-		foreach (var resource in Resources)
+		foreach (var resource in _orderedResources)
 		{
-			if (!modeEnabled || !GetGroups(resource).All(g => g.IsEnabledFor(builder)))
+			var ancestorsEnabled = true;
+			if (_parents.TryGetValue(resource, out var parent))
+			{
+				ancestorsEnabled = parent is IResourceKitGating gating ? gating.EffectiveIsEnabled : parent.IsEnabled;
+			}
+
+			var groupsEnabled = GetGroups(resource).All(group => group.IsEnabledFor(builder));
+
+			if (resource is IResourceKitGating resourceGating)
+			{
+				resourceGating.ApplyGates(modeEnabled, groupsEnabled, ancestorsEnabled);
+			}
+			else if (!modeEnabled || !groupsEnabled || !ancestorsEnabled)
+			{
 				resource.IsEnabled = false;
+			}
 
 			resource.Build(builder);
 		}
@@ -170,7 +367,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	/// </remarks>
 	public virtual void Configure()
 	{
-		foreach (var resource in Resources)
+		foreach (var resource in _orderedResources)
 			resource.Configure();
 
 		if (_builder is not null)
@@ -257,7 +454,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	{
 		List<(IResource Resource, IResourceBuilder<ResourceKitGroupResource> Node)> placements = [];
 		HashSet<IResource> kitResources = new(ReferenceEqualityComparer.Instance);
-		foreach (var resource in Resources)
+		foreach (var resource in _orderedResources)
 		{
 			if (!resource.IsEnabled || resource is not IResourceBuilder<IResource> resourceBuilder)
 				continue;

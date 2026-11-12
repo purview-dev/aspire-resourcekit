@@ -25,8 +25,15 @@
 		<PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="$(AspireVersion)" />
+		<PackageVersion Include="Aspire.Hosting.Azure.Network" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
+		<!--
+			Example/test-only: the hierarchy acceptance scenario builds real VNET/subnet and Service Bus models
+			with the installed Aspire surface (see issue #57). Keep these at AspireVersion; do not let them
+			raise the consumer-visible Aspire floor.
+		-->
+		<PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="$(AspireVersion)" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />

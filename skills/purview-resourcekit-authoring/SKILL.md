@@ -4,7 +4,8 @@ description: >-
   Use when composing an Aspire AppHost with Purview.Aspire.ResourceKit - declaring a [HostKit] and
   [ResourceDefinition] resource kits, choosing the generic or non-generic attribute style, the
   Build/BuildResource and Configure/ConfigureResource lifecycle, project resources through
-  AddProject, grouping kits with [ResourceGroup]/[InGroup<TGroup>], named dashboard URLs with
+  AddProject, parent/child kits with Parent = typeof(TParentKit) and inherited enablement, grouping
+  kits with [ResourceGroup]/[InGroup<TGroup>], named dashboard URLs with
   [ResourceUrl]/[EndpointUrl], and registering the generated AddAspireResourceKit extension.
 metadata:
   product: Purview.Aspire.ResourceKit
@@ -68,8 +69,9 @@ need more. Every participating class must be `partial` (`SG0001`).
 | Argument | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `Name` | `string?` | derived from the class name, suffix trimmed | the logical Aspire resource name |
-| `PropertyName` | `string?` | derived from the class name | the generated host property name; must be a valid C# identifier (`SG0008`) |
+| `PropertyName` | `string?` | derived from the class name | the generated host or parent property name; must be a valid C# identifier (`SG0008`) |
 | `Mode` | `ResourceKitMode` | `All` | execution mode for this resource |
+| `Parent` | `Type?` | `null` | the owning resource kit: `Parent = typeof(TParentKit)` |
 | `AspireResourceType` | generic type argument | `null` | the Aspire `IResource` type — generic style only |
 
 `Mode` accepts a named property or a constructor argument on both attributes, and configuration can
@@ -126,6 +128,47 @@ An attributed class must not declare a parameterised constructor or an executabl
 (`SG0012`). The generator supplies the wiring — a resource kit's primary constructor receives the
 host kit and its options.
 
+## Parent and child kits
+
+`Parent = typeof(TParentKit)` turns a kit into a child. The generator emits a typed `Parent` property on the
+child and a typed child property on the parent, and constructs parents before children:
+
+```csharp
+[ResourceDefinition<AzurePostgresFlexibleServerResource>("postgres")]
+sealed partial class PostgresKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            builder.AddAzurePostgresFlexibleServer(Name);
+}
+
+[ResourceDefinition<AzurePostgresFlexibleServerDatabaseResource>(
+    "db", PropertyName = "Database", Parent = typeof(PostgresKit))]
+sealed partial class PostgresDatabaseKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.ResourceBuilder.AddDatabase(Name);
+}
+```
+
+- The child reads `Parent.ResourceBuilder`; the parent has already finished `BuildResource`.
+- `hostKit.Postgres.Database` is the strongly typed child; `Parent` is the strongly typed parent.
+- One parent per kit, any number of children, any depth.
+- A disabled parent disables every descendant, and a disabled ancestor never invokes a descendant's
+  `IsResourceEnabled` hook. Siblings are independent.
+- Child options nest under the parent (`ShopHostKit:Postgres:Database:IsEnabled`).
+- A child with no `[InGroup]` inherits its parent's **primary** group. Grouping never changes build order.
+- ResourceKit parentage is composition ownership, not a general dependency, and it does **not** create an
+  Aspire visual parent relationship. Add `WithParentRelationship(Parent.ResourceBuilder)` yourself when you
+  want that.
+- Manual kits use `ResourceKitBase(hostKit, parent, name)` and register both kits with the host; the host
+  validates the graph before creating resources.
+
+The VNET/subnet shape from issue #57 is the same: a `VnetKit` root and one `SubnetKit` per subnet with
+`Parent = typeof(VnetKit)`, each building with `Parent.ResourceBuilder.AddSubnet(Name, prefix)`. Invalid
+graphs report `SG0032`–`SG0038`.
+
 ## Build versus Configure
 
 Two lifecycle pairs, and keeping them separate is what makes the composition deterministic:
@@ -147,7 +190,8 @@ kit's generated properties:
 ```csharp
 protected override void ConfigureResource()
 {
-    ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+    if (HostKit.Postgres.IsEnabled && HostKit.Postgres.Database.IsEnabled)
+        ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
 
     if (HostKit.Redis.IsEnabled)
         ResourceBuilder.WithReference(HostKit.Redis).WaitFor(HostKit.Redis);

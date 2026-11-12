@@ -120,6 +120,23 @@ protected override string[] Args =>
 ];
 ```
 
+Child options use the nested path, so the same helper works at any depth:
+
+```csharp
+OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
+    static o => o.Postgres.Database.IsEnabled = false).Build();
+```
+
+See [Parent and child resource kits](Hierarchies.md) for the configuration shape.
+
+### Testing a hierarchy
+
+`ResourceKit.UnitTests` builds real Aspire models for a PostgreSQL server/database, a VNET with several
+subnets, storage account/container, and a Service Bus namespace/topic/queue/subscription. Those tests assert
+resource creation through `Parent.ResourceBuilder`, plus inherited enablement and graph validation, without
+starting the AppHost or provisioning infrastructure. The example AppHost tests inspect the generated
+hierarchy model and its nested configuration paths.
+
 See [OptionsHelper](OptionsHelper.md) for `Assign`, `AsEnvironmentVariables`, and the `SG0020`
 single-property-path rule.
 

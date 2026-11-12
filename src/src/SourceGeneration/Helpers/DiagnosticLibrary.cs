@@ -185,6 +185,71 @@ static class DiagnosticLibrary
 		description: "Execution-only concern: the explicit base cannot build the declared project resource; generation is not blocked."
 	);
 
+	public static readonly DiagnosticDescriptor ResourceKitCannotParentItself = new(
+		id: "SG0032",
+		title: "Resource kit cannot be its own parent",
+		messageFormat: "'{0}' cannot declare itself as its parent",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ResourceKitParentCycle = new(
+		id: "SG0033",
+		title: "Resource kit parent cycle",
+		messageFormat: "Resource kits form a parent cycle: {0}",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "A resource kit's parent chain must be acyclic; a cycle has no valid build order."
+	);
+
+	public static readonly DiagnosticDescriptor ResourceKitParentNotResourceKit = new(
+		id: "SG0034",
+		title: "Parent type is not a resource kit",
+		messageFormat: "The parent '{0}' of '{1}' is not a resource kit; mark it with ResourceDefinitionAttribute",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ResourceKitParentUnavailable = new(
+		id: "SG0035",
+		title: "Parent resource kit is not part of this composition",
+		messageFormat: "The parent '{0}' of '{1}' is not part of this host kit composition",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "A parent must be generated as a resource kit in the same compilation and host kit as its child."
+	);
+
+	public static readonly DiagnosticDescriptor ResourceKitChildPropertyCollision = new(
+		id: "SG0036",
+		title: "Generated child property collides with a member on the parent",
+		messageFormat: "The generated property '{0}' on '{1}' collides with a member already declared on the parent resource kit",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor DuplicateResourceKitChildPropertyName = new(
+		id: "SG0037",
+		title: "Duplicate child property name",
+		messageFormat: "The child property name '{0}' is used by multiple children of '{1}'; child property names must be unique within a parent",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	public static readonly DiagnosticDescriptor ResourceKitParentMemberCollision = new(
+		id: "SG0038",
+		title: "Generated Parent member collides with a user-authored member",
+		messageFormat: "The generated '{0}' member on '{1}' collides with a member already declared on the resource kit",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
 	public static readonly DiagnosticDescriptor AssignSetsMultiplePropertyPaths = new(
 		id: "SG0020",
 		title: "OptionsHelper.Assign action must set exactly one property path",

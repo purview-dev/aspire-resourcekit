@@ -116,6 +116,30 @@ Publish-only resources no longer need a hook; declare the mode instead:
 sealed partial class KeyVaultKit;
 ```
 
+## Parent and child kits
+
+A child kit is enabled only when **every ancestor is enabled** as well as its own gates:
+
+```text
+EffectiveEnabled(child)
+    = EffectiveEnabled(parent)
+      AND ChildConfiguredEnabled
+      AND ChildModeEnabled
+      AND ChildResourceEnabled
+```
+
+- Disabling a parent disables every descendant, even when the child's options say `IsEnabled = true`.
+- A parent excluded by its `Mode` excludes descendants.
+- A child excluded by its own mode or hook leaves the parent and eligible siblings unaffected.
+- An ancestor-disabled kit never invokes a descendant's `IsResourceEnabled` hook.
+- Siblings are independent.
+
+`IsEnabled` remains the configured value before `Build` and the effective value afterwards. Use
+`ConfiguredIsEnabled` and `EffectiveIsEnabled` when code needs both explicitly. Accessing `ResourceBuilder`
+of a disabled, unbuilt or failed kit throws `InvalidOperationException`.
+
+See [Parent and child resource kits](Hierarchies.md) for the complete rules.
+
 ## Disabling a resource from options
 
 Because `IsEnabled` is bound from generated options, a resource can be disabled without code changes

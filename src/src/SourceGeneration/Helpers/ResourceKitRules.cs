@@ -50,7 +50,12 @@ static class ResourceKitRules
 		DiagnosticLibrary.RelativeUrlWithoutEndpoints.Id,
 		DiagnosticLibrary.MultipleResourceGroupParents.Id,
 		DiagnosticLibrary.ResourceGroupCannotBeGeneric.Id,
-		DiagnosticLibrary.ResourceGroupCannotBeResourceKit.Id
+		DiagnosticLibrary.ResourceGroupCannotBeResourceKit.Id,
+		DiagnosticLibrary.ResourceKitCannotParentItself.Id,
+		DiagnosticLibrary.ResourceKitParentCycle.Id,
+		DiagnosticLibrary.ResourceKitParentNotResourceKit.Id,
+		DiagnosticLibrary.ResourceKitParentUnavailable.Id,
+		DiagnosticLibrary.DuplicateResourceKitChildPropertyName.Id
 	);
 
 	/// <summary>
@@ -249,6 +254,8 @@ static class ResourceKitRules
 		{
 			diagnostics.Add(new(DiagnosticLibrary.NoAspireResourceFound, IsBlocking: true, GetLocation(symbol), []));
 		}
+
+		EvaluateParent(symbol, diagnostics);
 
 		if (declaredProject is not null)
 		{
@@ -499,6 +506,206 @@ static class ResourceKitRules
 		}
 
 		return parents.ToImmutable();
+	}
+
+	static void EvaluateParent(INamedTypeSymbol symbol, ImmutableArray<RuleEvaluation>.Builder diagnostics)
+	{
+		var parent = GetParent(symbol);
+		if (parent is null || HasResourceDefinitionAttribute(parent))
+			return;
+
+		diagnostics.Add(
+			new(
+				DiagnosticLibrary.ResourceKitParentNotResourceKit,
+				IsBlocking: true,
+				GetLocation(parent) ?? GetLocation(symbol),
+				[parent.ToDisplayString(), symbol.Name]
+			)
+		);
+	}
+
+	/// <summary>
+	/// Reads the parent resource kit declared by <c>Parent = typeof(TKit)</c> on either resource definition
+	/// attribute style.
+	/// </summary>
+	/// <remarks>
+	/// <c>Parent</c> is a <see cref="Type"/>, so it cannot live in the generated attribute-data model. More than
+	/// one declaration is already blocked by SG0013 (mixed attributes), so the first one wins here.
+	/// </remarks>
+	public static INamedTypeSymbol? GetParent(INamedTypeSymbol symbol)
+	{
+		foreach (var attribute in symbol.GetAttributes())
+		{
+			if (!IsResourceDefinitionAttribute(attribute))
+				continue;
+
+			foreach (var argument in attribute.NamedArguments)
+			{
+				if (argument.Key == "Parent" && argument.Value.Value is INamedTypeSymbol parent)
+					return parent;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// Determines whether an attribute application is <c>[ResourceDefinition]</c> or
+	/// <c>[ResourceDefinition&lt;TResource&gt;]</c>.
+	/// </summary>
+	public static bool IsResourceDefinitionAttribute(AttributeData attribute) =>
+		attribute.AttributeClass is { } attributeClass
+		&& (
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.Matches(attributeClass)
+			|| TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.Matches(
+				attributeClass.OriginalDefinition
+			)
+		);
+
+	/// <summary>
+	/// Determines whether a type carries a resource definition attribute, whether or not it is declared in this
+	/// compilation.
+	/// </summary>
+	public static bool HasResourceDefinitionAttribute(INamedTypeSymbol symbol) =>
+		symbol.GetAttributes().Any(IsResourceDefinitionAttribute);
+
+	/// <summary>
+	/// A symbol-free node in the resource kit ownership graph.
+	/// </summary>
+	internal readonly record struct HierarchyNode(
+		TypeIdentity KitType,
+		TypeIdentity ParentType,
+		string Name,
+		string PropertyName
+	);
+
+	/// <summary>
+	/// A diagnostic discovered from the complete ownership graph. <see cref="NodeIndex"/> indexes the sorted
+	/// node array the caller supplied.
+	/// </summary>
+	internal readonly record struct HierarchyFinding(
+		int NodeIndex,
+		DiagnosticDescriptor Descriptor,
+		ImmutableArray<object> MessageArgs
+	);
+
+	/// <summary>
+	/// Evaluates self-parenting, cycles, unavailable parents and duplicate child property names.
+	/// </summary>
+	/// <remarks>
+	/// The caller must supply nodes sorted by <c>KitType.MetadataFullName</c> so every finding and cycle path is
+	/// deterministic. All walks are iterative, so a deep hierarchy cannot exhaust the stack.
+	/// </remarks>
+	internal static ImmutableArray<HierarchyFinding> EvaluateHierarchy(ImmutableArray<HierarchyNode> nodes)
+	{
+		var findings = ImmutableArray.CreateBuilder<HierarchyFinding>();
+		if (nodes.IsEmpty)
+			return findings.ToImmutable();
+
+		Dictionary<string, int> byType = new(StringComparer.Ordinal);
+		for (var index = 0; index < nodes.Length; index++)
+			byType[nodes[index].KitType.MetadataFullName] = index;
+
+		Dictionary<int, int> parents = [];
+		foreach (var (index, node) in nodes.Select(static (node, index) => (index, node)))
+		{
+			if (node.ParentType == TypeIdentity.Empty)
+				continue;
+
+			if (node.ParentType == node.KitType)
+			{
+				findings.Add(new(index, DiagnosticLibrary.ResourceKitCannotParentItself, [node.Name]));
+				continue;
+			}
+
+			if (!byType.TryGetValue(node.ParentType.MetadataFullName, out var parentIndex))
+			{
+				findings.Add(
+					new(
+						index,
+						DiagnosticLibrary.ResourceKitParentUnavailable,
+						[node.ParentType.RenderFullName, node.Name]
+					)
+				);
+				continue;
+			}
+
+			parents[index] = parentIndex;
+		}
+
+		EvaluateCycles(nodes, parents, findings);
+
+		Dictionary<(string Parent, string Property), List<int>> children = [];
+		foreach (var (index, node) in nodes.Select(static (node, index) => (index, node)))
+		{
+			if (node.ParentType == TypeIdentity.Empty)
+				continue;
+
+			var key = (node.ParentType.MetadataFullName, node.PropertyName);
+			if (!children.TryGetValue(key, out var siblings))
+				children[key] = siblings = [];
+
+			siblings.Add(index);
+		}
+
+		foreach (var pair in children)
+		{
+			for (var duplicate = 1; duplicate < pair.Value.Count; duplicate++)
+			{
+				findings.Add(
+					new(
+						pair.Value[duplicate],
+						DiagnosticLibrary.DuplicateResourceKitChildPropertyName,
+						[pair.Key.Property, pair.Key.Parent]
+					)
+				);
+			}
+		}
+
+		return
+		[
+			.. findings
+				.OrderBy(static finding => finding.NodeIndex)
+				.ThenBy(static finding => finding.Descriptor.Id, StringComparer.Ordinal),
+		];
+	}
+
+	static void EvaluateCycles(
+		ImmutableArray<HierarchyNode> nodes,
+		Dictionary<int, int> parents,
+		ImmutableArray<HierarchyFinding>.Builder findings
+	)
+	{
+		Dictionary<int, int> states = [];
+
+		for (var start = 0; start < nodes.Length; start++)
+		{
+			if (states.TryGetValue(start, out var startState) && startState != 0)
+				continue;
+
+			List<int> path = [];
+			var current = start;
+			while (current >= 0 && (!states.TryGetValue(current, out var state) || state == 0))
+			{
+				states[current] = 1;
+				path.Add(current);
+				current = parents.TryGetValue(current, out var parent) ? parent : -1;
+			}
+
+			if (current >= 0 && states[current] == 1)
+			{
+				var cycleStart = path.FindIndex(node => node == current);
+				var cycle = path.Skip(cycleStart).ToArray();
+				var description = string.Join(" -> ", cycle.Select(node => nodes[node].Name));
+				var anchor = cycle.Min();
+				findings.Add(
+					new(anchor, DiagnosticLibrary.ResourceKitParentCycle, [$"{description} -> {nodes[cycle[0]].Name}"])
+				);
+			}
+
+			foreach (var node in path)
+				states[node] = 2;
+		}
 	}
 
 	/// <summary>
@@ -782,6 +989,99 @@ static class ResourceKitRules
 
 	static Location? GetLocation(AttributeData attribute, CancellationToken cancellationToken) =>
 		attribute.ApplicationSyntaxReference?.GetSyntax(cancellationToken).GetLocation();
+
+	static readonly ImmutableHashSet<string> GeneratedKitMemberNames = ImmutableHashSet.Create(
+		StringComparer.Ordinal,
+		"Options",
+		"HostKit",
+		"Parent",
+		"ParentKit",
+		"Name",
+		"IsEnabled",
+		"Mode",
+		"ResourceBuilder",
+		"Resource",
+		"ApplicationBuilder",
+		"ConfiguredIsEnabled",
+		"EffectiveIsEnabled",
+		"Build",
+		"Configure",
+		"WithAnnotation",
+		"Urls"
+	);
+
+	static readonly ImmutableHashSet<string> GeneratedOptionsMemberNames = ImmutableHashSet.Create(
+		StringComparer.Ordinal,
+		"Name",
+		"IsEnabled",
+		"Mode",
+		"Urls"
+	);
+
+	/// <summary>
+	/// Evaluates generated-member collisions that can only be judged before generation: a child property on the
+	/// parent kit or on the parent's options, and the generated <c>Parent</c> member on the child.
+	/// </summary>
+	/// <remarks>
+	/// The analyzer runs after generation and would see the generated members, so these rules are generator-owned
+	/// and reported by <see cref="HostKitGenerator"/> with the source declaration's location.
+	/// </remarks>
+	public static ImmutableArray<RuleEvaluation> EvaluateGeneratedMemberCollisions(
+		INamedTypeSymbol symbol,
+		string propertyName,
+		string resourceName
+	)
+	{
+		var diagnostics = ImmutableArray.CreateBuilder<RuleEvaluation>();
+		var parent = GetParent(symbol);
+
+		if (GeneratedKitMemberNames.Contains(propertyName) || GeneratedOptionsMemberNames.Contains(propertyName))
+		{
+			diagnostics.Add(
+				new(
+					DiagnosticLibrary.ResourceKitChildPropertyCollision,
+					IsBlocking: true,
+					GetLocation(symbol),
+					[propertyName, parent?.Name ?? symbol.Name]
+				)
+			);
+		}
+		else if (
+			parent is not null
+			&& parent
+				.GetMembers(propertyName)
+				.Any(member => !member.IsImplicitlyDeclared && GeneratedUserMember(member))
+		)
+		{
+			diagnostics.Add(
+				new(
+					DiagnosticLibrary.ResourceKitChildPropertyCollision,
+					IsBlocking: true,
+					GetLocation(symbol),
+					[propertyName, parent.Name]
+				)
+			);
+		}
+
+		if (symbol.GetMembers("Parent").Any(static member => !member.IsImplicitlyDeclared))
+		{
+			diagnostics.Add(
+				new(
+					DiagnosticLibrary.ResourceKitParentMemberCollision,
+					IsBlocking: true,
+					GetLocation(symbol),
+					["Parent", resourceName]
+				)
+			);
+		}
+
+		return diagnostics.ToImmutable();
+	}
+
+	static bool GeneratedUserMember(ISymbol member) =>
+		member.DeclaringSyntaxReferences.Any(reference =>
+			reference.SyntaxTree.FilePath.EndsWith(".cs", StringComparison.Ordinal)
+		);
 
 	/// <summary>
 	/// Evaluates <c>SG0017</c> for every <c>IResourceBuilder&lt;T&gt;</c> property that is never assigned in

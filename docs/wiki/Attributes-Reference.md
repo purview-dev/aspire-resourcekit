@@ -52,9 +52,14 @@ Options:
 | Argument | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `Name` | `string?` | Derived from class name (suffix trimmed) | Logical Aspire resource name. |
-| `PropertyName` | `string?` | Derived from class name | Generated host property name. Must be a valid C# identifier (SG0008). |
+| `PropertyName` | `string?` | Derived from class name | Generated host or parent property name. Must be a valid C# identifier (SG0008). |
 | `Mode` | `ResourceKitMode` | `All` | Execution mode in which this resource participates. |
+| `Parent` | `Type?` | `null` | The resource kit that owns this kit. Use `Parent = typeof(TParentKit)`. |
 | `AspireResourceType` | generic type argument | `null` | The Aspire `IResource` type (generic style only). |
+
+`Parent` gives the child a typed `Parent` property, a parent-aware constructor, a parent-before-child build
+order, and inherited enablement. It is composition ownership, not a general dependency. See
+[Parent and child resource kits](Hierarchies.md).
 
 `Mode` accepts a named property or a constructor argument, and configuration can override it:
 

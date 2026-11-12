@@ -44,7 +44,8 @@ partial class APIResourceKit;
 Options:
 
 - `Name` — logical Aspire resource name.
-- `PropertyName` — generated host property name.
+- `PropertyName` — generated host or parent property name.
+- `Parent` — `typeof(TParentKit)` when this kit is owned by another resource kit.
 
 ### `ResourceDefinition` vs `ResourceDefinition<TResource>`
 
@@ -83,6 +84,27 @@ partial class APIResourceKit : ResourceKitBase<ProjectResource>
 - Typically this is the generated host-specific base (`ResourceKitBase<TResource>`, unlike the `ResourceKitBase<THostKit, TResource>` that takes the explicit Host Kit as a construction parameter).
 
 Do not mix both attribute styles on the same class.
+
+### Parent and child kits
+
+`Parent = typeof(TParentKit)` gives the child a typed `Parent` property and the parent a typed child
+property. Parents are constructed and built before children, so `Parent.ResourceBuilder` is available inside
+the child's `BuildResource`:
+
+```csharp
+[ResourceDefinition<AzurePostgresFlexibleServerDatabaseResource>(
+    "db", PropertyName = "Database", Parent = typeof(PostgresKit))]
+sealed partial class PostgresDatabaseKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.ResourceBuilder.AddDatabase(Name);
+}
+```
+
+Child options nest under the parent (`<HostKit>:<Parent>:<Child>`). Disabling a parent disables every
+descendant, and a child with no `[InGroup]` inherits its parent's primary group. This is composition
+ownership, not a general dependency or an automatic Aspire visual parent relationship.
 
 ### Resource groups and dashboard URLs
 

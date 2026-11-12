@@ -56,29 +56,64 @@ partial class CodeGenEmiiter
 						)
 				)
 				{
-					// Write the constructor
+					var parent = context.ParentOf(resourceKit);
+
+					// Write the constructor. A child receives its parent instance directly; the relationship is
+					// fixed here and never changes after construction.
+					List<ParameterDeclarationOptions> constructorParameters =
+					[
+						new("hostKit", context.HostKit.HostKitType),
+					];
+
+					if (parent is { } parentModel)
+						constructorParameters.Add(new("parent", parentModel.ResourceKitType));
+
+					constructorParameters.Add(
+						context.HostKit.ShouldGenerateOptions
+							? new("options", resourceKit.OptionsType)
+							: new("name", TypeLibrary.System.String.MakeNullable(context.Writer))
+					);
+
 					context
 						.Writer.XmlSummary("Initializes a new instance of the Host Kit Resource Kit base class.")
 						.Constructor(
 							new(resourceKit.ResourceKitType, TypeDeclarationAccessibility.Public)
 							{
-								Parameters =
-								[
-									new("hostKit", context.HostKit.HostKitType),
-									context.HostKit.ShouldGenerateOptions
-										? new("options", resourceKit.OptionsType)
-										: new("name", TypeLibrary.System.String.MakeNullable(context.Writer)),
-								],
+								Parameters = [.. constructorParameters],
 								Initializer = context.HostKit.ShouldGenerateOptions
 									? "base(hostKit, (options ?? throw new global::System.ArgumentNullException(nameof(options))).Name)"
 									: "base(hostKit, name)",
 							},
 							body =>
 							{
+								if (parent is not null)
+								{
+									body.Assignment(
+											"Parent",
+											$"parent ?? throw new {TypeLibrary.System.ArgumentNullException}(nameof(parent))"
+										)
+										.Assignment("ParentKit", "Parent");
+								}
+
 								if (context.HostKit.ShouldGenerateOptions)
 									body.Assignment("Options", "options").Assignment("IsEnabled", "options.IsEnabled");
 							}
 						);
+
+					if (parent is { } parentKit)
+					{
+						context
+							.Writer.XmlSummary(
+								$"Gets the <see cref=\"{parentKit.ResourceKitType}\" /> resource kit that owns this kit."
+							)
+							.Property(
+								new(
+									"Parent",
+									parentKit.ResourceKitType,
+									LeastAccessible(resourceKit.Accessibility, parentKit.Accessibility)
+								)
+							);
+					}
 
 					// Write the Options property if the host kit has options
 					if (context.HostKit.ShouldGenerateOptions)
@@ -122,10 +157,68 @@ partial class CodeGenEmiiter
 								}
 							);
 					}
+
+					GenerateChildResourceKitProperties(context, resourceKit, cancellationToken);
 				}
 			}
 
 			resourceNs.Dispose();
+		}
+	}
+
+	// The host kit constructs children, so the setter is assembly-internal rather than private. The generated
+	// host and every generated kit live in the consuming compilation.
+	static void GenerateChildResourceKitProperties(
+		OutputContext context,
+		ResourceKitModel resourceKit,
+		CancellationToken cancellationToken
+	)
+	{
+		foreach (var child in context.ChildrenOf(resourceKit))
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+
+			context
+				.Writer.XmlSummary($"Gets the <see cref=\"{child.ResourceKitType}\" /> child resource instance.")
+				.XmlException(
+					TypeLibrary.System.InvalidOperationException,
+					"Thrown if the resource has not been initialized on get, or if the resource has already been initialized on set."
+				)
+				.XmlException(TypeLibrary.System.ArgumentNullException, "Thrown if the resource is set to null.");
+
+			context.Writer.Property(
+				new(
+					child.PropertyName,
+					child.ResourceKitType,
+					LeastAccessible(resourceKit.Accessibility, child.Accessibility)
+				)
+				{
+					HasGetter = true,
+					HasSetter = true,
+					SetterAccessibility = TypeDeclarationAccessibility.Internal,
+				},
+				writeGetterBody =>
+				{
+					var message = $"The '{child.PropertyName}' resource has not been initialized. Call Build first.";
+					writeGetterBody.Return(
+						$"field ?? throw new {TypeLibrary.System.InvalidOperationException}({message.StringLiteral()})"
+					);
+				},
+				writeSetterBody =>
+				{
+					writeSetterBody
+						.MethodCallOn(TypeLibrary.System.ArgumentNullException, "ThrowIfNull", ["value"])
+						.NewLine();
+
+					using (writeSetterBody.IfBlockScope("field is not null"))
+						writeSetterBody.Throw(
+							TypeLibrary.System.InvalidOperationException,
+							$"The '{child.PropertyName}' resource has already been initialized."
+						);
+
+					writeSetterBody.NewLine().Assignment("field", "value");
+				}
+			);
 		}
 	}
 
@@ -141,7 +234,9 @@ partial class CodeGenEmiiter
 
 		context.Writer.XmlSummary(
 			$"Typed settings for <see cref=\"{resourceKit.OptionsType}\" />.",
-			$"Can be accessed by resolving <see cref=\"{context.HostKit.OptionsType}.{resourceKit.PropertyName}\" />."
+			context.ParentOf(resourceKit) is null
+				? $"Can be accessed by resolving <see cref=\"{context.HostKit.OptionsType}.{resourceKit.PropertyName}\" />."
+				: "Nested inside its parent resource kit's options."
 		);
 
 		using (
@@ -191,6 +286,29 @@ partial class CodeGenEmiiter
 						Initializer = ModeExpression(resourceKit.Mode),
 					}
 				);
+
+			foreach (var child in context.ChildrenOf(resourceKit))
+			{
+				cancellationToken.ThrowIfCancellationRequested();
+
+				context
+					.Writer.NewLine()
+					.XmlSummary(
+						$"Gets or sets options for the <see cref=\"{child.ResourceKitType}\" /> child resource."
+					)
+					.Property(
+						new(
+							child.PropertyName,
+							child.OptionsType,
+							LeastAccessible(resourceKit.Accessibility, child.Accessibility)
+						)
+						{
+							HasGetter = true,
+							IsInitOnly = true,
+							Initializer = "new()",
+						}
+					);
+			}
 
 			if (!resourceKit.Urls.IsEmpty)
 			{

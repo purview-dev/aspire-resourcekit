@@ -260,6 +260,23 @@ partial class CodeGenEmiiter
 						}
 					);
 
+				attributeBody
+					.XmlSummary(
+						"Gets or sets the resource kit that owns this resource kit.",
+						"Use <c>Parent = typeof(TKit)</c>. The parent is built before this kit, its <c>ResourceBuilder</c>",
+						"is available while this kit builds, and disabling the parent disables every descendant."
+					)
+					.Property(
+						new(
+							"Parent",
+							TypeLibrary.System.Type.MakeNullable(attributeBody),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							IsInitOnly = true,
+						}
+					);
+
 				AddModeProperty(attributeBody);
 			}
 		);
@@ -378,9 +395,8 @@ partial class CodeGenEmiiter
 				{
 					attributeBody
 						.XmlSummary("Initializes a new instance of the ResourceGroupAttribute class.")
-						.Constructor(
-							new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute),
-							static ctor => ctor.Comment("Empty")
+						.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute), static ctor =>
+							ctor.Comment("Empty")
 						);
 
 					attributeBody
@@ -456,9 +472,8 @@ partial class CodeGenEmiiter
 				{
 					attributeBody
 						.XmlSummary("Initializes a new instance of the ResourceGroupAttribute class.")
-						.Constructor(
-							new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute),
-							static ctor => ctor.Comment("Empty")
+						.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute), static ctor =>
+							ctor.Comment("Empty")
 						);
 
 					attributeBody
@@ -526,9 +541,8 @@ partial class CodeGenEmiiter
 				static attributeBody =>
 					attributeBody
 						.XmlSummary("Initializes a new instance of the InGroupAttribute class.")
-						.Constructor(
-							new(TypeLibrary.Purview.Aspire.ResourceKit.InGroupAttribute),
-							static ctor => ctor.Comment("Empty")
+						.Constructor(new(TypeLibrary.Purview.Aspire.ResourceKit.InGroupAttribute), static ctor =>
+							ctor.Comment("Empty")
 						),
 				allowMultiple: true
 			);

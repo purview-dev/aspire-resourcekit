@@ -16,6 +16,8 @@ sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 
 	public PostgresKit Postgres { get; init; }
 
+	public PostgresDatabaseKit PostgresDatabase { get; init; }
+
 	public ResourceKitGroup<ExampleHostKit> PlatformGroup { get; init; }
 
 	public ResourceKitGroup<ExampleHostKit> DataGroup { get; init; }
@@ -37,6 +39,7 @@ sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 		PublishMarker = new(this);
 		Redis = new(this);
 		Postgres = new(this);
+		PostgresDatabase = new(this, Postgres);
 
 		AddResource(AzureStorage, DataGroup);
 		AddResource(ExampleAPI, ServicesGroup);
@@ -44,5 +47,6 @@ sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 		AddResource(PublishMarker);
 		AddResource(Redis, DataGroup);
 		AddResource(Postgres, DataGroup);
+		AddResource(PostgresDatabase);
 	}
 }

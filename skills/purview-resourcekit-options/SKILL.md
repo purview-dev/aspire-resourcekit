@@ -41,6 +41,27 @@ Host options bind to `SectionName` and `ValidateOnStart()` is called; resource o
 generated resource property name. Typical keys: `ShopHostKit:API:Name`, `ShopHostKit:API:IsEnabled`,
 `ShopHostKit:API:Mode`, `ShopHostKit:Mode`.
 
+### Child kits
+
+Only roots are host-level options. A kit declared with `Parent = typeof(TParentKit)` nests its options
+under the parent, so the configuration path mirrors the ownership hierarchy:
+
+```csharp
+public sealed partial class PostgresKitOptions
+{
+    public bool IsEnabled { get; set; } = true;
+    public PostgresDatabaseKit.PostgresDatabaseKitOptions Database { get; init; } = new();
+}
+```
+
+```json
+{ "ShopHostKit": { "Postgres": { "Database": { "IsEnabled": false } } } }
+```
+
+`OptionsHelper.Assign<ShopHostKitOptions>(o => o.Postgres.Database.IsEnabled = false)` produces
+`--ShopHostKit:Postgres:Database:IsEnabled=false`. A nested child can be disabled independently, but never
+re-enabled while an ancestor is disabled. See `purview-resourcekit-authoring` for the hierarchy rules.
+
 Two further option families appear when they are declared:
 
 - **Resource groups.** `[ResourceGroup]` adds `ShopHostKit:Groups:<Group>:{IsEnabled|Mode|ShowInDashboard}`.
@@ -155,6 +176,11 @@ Two consequences worth stating plainly:
   through options is *never* re-enabled by the hook. That is deliberate: configuration is the outer gate.
 - **`ResourceBuilder` cannot be accessed while the resource is disabled** — the property guards
   itself and throws `InvalidOperationException`.
+
+A child adds the ancestor gate. If any ancestor is disabled, the child is effectively disabled even when
+its own `IsEnabled` is `true`, and its hook is not invoked. `IsEnabled` is the configured value before
+`Build` and the effective value afterwards; `ConfiguredIsEnabled` and `EffectiveIsEnabled` expose both
+explicitly.
 
 Override the hook when enablement depends on runtime state that is not a mode:
 

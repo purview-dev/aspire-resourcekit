@@ -55,6 +55,13 @@ assigned.
 | `SG0029` | Error | A group declares its parent more than once (`ResourceGroup<TParent>` and `Parent`, or both attributes). |
 | `SG0030` | Error | A group is generic, or nested in a generic type. |
 | `SG0031` | Error | A group is also a resource kit, or carries `[InGroup]`. |
+| `SG0032` | Error | A resource kit declares itself as its parent. |
+| `SG0033` | Error | The parent chain contains a cycle; the message prints the path. |
+| `SG0034` | Error | The declared parent type is not a resource kit. |
+| `SG0035` | Error | The declared parent is not part of this host kit composition. |
+| `SG0036` | Error | The generated child property collides with a member on the parent. |
+| `SG0037` | Error | Two children of one parent use the same generated property name. |
+| `SG0038` | Error | The generated `Parent` member collides with a user-authored member. |
 
 ## Execution-only versus generation-blocking
 
@@ -128,6 +135,21 @@ sealed partial class SqlServerKit
   `[EndpointUrl("https")]` also collide.
 - `SG0027` / `SG0028`: a group, or a kit for a resource without endpoints such as a `ParameterResource`, can
   only show an **absolute** URL.
+
+### `SG0032`–`SG0038` — parent/child hierarchies
+
+- `SG0032` / `SG0033`: a kit can never be its own parent or form a parent chain that loops. Move the
+  intended root up the chain. The cycle diagnostic prints the path, for example
+  `PostgresKit -> DatabaseKit -> MigrationKit -> PostgresKit`.
+- `SG0034` / `SG0035`: `Parent = typeof(T)` must name a `[ResourceDefinition]` kit in the same compilation
+  and host composition.
+- `SG0036` / `SG0038`: the generated child property or `Parent` accessor collides with a member you already
+  declared. Rename the member or set a different `PropertyName`.
+- `SG0037`: child property names must be unique **within one parent**. Two different parents can both have a
+  `Database` child.
+
+Manual graphs are validated at runtime before any Aspire resource is created; a self-parent, cycle, missing
+parent or foreign-host parent throws `InvalidOperationException` even when the generator was not involved.
 
 ### `SG0020` — one property path per `Assign` action
 

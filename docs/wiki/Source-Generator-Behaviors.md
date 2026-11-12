@@ -20,11 +20,14 @@ a single package reference.
 
 `HostKitGenerator` is an `IIncrementalGenerator`. It:
 
-1. Registers the embedded attributes (`HostKitAttribute`, `ResourceDefinitionAttribute`) as
-   post-initialization output.
-2. Runs a set of incremental value providers over the compilation.
-3. Emits a single hint-name file per host kit that contains the host kit, resource kit skeletons,
-   options, the typed `ResourceKitBase<TResource>`, and the AppHost extension method.
+1. Registers the embedded attributes (`HostKitAttribute`, `ResourceDefinitionAttribute`,
+   `ResourceGroupAttribute`, `ResourceUrlAttribute`, and their generic forms) as post-initialization output.
+2. Runs a set of incremental value providers over the compilation. The resource-kit aggregate is sorted by
+   metadata name and then evaluated as a parent/child graph (cycles, unavailable parents, duplicate child
+   property names) and topologically ordered before output.
+3. Emits a single hint-name file per host kit that contains the host kit, resource kit skeletons
+   (including typed `Parent`/child properties and nested options), the typed
+   `ResourceKitBase<TResource>`, resource groups, and the AppHost extension method.
 
 Generation is skipped when the generator is disabled via settings (`IsSourceGeneratorDisabled`).
 

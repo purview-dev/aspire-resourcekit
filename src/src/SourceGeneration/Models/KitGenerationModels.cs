@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Purview.Aspire.ResourceKit.SourceGeneration.Models;
 
@@ -31,6 +33,18 @@ sealed record KitGenerationModel(
 	public EquatableArray<GeneratorResult<ResourceGroupModel>> ResourceGroups { get; init; } =
 		EquatableArray<GeneratorResult<ResourceGroupModel>>.Empty;
 
+	/// <summary>
+	/// Diagnostics raised by the ownership graph once every resource kit is known: self-parenting, cycles,
+	/// unknown parents, and duplicate child property names.
+	/// </summary>
+	public EquatableArray<ReportableDiagnostic> HierarchyDiagnostics { get; init; } =
+		EquatableArray<ReportableDiagnostic>.Empty;
+
+	/// <summary>
+	/// The resource kits in parent-before-child order, used for construction, registration and options.
+	/// </summary>
+	public EquatableArray<ResourceKitModel> HierarchyOrder { get; init; } = EquatableArray<ResourceKitModel>.Empty;
+
 	public (bool IsFatal, EquatableArray<ReportableDiagnostic> Diagnostics) GetAllDiagnostics()
 	{
 		var allDiagnostics = Diagnostics
@@ -44,6 +58,7 @@ sealed record KitGenerationModel(
 							.SelectMany(static r => r.Items.AsImmutableArray().SelectMany(static d => d.Diagnostics))
 					)
 					.Concat(ResourceGroups.AsImmutableArray().SelectMany(static g => g.Diagnostics))
+					.Concat(HierarchyDiagnostics.AsImmutableArray())
 			)
 			.ToImmutableArray();
 
@@ -52,7 +67,8 @@ sealed record KitGenerationModel(
 			|| ResourceKits
 				.AsImmutableArray()
 				.Any(static r => r.Items.AsImmutableArray().Any(static d => !d.ShouldProcess))
-			|| ResourceGroups.AsImmutableArray().Any(static g => !g.ShouldProcess);
+			|| ResourceGroups.AsImmutableArray().Any(static g => !g.ShouldProcess)
+			|| HierarchyDiagnostics.AsImmutableArray().Any(static d => d.IsBlocking);
 
 		return (isFatal, EquatableArray<ReportableDiagnostic>.Create([.. allDiagnostics]));
 	}
@@ -63,6 +79,7 @@ sealed record OutputContext(
 	EquatableArray<ResourceKitModelGroup> ResourceKits,
 	// Ordered parents before their children.
 	EquatableArray<ResourceGroupModel> ResourceGroups,
+	EquatableArray<ResourceKitModel> HierarchyOrder,
 	GenerationContext<KitGenerationCapabilities> Context
 ) : ISourceGenLogger
 {
@@ -73,6 +90,49 @@ sealed record OutputContext(
 	public bool HasResourceKits => ResourceKitCount > 0;
 
 	public bool HasResourceGroups => !ResourceGroups.IsEmpty;
+
+	/// <summary>
+	/// Finds the model for the kit that owns <paramref name="kit"/>, or <see langword="null"/> for a root.
+	/// </summary>
+	public ResourceKitModel? ParentOf(ResourceKitModel kit) =>
+		!kit.HasParent
+			? null
+			: ResourceKits
+				.AsImmutableArray()
+				.SelectMany(static group => group.Items.AsImmutableArray())
+				.Where(model => model.ResourceKitType == kit.ParentType)
+				.Select(static model => (ResourceKitModel?)model)
+				.FirstOrDefault();
+
+	/// <summary>
+	/// Gets the direct children of <paramref name="kit"/> in hierarchy order.
+	/// </summary>
+	public IEnumerable<ResourceKitModel> ChildrenOf(ResourceKitModel kit) =>
+		HierarchyOrder.AsImmutableArray().Where(model => model.HasParent && model.ParentType == kit.ResourceKitType);
+
+	/// <summary>
+	/// Gets the property path from the host kit to <paramref name="kit"/>, for example
+	/// <c>Postgres.Database</c>.
+	/// </summary>
+	public string AccessPathOf(ResourceKitModel kit)
+	{
+		List<string> segments = [kit.PropertyName];
+		var current = kit;
+		while (ParentOf(current) is { } parent)
+		{
+			segments.Add(parent.PropertyName);
+			current = parent;
+		}
+
+		segments.Reverse();
+		return string.Join(".", segments);
+	}
+
+	/// <summary>
+	/// Gets the options path from the host options to <paramref name="kit"/>, for example
+	/// <c>Options.Postgres.Database</c>.
+	/// </summary>
+	public string OptionsPathOf(ResourceKitModel kit) => $"Options.{AccessPathOf(kit)}";
 
 	public CodeWriter Writer { get; } = Context.CreateCodeWriter();
 
@@ -96,6 +156,8 @@ readonly record struct ResourceKitModel(
 	TypeIdentity ResourceKitType,
 	TypeIdentity OptionsType,
 	TypeIdentity AspireResourceType,
+	// TypeIdentity.Empty for a root kit.
+	TypeIdentity ParentType,
 	TypeDeclarationAccessibility? Accessibility,
 	string PropertyName,
 	string ResourceName,
@@ -103,8 +165,28 @@ readonly record struct ResourceKitModel(
 	string? Mode,
 	// The groups the kit belongs to, primary group first.
 	EquatableArray<TypeIdentity> Groups,
-	EquatableArray<UrlModel> Urls
-);
+	EquatableArray<UrlModel> Urls,
+	SourceLocationModel Location
+)
+{
+	public bool HasParent => ParentType != TypeIdentity.Empty;
+}
+
+/// <summary>
+/// A Roslyn-free, value-equatable source location used to report a diagnostic discovered after the
+/// individual kit transforms have run (for example a parent cycle).
+/// </summary>
+readonly record struct SourceLocationModel(string? FilePath, TextSpan TextSpan, LinePositionSpan LinePositionSpan)
+{
+	public bool IsEmpty => FilePath is null;
+
+	public static SourceLocationModel From(Location? location) =>
+		location is null || location == Location.None
+			? default
+			: new(location.SourceTree?.FilePath, location.SourceSpan, location.GetLineSpan().Span);
+
+	public Location ToLocation() => Location.Create(FilePath ?? string.Empty, TextSpan, LinePositionSpan);
+}
 
 readonly record struct ResourceGroupModel(
 	TypeIdentity GroupType,

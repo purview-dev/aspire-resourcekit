@@ -137,5 +137,8 @@ A common progression:
 - Start with one resource kit class.
 - Add more resource kit classes as the AppHost grows.
 - Use generated options to toggle resources for local/dev/test scenarios.
+- Split a parent resource and its children (VNET/subnets, server/databases, storage/containers) into
+  separate kits with `Parent = typeof(TParentKit)`.
 
 For configuration details, continue with [Configuration and Options](Configuration-and-Options.md).
+For hierarchies, see [Parent and child resource kits](Hierarchies.md).

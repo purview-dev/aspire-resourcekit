@@ -7,16 +7,12 @@ namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 [InGroup<DataGroup>]
 sealed partial class PostgresKit
 {
-	public IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> Database { get; private set; }
-
 	protected override IResourceBuilder<AzurePostgresFlexibleServerResource> BuildResource(
 		IDistributedApplicationBuilder builder
 	)
 	{
 		var postgres = builder.AddAzurePostgresFlexibleServer(Name);
 		postgres.RunAsContainer(c => c.WithPgWeb(p => p.WithParentRelationship(postgres)));
-
-		Database = postgres.AddDatabase(Platform.ResourceKits.PostgresDb);
 
 		return postgres;
 	}

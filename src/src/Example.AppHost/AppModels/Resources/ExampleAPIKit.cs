@@ -37,8 +37,11 @@ sealed partial class ExampleAPIKit
 				.Build()
 		);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
-		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
+		if (HostKit.Postgres.IsEnabled && HostKit.Postgres.Database.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+
+		if (HostKit.AzureStorage.IsEnabled && HostKit.AzureStorage.Blobs.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
 		if (HostKit.KeyVault.IsEnabled)
 			ResourceBuilder.WithReference(HostKit.KeyVault).WaitFor(HostKit.KeyVault);

@@ -12,12 +12,57 @@ Both hosts build the same logical resources through `Purview.Aspire.ResourceKit.
 
 | Resource | Name | Aspire type |
 | --- | --- | --- |
-| Postgres | `postgres` (+ `db` database) | `AzurePostgresFlexibleServerResource` |
-| Azure Storage | `azure-storage` (+ `blob`) | `AzureStorageResource` |
+| Postgres | `postgres` (+ child kit `db`) | `AzurePostgresFlexibleServerResource` |
+| Azure Storage | `azure-storage` (+ child kit `blob`) | `AzureStorageResource` |
+| VNET (publish-only) | `vnet` (+ child kits `snet-web`, `snet-data`, `snet-private-endpoint`) | `AzureVirtualNetworkResource` |
 | Redis | `redis` | `AzureManagedRedisResource` |
 | Key Vault | `kv` | `AzureKeyVaultResource` |
 | API | `api` | `ProjectResource` (`Projects.Example_Service`) |
 | Publish marker | `publish-marker` | `ParameterResource` |
+
+The Postgres database and storage blob are separate child kits, so their builders come from the parent:
+
+```csharp
+[ResourceDefinition<AzurePostgresFlexibleServerDatabaseResource>(
+    Platform.ResourceKits.PostgresDb,
+    PropertyName = "Database",
+    Parent = typeof(PostgresKit))]
+sealed partial class PostgresDatabaseKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.ResourceBuilder.AddDatabase(Name);
+}
+```
+
+The VNET/subnet hierarchy is publish-only (`ResourceKitMode.Publish`) so the run-mode example does not need
+Azure provisioning, but it is the issue #57 shape:
+
+```csharp
+[ResourceDefinition<AzureVirtualNetworkResource>(
+    Platform.ResourceKits.Vnet,
+    ResourceKitMode.Publish)]
+[InGroup<DataGroup>]
+sealed partial class VnetKit
+{
+    protected override IResourceBuilder<AzureVirtualNetworkResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            builder.AddAzureVirtualNetwork(Name);
+}
+
+[ResourceDefinition<AzureSubnetResource>(
+    Platform.ResourceKits.SubnetWeb,
+    PropertyName = "Web",
+    Parent = typeof(VnetKit))]
+sealed partial class SubnetWebKit
+{
+    protected override IResourceBuilder<AzureSubnetResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.ResourceBuilder.AddSubnet(Name, "10.0.1.0/24");
+}
+```
+
+See [Parent and child resource kits](Hierarchies.md).
 
 Key Vault and the publish marker are publish-only. The generated AppHost declares that on the
 attribute (`ResourceKitMode.Publish`), and the manual AppHost overrides the `Mode` property:
@@ -95,8 +140,11 @@ sealed partial class ExampleAPIKit
 			.Build()
 		);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
-		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
+		if (HostKit.Postgres.IsEnabled && HostKit.Postgres.Database.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+
+		if (HostKit.AzureStorage.IsEnabled && HostKit.AzureStorage.Blobs.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
 		if (HostKit.KeyVault.IsEnabled)
 			ResourceBuilder.WithReference(HostKit.KeyVault).WaitFor(HostKit.KeyVault);
@@ -178,11 +226,31 @@ sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 		if (HostKit.PublishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", HostKit.PublishMarker);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+		ResourceBuilder.WithReference(HostKit.PostgresDatabase).WaitFor(HostKit.PostgresDatabase);
 		// ...
 	}
 }
 ```
+
+A manual child passes its parent to the base constructor and exposes it as a typed property:
+
+```csharp
+sealed partial class PostgresDatabaseKit(ExampleHostKit hostKit, PostgresKit parent)
+	: ResourceKitBase<ExampleHostKit, AzurePostgresFlexibleServerDatabaseResource>(
+		hostKit,
+		parent,
+		Platform.ResourceKits.PostgresDb)
+{
+	public PostgresKit Parent { get; } = parent;
+
+	protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+		BuildResource(IDistributedApplicationBuilder builder) =>
+			Parent.ResourceBuilder.AddDatabase(Name);
+}
+```
+
+The host creates it after the parent and registers it; `HostKitBase` validates the graph and builds the
+parent first.
 
 ## Choosing between the two
 

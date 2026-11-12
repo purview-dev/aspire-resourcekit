@@ -17,7 +17,7 @@ sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 		if (HostKit.PublishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", HostKit.PublishMarker);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+		ResourceBuilder.WithReference(HostKit.PostgresDatabase).WaitFor(HostKit.PostgresDatabase);
 		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
 		if (HostKit.KeyVault.IsEnabled)

@@ -26,7 +26,11 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 - **Cleaner AppHost code** with resource logic split into dedicated classes.
 - **Strong typing + IntelliSense** instead of stringly-typed setup.
 - **Generated wiring** for host/resource options and registration.
+- **Parent/child resource hierarchies** for VNETs and subnets, SQL servers and databases, Service Bus
+  namespaces and topics/queues/subscriptions, or storage accounts and containers (issue #57).
 - **Predictable lifecycle** (`Build` then `Configure`) for inter-resource dependencies.
+- **Hierarchical kits** so a parent resource can own child kits, with typed `Parent` access, parent-first
+  build ordering, inherited enablement, and nested options.
 - **Testability** with options overrides and isolated resource composition.
 
 ## Quick example
@@ -102,6 +106,7 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
 - [Getting started](docs/wiki/Getting-Started.md)
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
+- [Parent and child resource kits](docs/wiki/Hierarchies.md)
 - [Resource groups and dashboard URLs](docs/wiki/Groups-and-URLs.md)
 - [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)

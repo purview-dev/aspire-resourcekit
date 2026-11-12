@@ -192,13 +192,7 @@ partial class CodeGenEmiiter
 			1
 		);
 
-		foreach (
-			var resourceKit in context
-				.Model.ResourceKits.AsImmutableArray()
-				.SelectMany(r => r.Items.AsImmutableArray())
-				.Where(m => m.ShouldProcess)
-				.Select(m => m.Value)
-		)
+		foreach (var resourceKit in context.HierarchyOrder.AsImmutableArray().Where(static kit => !kit.HasParent))
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -213,7 +207,11 @@ partial class CodeGenEmiiter
 				.XmlException(TypeLibrary.System.ArgumentNullException, "Thrown if the resource is set to null.");
 
 			context.Writer.Property(
-				new(resourceKit.PropertyName, resourceKit.ResourceKitType, TypeDeclarationAccessibility.Public)
+				new(
+					resourceKit.PropertyName,
+					resourceKit.ResourceKitType,
+					LeastAccessible(context.HostKit.Accessibility, resourceKit.Accessibility)
+				)
 				{
 					HasGetter = true,
 					HasSetter = true,
@@ -279,29 +277,23 @@ partial class CodeGenEmiiter
 					.NewLine();
 			}
 
-			foreach (
-				var resourceKit in context
-					.ResourceKits.AsImmutableArray()
-					.SelectMany(static r => r.Items.AsImmutableArray())
-			)
+			foreach (var resourceKit in context.HierarchyOrder)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
 				context.Writer.Comment($"Creating {resourceKit.ResourceKitType.Name} Resource Kit.");
-				if (context.HostKit.ShouldGenerateOptions)
-				{
-					context.Writer.Assignment(
-						resourceKit.PropertyName,
-						new ObjectCreationOptions(["this", $"Options.{resourceKit.PropertyName}"])
-					);
-				}
-				else
-				{
-					context.Writer.Assignment(
-						resourceKit.PropertyName,
-						new ObjectCreationOptions(["this", resourceKit.ResourceName.StringLiteral()])
-					);
-				}
+
+				List<string> arguments = ["this"];
+				if (context.ParentOf(resourceKit) is { } parent)
+					arguments.Add(context.AccessPathOf(parent));
+
+				arguments.Add(
+					context.HostKit.ShouldGenerateOptions
+						? context.OptionsPathOf(resourceKit)
+						: resourceKit.ResourceName.StringLiteral()
+				);
+
+				context.Writer.Assignment(context.AccessPathOf(resourceKit), new ObjectCreationOptions([.. arguments]));
 
 				context.Writer.NewLine();
 			}
@@ -311,18 +303,14 @@ partial class CodeGenEmiiter
 			else
 			{
 				context.Writer.Comment("Register the discovered app resources with the base class.");
-				foreach (
-					var resourceKit in context
-						.ResourceKits.AsImmutableArray()
-						.SelectMany(static r => r.Items.AsImmutableArray())
-				)
+				foreach (var resourceKit in context.HierarchyOrder)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 
 					// The primary group is first; it decides where the kit is shown in the dashboard.
 					string[] arguments =
 					[
-						resourceKit.PropertyName,
+						context.AccessPathOf(resourceKit),
 						.. resourceKit
 							.Groups.AsImmutableArray()
 							.Where(g => context.ResourceGroups.AsImmutableArray().Any(m => m.GroupType == g))
@@ -480,9 +468,7 @@ partial class CodeGenEmiiter
 			if (context.HasResourceKits)
 			{
 				foreach (
-					var resourceKit in context
-						.ResourceKits.AsImmutableArray()
-						.SelectMany(static r => r.Items.AsImmutableArray())
+					var resourceKit in context.HierarchyOrder.AsImmutableArray().Where(static kit => !kit.HasParent)
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();

@@ -106,6 +106,16 @@ static partial class CodeGenEmiiter
 		return mode.StartsWith("global::", StringComparison.Ordinal) ? mode : $"global::{mode}";
 	}
 
+	// A public member on an internal type is allowed even when its type is internal, because its effective
+	// accessibility is internal. Only a public containing type needs the target type to be public too.
+	static TypeDeclarationAccessibility LeastAccessible(
+		TypeDeclarationAccessibility? containing,
+		TypeDeclarationAccessibility? target
+	) =>
+		containing == TypeDeclarationAccessibility.Public && target != TypeDeclarationAccessibility.Public
+			? TypeDeclarationAccessibility.Internal
+			: TypeDeclarationAccessibility.Public;
+
 	static CodeWriter ModeOverride(CodeWriter writer, string expression) =>
 		writer
 			.NewLine()

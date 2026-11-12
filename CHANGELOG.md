@@ -37,6 +37,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `ResourceKitBase.Urls`, and any builder can call `WithResourceKitUrls(...)`.
 - **Diagnostics SG0021–SG0031** for groups and URLs, including cycle detection. No group can become its own
   ancestor or member, at declaration, generation or runtime.
+- **Parent and child resource kits** (issue #57). Declare `Parent = typeof(TParentKit)` on
+  `[ResourceDefinition]` to give the child a typed `Parent` and the parent a typed child property. The host
+  constructs parents before children, validates the ownership graph before creating Aspire resources,
+  builds in parent-before-child order, and inherits enablement down the hierarchy. Child options nest under
+  the parent (`<HostKit>:<Parent>:<Child>`). A child with no `[InGroup]` inherits its parent's primary group.
+  See [Parent and child resource kits](docs/wiki/Hierarchies.md).
+- **Diagnostics SG0032–SG0038** for self-parenting, parent cycles, unavailable or non-kit parents, child
+  property collisions, duplicate child property names, and generated `Parent` member collisions. Invalid
+  graphs block generation; manual graphs are rejected at runtime before resource creation.
 
 ### Changed
 

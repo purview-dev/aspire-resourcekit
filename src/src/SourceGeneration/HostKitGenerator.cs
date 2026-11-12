@@ -55,7 +55,13 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 			);
 
 			var writer = CodeGenEmiiter.Emit(
-				new(generationModel, validResourceKits, validResourceGroups, generationContext),
+				new(
+					generationModel,
+					validResourceKits,
+					validResourceGroups,
+					generationModel.HierarchyOrder,
+					generationContext
+				),
 				sourceProductionContext.CancellationToken
 			);
 			var hintName = HintNameHelper.ForHost(generationModel.HostKit.Value.HostKitType.MetadataFullName);
