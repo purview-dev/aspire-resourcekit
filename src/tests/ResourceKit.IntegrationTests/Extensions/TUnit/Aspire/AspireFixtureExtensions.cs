@@ -16,7 +16,10 @@ static class AspireFixtureExtensions
 	{
 		public async Task APIIsHealthyAsync(CancellationToken cancellationToken)
 		{
-			var client = fixture.CreateHttpClient(Platform.ResourceKits.API);
+			// Use the HTTP endpoint: CI agents (Linux) do not trust the ASP.NET Core development certificate,
+			// and this test is about the service being healthy, not TLS. The HTTPS endpoint is still covered
+			// by the AppHost starting it successfully.
+			var client = fixture.CreateHttpClient(Platform.ResourceKits.API, "http");
 			var response = await client.GetAsync(new Uri("/health", UriKind.Relative), cancellationToken);
 
 			await Assert.That(response.StatusCode).IsEqualTo(System.Net.HttpStatusCode.OK);
