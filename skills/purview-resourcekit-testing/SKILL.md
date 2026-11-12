@@ -155,17 +155,22 @@ to test lifecycle semantics without starting anything.
 
 ## Running them
 
-Unit tier only — integration tests need Docker/Testcontainers:
+The fast local loop — unit tests only; the integration tests need Docker/Testcontainers:
 
 ```bash
 just test "/*/*/*/*[Category=Unit]"
 ```
 
-Everything, locally:
+Everything, locally, including the AppHost integration tests:
 
 ```bash
 just test
 ```
+
+CI runs **everything**, not the unit tier: PR validation and the release both run every test project in
+this table. A change that only passes `just test-unit` is not a passing PR. The integration project's
+AppHost fixtures start serially and each target-framework test app gets its own Aspire port range, so
+several AppHosts cannot be handed the same target port; keep those guarantees if you add a fixture.
 
 Filtering uses the TUnit **tree-node** filter (`--treenode-filter`), not `--filter`: this repository
 runs on Microsoft.Testing.Platform, where `dotnet test --filter` reports "Zero tests ran".

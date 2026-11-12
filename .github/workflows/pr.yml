@@ -12,4 +12,8 @@ jobs:
   build:
     name: Build and test
     uses: purview-dev/build/.github/workflows/purview-build.yml@main
+    with:
+      # The full test filter is owned by .config/purview-build.json; this only states that the
+      # pipeline must run tests rather than rely on a shared-workflow default.
+      run-tests: true
     secrets: inherit

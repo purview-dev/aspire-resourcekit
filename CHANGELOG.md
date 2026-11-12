@@ -85,6 +85,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **PR validation and the release run the full test suite.** `.config/purview-build.json` deliberately
+  uses the `/*/*/*/*` filter, so both pipelines execute every test project — including
+  `ResourceKit.IntegrationTests` — on both target frameworks, one project at a time so the Docker-heavy
+  AppHost suite does not compete with the Roslyn suites. `PipelineTests` fails if a workflow narrows the
+  filter or disables tests. The integration suite also starts its AppHost fixtures serially and gives
+  each target-framework test app a disjoint Aspire target-port range, so two AppHosts can no longer be
+  handed the same target port and fail with `address already in use` — the release-pipeline failure
+  that a PR on the same commit did not reproduce.
+
 - **The repository builds without the Aspire CLI installed.** `Example.AppHost` and
   `Example.ManualAppHost` set `AspireUseCliBundle=true`, which makes a *build* require a resolvable CLI
   bundle: with none present, `Aspire.Hosting.AppHost.targets` runs `dnx aspire.cli@<version> setup` once per

@@ -3,7 +3,15 @@
 		"Solution": "src/ResourceKit.slnx",
 		"TestRoot": "src/tests",
 		"TestPatterns": "*Tests.csproj",
-		"TestFilter": "/*/*/*/*"
+		// The full suite, not the unit tier: both PR validation and the release run every discovered
+		// test project, including the AppHost integration tests. PipelineTests fails if this is
+		// narrowed, because a unit-only filter looks green while the expensive suite never runs.
+		"TestFilter": "/*/*/*/*",
+		// The integration suite starts Docker containers and several AppHosts; running it beside the
+		// Roslyn suites on a shared CI runner widens Aspire's probe-then-bind port race and starves
+		// the containers. Run one test project at a time; each project still runs its TFM apps in
+		// parallel, which the integration project handles with its own port ranges.
+		"MaxTestParallelism": 1
 	},
 	"PackValidation": {
 		// Explicit because Purview.Build 0.5.3 defaults RequiredCompilerFlags to empty. Earlier
