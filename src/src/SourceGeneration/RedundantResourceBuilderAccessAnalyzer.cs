@@ -58,12 +58,8 @@ public sealed class RedundantResourceBuilderAccessAnalyzer : DiagnosticAnalyzer
 			return;
 
 		if (
-			!receiver.AllInterfaces.Any(interfaceType =>
-				TypeLibrary.Purview.Aspire.ResourceKit.IResourceKit.Matches(interfaceType)
-			)
-			|| !receiver.AllInterfaces.Any(interfaceType =>
-				TypeLibrary.Aspire.Hosting.ApplicationModel.IResourceBuilder.Matches(interfaceType)
-			)
+			!receiver.AllInterfaces.Any(TypeLibrary.Purview.Aspire.ResourceKit.IResourceKit.Matches)
+			|| !receiver.AllInterfaces.Any(TypeLibrary.Aspire.Hosting.ApplicationModel.IResourceBuilder.Matches)
 		)
 			return;
 

@@ -84,7 +84,9 @@ public sealed class RedundantResourceBuilderAccessCodeFixTests
 		);
 
 		// Assert
-		var fixedCode = result.FixedCode().Trees.First().GetText().ToString();
+		var fixedCodeSource = await result.FixedCode().Trees.First().GetTextAsync(cancellationToken);
+		var fixedCode = fixedCodeSource.ToString();
+
 		await Assert.That(fixedCode).Contains("parent.WithAnnotation(new TestAnnotation())");
 		await Assert.That(fixedCode).DoesNotContain("parent.ResourceBuilder.WithAnnotation");
 	}
