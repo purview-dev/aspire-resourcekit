@@ -6,13 +6,23 @@
 			No TargetFramework/TargetFrameworks here: Purview.BuildSdk 2.x owns the curated set and its
 			'Current' default is net10.0;net11.0. The .NET 10 leg is the published floor; the .NET 11
 			leg is a real shipped asset and the leg that exercises the C# 15 / .NET 11 feature set
-			(Runtime Async, MemorySafetyRules=2) that the SDK opts into for net11.0+ targets.
+			(MemorySafetyRules=2 by SDK default, and Runtime Async opted into below).
 		-->
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<RepositoryUrl>https://github.com/purview-dev/aspire-resourcekit</RepositoryUrl>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.BuildSdk" Project="Sdk.props" />
+
+	<PropertyGroup Label=".NET 11 feature opt-ins">
+		<!--
+			Runtime Async is opt-in in Purview.BuildSdk 2.0.1; 2.0.0 defaulted it on. The net11.0 leg
+			exists to exercise the .NET 11 feature set, so opting in explicitly restores the documented
+			behaviour instead of inheriting a changed patch-release default. The SDK applies it only to
+			net11.0+ targets, so the net10.0 floor is unaffected. BuildSdkAdoptionTests guards this.
+		-->
+		<PurviewRuntimeAsync>true</PurviewRuntimeAsync>
+	</PropertyGroup>
 
 	<PropertyGroup Label="Aspire AppHost single-target">
 		<!--

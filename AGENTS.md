@@ -19,10 +19,12 @@ This is a .NET repository centered on Aspire and source generation.
   `Purview.BuildSdk` 2.x resolves the build from its `Current` set (`net10.0;net11.0`), and the package
   ships `lib/net10.0` and `lib/net11.0`. The .NET 10 leg declares the lowest-compatible
   `Microsoft.Extensions.*` floor; do not raise it to the 11.x band just because the net11.0 leg exists.
-- **.NET 11 opt-ins come from the SDK**: BuildSdk 2.x gives a `net11.0` target Runtime Async
-  (`runtime-async=on`) and `MemorySafetyRules=2` by default. Do not set either by hand, and do not
-  expect a `net10.0` target to compile C# 15 union/closed declarations: the runtime types those
-  features require are not in the .NET 10 framework.
+- **.NET 11 opt-ins**: `MemorySafetyRules=2` (the C# 15 updated memory-safety rules) is a BuildSdk
+  default for `net11.0` targets. Runtime Async is **not** a default in BuildSdk 2.0.1 — it became
+  opt-in there (2.0.0 defaulted it on) — so the repository sets `PurviewRuntimeAsync=true` in
+  `src/Directory.Build.props`, guarded by `BuildSdkAdoptionTests`. Neither switch applies to the
+  `net10.0` leg, and do not expect a `net10.0` target to compile C# 15 union/closed declarations: the
+  runtime types those features require are not in the .NET 10 framework.
 - The two Roslyn components (`SourceGeneration`, `SourceGeneration.CodeFixes`) target `netstandard2.0`
   by SDK rule — a generator runs inside the compiler and IDE host, not on the consumer's framework.
 - Uses the **Purview DotNet Project SDK** (`Purview.BuildSdk`) for project defaults and conventions.

@@ -26,7 +26,7 @@ under `src/tests`:
 | `ResourceKit.UnitTests` | runtime behaviour of the kit base types, run modes and `OptionsHelper` |
 | `ResourceKit.IntegrationTests` | starts the example AppHosts and asserts against real resources |
 | `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` | generator output, diagnostics, suppression, code fixes, caching |
-| `Repository.UnitTests` | the repository itself: authored skills and the architecture policy |
+| `Repository.UnitTests` | the repository itself: authored skills, the architecture policy and its `Purview.BuildSdk` opt-ins |
 
 Reports land in `TestResults/`. The project **name** sets the tier (`*.UnitTests` → `Category=Unit`);
 nothing is tagged per test.

@@ -13,7 +13,8 @@ The repository uses [TUnit](https://thomhurst.github.io/TUnit/) with the
 - `ResourceKit.IntegrationTests` — starts the example AppHosts and asserts against real resources.
 - `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` — generator output, diagnostics,
   suppression, code fixes, and caching.
-- `Repository.UnitTests` — the repository itself: authored skills and the architecture policy.
+- `Repository.UnitTests` — the repository itself: authored skills, the architecture policy, and the
+  `Purview.BuildSdk` feature opt-ins.
 - `SharedTestingInfra` — a shared-testing library, referenced rather than executed.
 
 Reports are written to `TestResults/`.

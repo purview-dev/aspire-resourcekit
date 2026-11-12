@@ -12,11 +12,11 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   `lib/net11.0` (the newest leg). See
   [Supported target frameworks](Versioning.md#supported-target-frameworks) and
   [.NET 11 toolchain and feature adoption](Toolchain.md).
-- **.NET 11 leg and tooling** — the repository builds with the .NET 11 GA SDK, `Purview.BuildSdk` 2.x
-  and TUnit 1.83. The net11.0 leg uses the SDK's Runtime Async and memory-safety opt-ins; the net10.0
-  leg keeps the 10.0.15 `Microsoft.Extensions.*` floor. `OptionsHelper.PathFor<TOptions, TValue>` adds
-  a non-boxing selector overload, and pack validation now compares against the published 1.1.0
-  baseline.
+- **.NET 11 leg and tooling** — the repository builds with the .NET 11 GA SDK, `Purview.BuildSdk` 2.0.1
+  and TUnit 1.83. The net11.0 leg opts into the SDK's Runtime Async (`PurviewRuntimeAsync=true`) and
+  takes its memory-safety rules; the net10.0 leg keeps the 10.0.15 `Microsoft.Extensions.*` floor.
+  `OptionsHelper.PathFor<TOptions, TValue>` adds a non-boxing selector overload, and pack validation
+  now compares against the published 1.1.0 baseline.
 
 ## 1.0.0
 

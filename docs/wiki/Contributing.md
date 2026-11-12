@@ -61,8 +61,9 @@ Test projects:
 - `src/tests/SourceGeneration.IntegrationTests` — generated source content, caching, diagnostics,
   suppression, and the SG0020 code fix.
 - `src/tests/Repository.UnitTests` — asserts things about this repository itself: the conformance of the
-  authored skills in `skills/`, the architecture policy in `.config/architecture-policy.json`, and the
-  example AppHosts' build contract (no machine-global Aspire CLI).
+  authored skills in `skills/`, the architecture policy in `.config/architecture-policy.json`, the
+  `Purview.BuildSdk` feature opt-ins (`BuildSdkAdoptionTests`), and the example AppHosts' build contract
+  (no machine-global Aspire CLI).
 - `src/tests/SharedTestingInfra` — a shared-testing library, referenced rather than executed.
 
 Reports are written to `TestResults/`.

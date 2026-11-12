@@ -9,7 +9,7 @@ consumer-facing dependency is still declared at the .NET 10 servicing band.
 | Piece | Version | Why |
 | --- | --- | --- |
 | .NET SDK | `11.0.100` (GA) | C# 15, .NET 11 runtime/tooling; `rollForward: latestFeature` keeps a feature band, not a major |
-| `Purview.BuildSdk` | `2.0.0` | Curated TFM sets, C# 15 defaults, Runtime Async and memory-safety opt-ins for `net11.0+` |
+| `Purview.BuildSdk` | `2.0.1` | Curated TFM sets, C# 15 defaults, the `net11.0+` memory-safety rules, and the bootstrapped `Directory.Build.rsp` |
 | `Aspire.AppHost.Sdk` | `13.6.5` | Includes the `Aspire.Hosting` security fix that `13.6.4` lacked |
 | `Purview.SourceGeneratorFramework` | `2.0.0` | Generator/runtime split; analyzer stays on `netstandard2.0` |
 | `TUnit` | `1.83.0` | Has `net10.0` and `net11.0` assets, so each test leg runs a first-class build |
@@ -24,8 +24,8 @@ package therefore ships `lib/net10.0` and `lib/net11.0`. The two Roslyn componen
 | Area | Feature | Where it applies |
 | --- | --- | --- |
 | Language | C# 15 (`LangVersion=latest`) | Both legs. Syntax that needs .NET 11 runtime types (unions, `closed`) is available only to the `net11.0` leg |
-| Runtime | Runtime Async (`runtime-async=on`) | `net11.0` targets, supplied by BuildSdk 2.x. Production code is synchronous, so this is exercised by the net11 test leg, not by a changed library contract. The sample AppHosts stay on the net10.0 floor because `Aspire.AppHost.Sdk` cannot multi-target |
-| Runtime | `MemorySafetyRules=2` | `net11.0` targets, supplied by BuildSdk 2.x. The library does not use `unsafe`, so this is a safety net rather than a code change |
+| Runtime | Runtime Async (`runtime-async=on`) | `net11.0` targets. Opt-in in BuildSdk 2.0.1 (2.0.0 defaulted it on), so `src/Directory.Build.props` sets `PurviewRuntimeAsync=true`. Production code is synchronous, so this is exercised by the net11 test leg, not by a changed library contract. The sample AppHosts stay on the net10.0 floor because `Aspire.AppHost.Sdk` cannot multi-target |
+| Runtime | `MemorySafetyRules=2` | `net11.0` targets, the BuildSdk 2.0.1 default. The library does not use `unsafe`, so this is a safety net rather than a code change |
 | Build | Multithreaded MSBuild (`-mt`) and the MSBuild server | Repository-wide via the SDK's bootstrapped response file; no project setting |
 | Analysis | `AnalysisLevel=latest`, `AnalysisMode=All`, `EnforceCodeStyleInBuild` | Both legs, via the SDK |
 | Supply chain | `NuGetAudit=true`, `NuGetAuditMode=all` | Both legs, via the SDK |
@@ -35,9 +35,11 @@ package therefore ships `lib/net10.0` and `lib/net11.0`. The two Roslyn componen
 | Packaging | Two runtime assets, one analyzer asset | `lib/net10.0` + `lib/net11.0`; the generator under `analyzers/dotnet/cs` serves both |
 | Debug | Portable PDBs, SourceLink, embedded untracked sources, `.snupkg` | Supplied by `Purview.BuildSdk`; unchanged by this upgrade |
 
-Runtime Async, `MemorySafetyRules` and C# 15's runtime-dependent features are **not** enabled by hand.
-`Purview.BuildSdk` 2.x owns those switches for `net11.0+`, so a project that opts into another SDK band
-gets the band's defaults rather than a stale copy in this repository.
+`MemorySafetyRules` and C# 15's runtime-dependent features are **not** enabled by hand: `Purview.BuildSdk`
+2.0.1 owns those switches for `net11.0+`. Runtime Async is the deliberate exception — 2.0.1 made it
+opt-in after 2.0.0 defaulted it on, so `src/Directory.Build.props` sets `PurviewRuntimeAsync=true` and
+`BuildSdkAdoptionTests` fails if that setting disappears. A patch upgrade cannot silently turn the
+feature off again.
 
 ## Deliberately not adopted
 

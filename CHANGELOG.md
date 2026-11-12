@@ -30,12 +30,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   AppHost must be on .NET 10 or .NET 11; the package ships `lib/net10.0` (the floor) and `lib/net11.0`
   (the newest leg). Both legs declare the `Microsoft.Extensions.*` 10.x servicing band — the net11.0
   leg deliberately does not raise a .NET 10 consumer's floor.
-- **.NET 11 GA toolchain** — SDK `11.0.100`, `Purview.BuildSdk` 2.0.0, `Aspire.AppHost.Sdk` 13.6.5,
-  `Purview.SourceGeneratorFramework` 2.0.0, `Purview.Telemetry.SourceGenerator` 5.3.0, TUnit 1.83.0,
+- **.NET 11 GA toolchain** — SDK `11.0.100`, `Purview.BuildSdk` 2.0.1, `Aspire.AppHost.Sdk` 13.6.5,
+  `Purview.SourceGeneratorFramework` 2.0.0, `Purview.Telemetry.SourceGenerator` 6.0.0, TUnit 1.83.0,
   `Microsoft.Extensions.*` at the 10.0.15 / 10.11.0 servicing band, and SourceLink 11.0.100. The
-  net11.0 leg gets Runtime Async and `MemorySafetyRules=2` from the SDK; `Aspire.Hosting` 13.6.5
-  also takes the security fix the previous pin lacked. The test suite runs on both frameworks, with
-  `--timeout`, `--maximum-failed-tests` and per-module report directories.
+  net11.0 leg opts into Runtime Async explicitly (`PurviewRuntimeAsync=true`), because `Purview.BuildSdk`
+  2.0.1 made it opt-in after 2.0.0 defaulted it on, and takes the SDK's `MemorySafetyRules=2` default;
+  `Aspire.Hosting` 13.6.5 also takes the security fix the previous pin lacked. The test suite runs on
+  both frameworks, with `--timeout`, `--maximum-failed-tests` and per-module report directories.
 - **Repository guardrails** — `.config/architecture-policy.json` plus
   `src/tests/Repository.UnitTests/ArchitectureTests.cs` enforce the dependency direction between the
   runtime, the Roslyn components and the samples; `just verify-consumers` packs the package and builds
