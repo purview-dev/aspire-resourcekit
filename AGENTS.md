@@ -63,6 +63,9 @@ Work is **not complete** until relevant tests pass.
 
 - Use **TUnit** and **TUnit.Mocks**.
 - Do **not** introduce NUnit, xUnit, or MSTest patterns/packages.
+- Both PR validation and the release run the **full** suite on both target frameworks. Do not add a
+  `Build:TestFilter` category filter or a workflow `test-filter` to skip the integration tests;
+  `Repository.UnitTests/PipelineTests.cs` fails if the filter is narrowed.
 
 ### Test structure and style
 
@@ -95,7 +98,8 @@ If any method invoked in the test body supports a `CancellationToken`, pass a to
 Before considering a change done:
 
 1. Relevant tests are updated/added using the conventions above.
-2. Test runs pass for the impacted scope.
+2. Test runs pass for the impacted scope. Both PR validation and the release run every test project,
+   including the AppHost integration tests, so `just test-unit` alone is not evidence a change passes CI.
 3. New/updated docs stay consistent with this file and the authored skills in `skills/`.
 4. A change to a project reference is reflected in `.config/architecture-policy.json` — the policy is
    enforced by `src/tests/Repository.UnitTests/ArchitectureTests.cs`, and widening `mayDependOn` is a

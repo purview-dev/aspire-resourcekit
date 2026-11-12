@@ -30,6 +30,9 @@ jobs:
         with:
           release-mode: NuGet
           trusted-publishing: true
+          # The full test filter is owned by .config/purview-build.json; this only states that the
+          # pipeline must run tests rather than rely on the composite action's default.
+          run-tests: true
           # The nuget.org profile name, not the sign-in email.
           nuget-user: kieronlanning
           # A composite action has no `secrets` context, so the read token is passed explicitly.

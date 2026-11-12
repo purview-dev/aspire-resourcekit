@@ -22,6 +22,11 @@
 		<PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
+		<!--
+			TUnit.Aspire depends on Aspire.Hosting.Testing at a 13.6.4 floor. Pin it to the Aspire band
+			the rest of the repository uses so the test host and Aspire.Hosting are the same patch.
+		-->
+		<PackageVersion Include="Aspire.Hosting.Testing" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="$(AspireVersion)" />

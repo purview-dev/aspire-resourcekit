@@ -49,9 +49,10 @@ opt-in out of the project files for exactly that reason.
 - Test names mirror production structure: `{ClassUnderTest}Tests` and
   `{SubjectOrMethodUnderTest}_{Scenario}_{Expectation}`.
 - When a method under test accepts a `CancellationToken`, pass one and make it the final argument.
-- A unit test runs in CI because of the **project it lives in**, not an attribute: `Purview.BuildSdk`
-  derives the tier from the project name (`*.UnitTests` → `Category=Unit`), and the pipeline filters on
-  that. Splitting a suite into a second project is how a test leaves the fast tier.
+- The project name sets the tier: `Purview.BuildSdk` derives `Category=Unit` for `*.UnitTests`. Both
+  PR validation and the release run the **full** suite, so the tier is a local convenience for the
+  fast loop (`just test-unit`), not a CI gate. A test added to an integration project runs in CI.
+  Do not narrow `Build:TestFilter` or pass `test-filter` from a workflow; `PipelineTests` fails if you do.
 
 Test projects:
 
@@ -135,7 +136,9 @@ Releases are produced by the shared pipeline when a version bump is merged to `m
 
 Pull requests target `main` and are validated by `.github/workflows/pr.yml`, which delegates to the
 shared [Purview.Build](https://github.com/purview-dev/build) pipeline (restore, build, CSharpier lint,
-unit tests, pack, package-content validation). See [Release Flow](Release-Flow.md).
+the full test suite including the AppHost integration tests, pack, package-content validation). The
+integration tests need a Docker-capable runner; GitHub's `ubuntu-latest` is one. See
+[Release Flow](Release-Flow.md).
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint and
 Lefthook hooks.
