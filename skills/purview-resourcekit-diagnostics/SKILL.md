@@ -2,7 +2,7 @@
 name: purview-resourcekit-diagnostics
 description: >-
   Use when a Purview.Aspire.ResourceKit build reports an SG00xx diagnostic - what triggered it, how to
-  fix it, which rules block source generation and which are execution-only warnings, and why CS8618 is
+  fix it, which rules cover parent/child hierarchies, group placement and redundant ResourceBuilder access, which rules block source generation and which are execution-only warnings, and why CS8618 is
   suppressed on IResourceBuilder properties.
 metadata:
   product: Purview.Aspire.ResourceKit

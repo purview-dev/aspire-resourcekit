@@ -53,8 +53,9 @@ Root kits are unchanged. See [Parent and child resource kits](Hierarchies.md).
 
 ## Generated host Build/Configure
 
-`Build` instantiates each resource kit from its options, registers it with the base class, invokes the
-optional `onBuilt` callback, then calls `base.Build(builder)`:
+`Build` instantiates roots first and then each child with its parent instance, registers them in
+parent-before-child order, invokes the optional `onBuilt` callback, then calls `base.Build(builder)`
+(which validates the ownership graph before creating anything):
 
 ```csharp
 public override void Build(global::Aspire.Hosting.IDistributedApplicationBuilder builder)

@@ -2,7 +2,7 @@
 name: purview-resourcekit-options
 description: >-
   Use when configuring Purview.Aspire.ResourceKit through options - the generated host and resource
-  options shape, extending them with custom properties, selecting a run mode with Mode, section-name
+  options shape including nested child-kit options, extending them with custom properties, selecting a run mode with Mode, inherited enablement, section-name
   resolution, disabling a resource with IsEnabled, disabling a resource group, overriding a declared
   dashboard URL, overriding enablement with IsResourceEnabled, and building args or environment
   variables with OptionsHelper.
@@ -61,6 +61,12 @@ public sealed partial class PostgresKitOptions
 `OptionsHelper.Assign<ShopHostKitOptions>(o => o.Postgres.Database.IsEnabled = false)` produces
 `--ShopHostKit:Postgres:Database:IsEnabled=false`. A nested child can be disabled independently, but never
 re-enabled while an ancestor is disabled. See `purview-resourcekit-authoring` for the hierarchy rules.
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.Postgres.Database.IsEnabled = false
+).Build();
+```
 
 Two further option families appear when they are declared:
 

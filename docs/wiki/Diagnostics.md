@@ -57,7 +57,7 @@ exiting the constructor" warning does not apply.
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
 [Project Resources](Project-Resources.md) for SG0018/SG0019 specifics,
 [Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031, and
-[Parent and child resource kits](Hierarchies.md) for SG0032–SG0038.
+[Parent and child resource kits](Hierarchies.md) for SG0032–SG0040.
 
 A parent cycle is reported on one kit in the cycle and includes the full path, for example
 `PostgresKit -> DatabaseKit -> MigrationKit -> PostgresKit`. Invalid hierarchies block generation; manual
@@ -120,9 +120,13 @@ and the kit's own `IResourceBuilder<TResource>` would not satisfy it.
 
 1. Ensure host/resource classes are marked `partial`.
 2. Ensure exactly one `[HostKit]` class exists in the compilation.
-3. Ensure resource property names are unique (explicit `PropertyName` can help).
+3. Ensure root property names are unique, and child property names are unique within each parent
+   (explicit `PropertyName` can help).
 4. Ensure each resource uses a compatible base and definition attribute style.
 5. Set explicit `Name` when inference cannot determine resource name.
+6. If the kit declares `Parent = typeof(...)`, ensure that type is a resource kit in the same composition;
+   a child in a different primary group than its parent gets SG0039, and a redundant
+   `Parent.ResourceBuilder` gets SG0040.
 
 ## Common fixes
 

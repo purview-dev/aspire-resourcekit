@@ -40,11 +40,13 @@ the two never drift apart.
 
 - **Analyzer-owned rules** are reported only by the analyzer; the generator computes them for its
   `ShouldProcess` gating but does not re-report them (avoiding duplicate diagnostics).
-- **Generation-blocking rules** (Error severity, SG0001–SG0016) halt generation via the
-  `GeneratorResult.ShouldProcess` gate.
-- **Execution-only rules** (SG0017–SG0019, warnings) never block generation, so a resource kit with
-  incomplete `BuildResource`/`ConfigureResource` wiring is still generated and the host kit output is
-  still emitted.
+- **Generation-blocking rules** (Error severity, including the group and hierarchy rules SG0021–SG0038)
+  halt generation via the `GeneratorResult.ShouldProcess` gate.
+- **Execution-only rules** (SG0017–SG0019, SG0024 and SG0028, warnings) never block generation, so a
+  resource kit with incomplete `BuildResource`/`ConfigureResource` wiring is still generated and the host
+  kit output is still emitted.
+- **Suggestion rules** (SG0040, Info) and the group-placement warning SG0039 never block generation; they
+  surface a simplification or a visual-placement mismatch without changing the build result.
 
 See [Diagnostics](Diagnostics.md) for the full rule reference.
 

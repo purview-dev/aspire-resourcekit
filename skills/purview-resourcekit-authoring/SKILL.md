@@ -160,6 +160,8 @@ sealed partial class PostgresDatabaseKit
   `IsResourceEnabled` hook. Siblings are independent.
 - Child options nest under the parent (`ShopHostKit:Postgres:Database:IsEnabled`).
 - A child with no `[InGroup]` inherits its parent's **primary** group. Grouping never changes build order.
+  An explicit child group whose primary group differs from the parent's warns `SG0039`; the child renders in
+  its own group unless an Aspire visual parent places it under the parent.
 - ResourceKit parentage is composition ownership, not a general dependency, and it does **not** create an
   Aspire visual parent relationship. Add `WithParentRelationship(Parent.ResourceBuilder)` yourself when you
   want that.

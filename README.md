@@ -19,6 +19,7 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > **Lifecycle quick links**
 >
 > - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
+> - Parent/child resource kits: [`docs/wiki/Hierarchies.md`](docs/wiki/Hierarchies.md)
 > - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
 
 ## Why teams use it
@@ -86,6 +87,8 @@ Enablement is evaluated *before* resource construction:
 - `IsEnabled` is the persisted toggle (typically from generated options) and the single member consumers need to check.
 - `IsResourceEnabled(builder)` is the runtime hook used by `Build` to decide whether this resource should run now.
 - If any gate excludes the resource, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
+- A child kit is also disabled when any ancestor is disabled; an ancestor-disabled kit never runs a
+  descendant's `IsResourceEnabled` hook.
 
 Use `Mode` for publish-only or local-development-only resources, and `IsResourceEnabled(builder)` when enablement depends on runtime state beyond an execution mode (environment probes, dynamic configuration).
 
@@ -94,8 +97,8 @@ Use `Mode` for publish-only or local-development-only resources, and `IsResource
 From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit generates:
 
 - a host resource base class,
-- resource properties on the host,
-- host + per-resource options (when enabled),
+- typed parent/child properties and constructors for hierarchical kits,
+- host + per-resource options (when enabled), including nested child options,
 - typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
 - named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
 - an AppHost extension method to build/configure/register your host kit.

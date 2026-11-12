@@ -126,6 +126,7 @@ Typical keys (example):
 - `ShopHostKit:API:IsEnabled`
 - `ShopHostKit:API:Mode`
 - `ShopHostKit:API:Urls:Health:IsEnabled` (a declared `[ResourceUrl("Health", ...)]`)
+- `ShopHostKit:Postgres:Database:IsEnabled` (a child resource kit)
 - `ShopHostKit:Mode`
 - `ShopHostKit:Groups:Data:IsEnabled`, `:Mode`, `:ShowInDashboard` (a `[ResourceGroup]`)
 

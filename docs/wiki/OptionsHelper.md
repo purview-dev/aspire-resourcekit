@@ -30,6 +30,17 @@ You can also pass an explicit root section name:
 OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>("MySection", c => c.API.IsEnabled = false);
 ```
 
+Child ResourceKit options are nested under their parent, so the same selector works at any depth:
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.Postgres.Database.IsEnabled = false
+).Build();
+// --ShopHostKit:Postgres:Database:IsEnabled=false
+```
+
+See [Parent and child resource kits](Hierarchies.md) for the ownership model and configuration shape.
+
 ## AsEnvironmentVariables
 
 Call `AsEnvironmentVariables()` before `Build()` to produce environment variables instead:

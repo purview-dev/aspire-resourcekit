@@ -2,7 +2,7 @@
 name: purview-resourcekit-testing
 description: >-
   Use when testing a Purview.Aspire.ResourceKit AppHost - the TUnit.Aspire fixture pattern,
-  integration-testing a running AppHost, overriding generated options from a test with OptionsHelper
+  integration-testing a running AppHost, overriding generated options from a test with OptionsHelper, testing parent/child hierarchies and nested child options
   or raw args, unit-testing the manual kit pattern, and the treenode filter for running the tiers.
 metadata:
   product: Purview.Aspire.ResourceKit
@@ -23,7 +23,7 @@ under `src/tests`:
 
 | Project | Covers |
 | --- | --- |
-| `ResourceKit.UnitTests` | runtime behaviour of the kit base types, run modes and `OptionsHelper` |
+| `ResourceKit.UnitTests` | runtime behaviour of the kit base types, hierarchies, graph validation, run modes, real Aspire models and `OptionsHelper` |
 | `ResourceKit.IntegrationTests` | starts the example AppHosts and asserts against real resources |
 | `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` | generator output, diagnostics, suppression, code fixes, caching |
 | `Repository.UnitTests` | the repository itself: authored skills, the architecture policy and its `Purview.BuildSdk` opt-ins |

@@ -124,11 +124,11 @@ npx skills add purview-dev/aspire-resourcekit
 
 | Skill | Answers |
 | --- | --- |
-| `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
-| `skills/purview-resourcekit-options/` | generated options, extending them, run modes (`Mode`), `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
-| `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
-| `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means and how to fix it |
-| `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition |
+| `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, parent/child hierarchies, the Build/Configure lifecycle, project resources, groups and URLs |
+| `skills/purview-resourcekit-options/` | generated options including nested child options, extending them, run modes (`Mode`), inherited `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, hierarchy model tests, running the tiers |
+| `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means, including hierarchy, group-placement and redundant-`ResourceBuilder` rules, and how to fix it |
+| `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition, including extracting child resource kits |
 
 Every skill carries the `purview-resourcekit` prefix. Skills install into one flat directory per
 agent, shared with every skill a developer has installed from anywhere, so an unprefixed name

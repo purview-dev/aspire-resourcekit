@@ -306,6 +306,15 @@ variables.
 | SG0029 | Error | Resource group declares its parent more than once |
 | SG0030 | Error | Resource group is generic |
 | SG0031 | Error | Resource group is also a resource kit or a group member |
+| SG0032 | Error | A resource kit declares itself as its parent |
+| SG0033 | Error | Resource kit parent cycle; the message prints the path |
+| SG0034 | Error | Parent type is not a resource kit |
+| SG0035 | Error | Parent is not part of this host kit composition |
+| SG0036 | Error | Generated child property collides with a member on the parent |
+| SG0037 | Error | Duplicate child property name under one parent |
+| SG0038 | Error | Generated `Parent` member collides with a user-authored member |
+| SG0039 | Warning | Child primary group differs from its parent's; visual placement follows the child's group |
+| SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
 SG0017–SG0019, SG0024 and SG0028 are execution-only warnings: they indicate the resource will fail at runtime but never
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
