@@ -4,7 +4,8 @@ description: >-
   Use when composing an Aspire AppHost with Purview.Aspire.ResourceKit - declaring a [HostKit] and
   [ResourceDefinition] resource kits, choosing the generic or non-generic attribute style, the
   Build/BuildResource and Configure/ConfigureResource lifecycle, project resources through
-  AddProject, and registering the generated AddAspireResourceKit extension.
+  AddProject, grouping kits with [ResourceGroup]/[InGroup<TGroup>], named dashboard URLs with
+  [ResourceUrl]/[EndpointUrl], and registering the generated AddAspireResourceKit extension.
 metadata:
   product: Purview.Aspire.ResourceKit
   repository: purview-dev/aspire-resourcekit
@@ -20,7 +21,7 @@ dotnet add package Purview.Aspire.ResourceKit
 ```
 
 Requires **.NET 10** or **.NET 11**: the package ships `lib/net10.0` and `lib/net11.0` assets, and the
-two attributes below are generated into the consuming compilation by the bundled source generator —
+attributes below are generated into the consuming compilation by the bundled source generator —
 there is no separate attribute package to reference.
 
 ## The shape
@@ -193,6 +194,43 @@ evaluated first, then `IsResourceEnabled(builder)` — **only when `IsEnabled` i
 the combined result is assigned back to `IsEnabled`. A `false` result skips both `BuildResource(...)`
 and `ConfigureResource()`. The `purview-resourcekit-options` skill covers the full model, including why
 a kit disabled through options is never re-enabled by the hook.
+
+## Groups and dashboard URLs
+
+Group related kits with a `[ResourceGroup]` class, and add a kit to a group with `[InGroup<TGroup>]`. A
+kit can be in several groups, and its first group, or the one marked `Primary = true`, is where the
+dashboard nests it:
+
+```csharp
+[ResourceGroup("platform")] sealed partial class PlatformGroup;
+[ResourceGroup<PlatformGroup>("data")] sealed partial class DataGroup;  // or Parent = typeof(PlatformGroup)
+
+[ResourceDefinition<AzurePostgresFlexibleServerResource>("postgres")]
+[InGroup<DataGroup>]
+[ResourceUrl("Docs", "https://example.com/postgres")]   // absolute: shown as-is
+sealed partial class PostgresKit { /* ... */ }
+
+[ResourceDefinition<Projects.Example_Service>("api")]
+[ResourceUrl("Health", "/health", DisplayText = "Health")]  // one URL, against https then http
+[EndpointUrl("https", DisplayText = "API")]                  // renames the endpoint's own URL
+sealed partial class ApiKit { /* ... */ }
+```
+
+- A group class must be `partial`, non-generic and must have no base type: the generator derives it from
+  `ResourceKitGroup<THostKit>` (`SG0025`, `SG0030`). A class is a kit or a group, never both (`SG0031`), and a
+  parent chain can never loop back (`SG0022`). It must be at least as accessible as the host kit.
+- In run mode, at the end of `Configure`, each group with a built kit is added as a `ResourceKitGroupResource`
+  node, named after the group, or `<name>-group` when a resource already has that name. The node is
+  excluded from the manifest. A kit whose resource already has a parent (its own
+  `WithParentRelationship`, or an integration such as AspireC4 that builds its own tree) keeps it, and the
+  top of that chain is nested in the group instead, unless the chain ends at another kit or a group node.
+- A resource an integration adds beside a kit's own (DbGate, pgweb) isn't a kit. Place it with
+  `sql.WithDbGate(dbGate => dbGate.WithResourceGroup(HostKit.Groups.Persistence))`. `WithDbGate` returns the SQL builder,
+  so the callback is the only place to reach DbGate's.
+- Prefer `[ResourceUrl]` to `WithUrl("/path")`. Aspire's relative `WithUrl` rewrites the path of
+  **every** endpoint URL; `[ResourceUrl]` adds one URL.
+- `HostKit.Groups.Data.Resources` lists a group's kits for cross-resource wiring in `ConfigureResource`.
+- Manual host kits pass groups to `AddResource(kit, group, ...)` and override `Urls`.
 
 ## Growing a composition
 

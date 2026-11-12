@@ -9,7 +9,69 @@ static partial class CodeGenEmiiter
 	{
 		yield return ($"{nameof(HostKitAttribute)}.g.cs", HostKitAttribute());
 		yield return ("ResourceDefinitionAttribute.g.cs", ResourceKitDefinitionAttribute());
+		yield return ("ResourceGroupAttribute.g.cs", ResourceGroupAttributes());
+		yield return ("ResourceUrlAttribute.g.cs", ResourceUrlAttributes());
 	}
+
+	// Attribute-supplied URL display locations arrive as a fully-qualified enum member name, like modes.
+	static string DisplayLocationExpression(string? location)
+	{
+		if (location is null || location.Trim().Length == 0)
+			return $"{TypeLibrary.Aspire.Hosting.ApplicationModel.UrlDisplayLocation}.SummaryAndDetails";
+
+		return location.StartsWith("global::", StringComparison.Ordinal) ? location : $"global::{location}";
+	}
+
+	// A new ResourceKitUrl populated from a declared URL, for an options initializer or an Urls override.
+	static string UrlCreationExpression(UrlModel url)
+	{
+		List<string> members = [];
+		if (url.Url is not null)
+			members.Add($"Url = {url.Url.StringLiteral()}");
+		if (url.DisplayText is not null)
+			members.Add($"DisplayText = {url.DisplayText.StringLiteral()}");
+		if (url.Endpoint is not null)
+			members.Add($"Endpoint = {url.Endpoint.StringLiteral()}");
+
+		members.Add($"DisplayLocation = {DisplayLocationExpression(url.DisplayLocation)}");
+
+		return $"new {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitUrl}() {{ {string.Join(", ", members)} }}";
+	}
+
+	// Writes the nested options class holding one ResourceKitUrl per declared URL, named after the URL.
+	static void GenerateUrlsOptionsClass(CodeWriter writer, EquatableArray<UrlModel> urls)
+	{
+		writer.NewLine().XmlSummary("Typed settings for the declared dashboard URLs, one property per URL name.");
+
+		using (
+			writer.ClassScope(
+				new("UrlsOptions", TypeDeclarationAccessibility.Public) { IsSealed = true, IsPartial = true }
+			)
+		)
+		{
+			foreach (var url in urls)
+			{
+				writer
+					.XmlSummary($"Gets or sets the '{url.PropertyName}' URL.")
+					.Property(
+						new(
+							url.PropertyName,
+							TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitUrl,
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							HasSetter = true,
+							Initializer = UrlCreationExpression(url),
+						}
+					);
+			}
+		}
+	}
+
+	static string UrlsExpression(EquatableArray<UrlModel> urls, bool fromOptions) =>
+		fromOptions
+			? $"[{string.Join(", ", urls.AsImmutableArray().Select(static u => $"Options.Urls.{u.PropertyName}"))}]"
+			: $"[{string.Join(", ", urls.AsImmutableArray().Select(UrlCreationExpression))}]";
 
 	public static CodeWriter Emit(OutputContext outputContext, CancellationToken cancellationToken)
 	{
@@ -26,6 +88,7 @@ static partial class CodeGenEmiiter
 		EmitHostKit(outputContext, cancellationToken);
 		EmitResourceKitBase(outputContext, cancellationToken);
 		EmitResourceKits(outputContext, cancellationToken);
+		EmitResourceGroups(outputContext, cancellationToken);
 		EmitExtensionClass(outputContext, cancellationToken);
 
 		return writer;

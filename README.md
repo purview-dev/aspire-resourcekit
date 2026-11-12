@@ -92,6 +92,8 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - a host resource base class,
 - resource properties on the host,
 - host + per-resource options (when enabled),
+- typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
+- named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
 - an AppHost extension method to build/configure/register your host kit.
 
 ## Documentation
@@ -100,6 +102,7 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
 - [Getting started](docs/wiki/Getting-Started.md)
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
+- [Resource groups and dashboard URLs](docs/wiki/Groups-and-URLs.md)
 - [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)
 - [Release notes](docs/wiki/Release-Notes.md)

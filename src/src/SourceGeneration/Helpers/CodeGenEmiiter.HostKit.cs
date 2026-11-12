@@ -70,6 +70,10 @@ partial class CodeGenEmiiter
 				context.HostKit.ShouldGenerateOptions ? "Options.Mode" : ModeExpression(context.HostKit.Mode)
 			);
 
+			// Write the typed resource group accessor
+			if (context.HasResourceGroups)
+				GenerateGroupsProperty(context);
+
 			// Write the Resource Kit properties
 			if (context.Model.HasResourceKits)
 			{
@@ -90,6 +94,9 @@ partial class CodeGenEmiiter
 
 			// Write the partial lifecycle hooks.
 			GenerateLifecyclePartialMethods(context, cancellationToken);
+
+			if (context.HasResourceGroups)
+				GenerateGroupsClass(context, cancellationToken);
 
 			if (context.Model.HostKit.Value.ShouldGenerateOptions)
 			{
@@ -150,6 +157,32 @@ partial class CodeGenEmiiter
 							)
 				);
 		}
+	}
+
+	static void GenerateGroupsProperty(OutputContext context)
+	{
+		var groupsType = context.HostKit.HostKitType.Nested(GroupsClassName);
+
+		context
+			.Writer.XmlSummary("Gets the resource groups composed by this host kit.")
+			.XmlException(
+				TypeLibrary.System.InvalidOperationException,
+				"Thrown if the groups have not been initialized. Call Build first."
+			);
+
+		context.Writer.Property(
+			new("Groups", groupsType, TypeDeclarationAccessibility.Public)
+			{
+				HasGetter = true,
+				HasSetter = true,
+				SetterAccessibility = TypeDeclarationAccessibility.Private,
+			},
+			writeGetterBody =>
+				writeGetterBody.Return(
+					$"field ?? throw new {TypeLibrary.System.InvalidOperationException}({"The resource groups have not been initialized. Call Build first.".StringLiteral()})"
+				),
+			writeSetterBody => writeSetterBody.Assignment("field", "value")
+		);
 	}
 
 	static void GenerateResourceKitProperties(OutputContext context, CancellationToken cancellationToken)
@@ -235,6 +268,17 @@ partial class CodeGenEmiiter
 				.MethodCall("OnPreBuild", ["builder"])
 				.NewLine();
 
+			if (context.HasResourceGroups)
+			{
+				context
+					.Writer.Comment("Creating the resource groups, parents before their children.")
+					.Assignment(
+						"Groups",
+						new ObjectCreationOptions(context.HostKit.ShouldGenerateOptions ? ["Options"] : [])
+					)
+					.NewLine();
+			}
+
 			foreach (
 				var resourceKit in context
 					.ResourceKits.AsImmutableArray()
@@ -274,7 +318,17 @@ partial class CodeGenEmiiter
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					context.Writer.MethodCall("AddResource", resourceKit.PropertyName);
+
+					// The primary group is first; it decides where the kit is shown in the dashboard.
+					string[] arguments =
+					[
+						resourceKit.PropertyName,
+						.. resourceKit
+							.Groups.AsImmutableArray()
+							.Where(g => context.ResourceGroups.AsImmutableArray().Any(m => m.GroupType == g))
+							.Select(g => $"Groups.{PropertyNameOf(context, g)}"),
+					];
+					context.Writer.MethodCall("AddResource", arguments);
 				}
 			}
 
@@ -401,6 +455,27 @@ partial class CodeGenEmiiter
 						Initializer = ModeExpression(context.HostKit.Mode),
 					}
 				);
+
+			if (context.HasResourceGroups)
+			{
+				context
+					.Writer.NewLine()
+					.XmlSummary("Gets or sets options for the resource groups, one property per group.")
+					.Property(
+						new(
+							"Groups",
+							context.HostKit.OptionsType.Nested(GroupsOptionsClassName),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							HasGetter = true,
+							IsInitOnly = true,
+							Initializer = "new()",
+						}
+					);
+
+				GenerateGroupsOptionsClass(context, cancellationToken);
+			}
 
 			if (context.HasResourceKits)
 			{

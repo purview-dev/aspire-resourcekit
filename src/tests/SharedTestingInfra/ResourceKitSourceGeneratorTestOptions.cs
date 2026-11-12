@@ -37,6 +37,8 @@ public sealed record ResourceKitSourceGeneratorTestOptions : SourceGeneratorTest
 			"EmbeddedAttribute",
 			TypeLibrary.Purview.Aspire.ResourceKit.HostKitAttribute.Name,
 			TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute.Name,
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceGroupAttribute.Name,
+			TypeLibrary.Purview.Aspire.ResourceKit.ResourceUrlAttribute.Name,
 		];
 		AnalyzerTypes = [typeof(SourceGeneration.ResourceKitDiagnosticAnalyzer)];
 	}

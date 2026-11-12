@@ -17,6 +17,13 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   takes its memory-safety rules; the net10.0 leg keeps the 10.0.15 `Microsoft.Extensions.*` floor.
   `OptionsHelper.PathFor<TOptions, TValue>` adds a non-boxing selector overload, and pack validation
   now compares against the published 1.1.0 baseline.
+- **Resource groups.** `[ResourceGroup]` and `[InGroup<TGroup>]` gather kits under named, nestable groups.
+  A group can be switched off or given a mode from configuration, and in run mode it appears as a node in the dashboard
+  with its kits nested underneath. See [Groups and URLs](Groups-and-URLs.md).
+- **Named dashboard URLs.** `[ResourceUrl]` and `[EndpointUrl]` declare a kit's or group's dashboard links as
+  options. A relative URL adds one link for one endpoint, instead of rewriting every endpoint URL as
+  `WithUrl("/path")` does.
+- **Diagnostics SG0021-SG0031** for groups and URLs. A group can never become its own ancestor or member.
 
 ## 1.0.0
 

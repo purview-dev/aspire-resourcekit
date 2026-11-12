@@ -44,8 +44,18 @@ public sealed partial class HostKitGenerator : IIncrementalGenerator
 				))
 				.ToImmutableArray();
 
+			var validResourceGroups = ResourceGroupOrdering.ParentsFirst(
+				[
+					.. generationModel
+						.ResourceGroups.AsImmutableArray()
+						.Where(static g => g.ShouldProcess)
+						.Select(static g => g.Value),
+				],
+				sourceProductionContext.CancellationToken
+			);
+
 			var writer = CodeGenEmiiter.Emit(
-				new(generationModel, validResourceKits, generationContext),
+				new(generationModel, validResourceKits, validResourceGroups, generationContext),
 				sourceProductionContext.CancellationToken
 			);
 			var hintName = HintNameHelper.ForHost(generationModel.HostKit.Value.HostKitType.MetadataFullName);

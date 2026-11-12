@@ -33,19 +33,31 @@ exiting the constructor" warning does not apply.
 | SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` |
 | SG0019 | Warning | A project resource kit declares an explicit base class that does not use `ProjectResource` |
 | SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
+| SG0021 | Error | An `[InGroup<TGroup>]` type argument, or a group's `Parent`, is not a `[ResourceGroup]` class |
+| SG0022 | Error | A resource group is its own ancestor |
+| SG0023 | Error | Two resource groups share a name (case-insensitive) or a property name |
+| SG0024 | Warning | A resource kit marks more than one group as `Primary` |
+| SG0025 | Error | A resource group declares a base type |
+| SG0026 | Error | Two URLs on one resource kit or group share a name |
+| SG0027 | Error | An endpoint URL is declared on a resource, or group, without endpoints |
+| SG0028 | Warning | A relative URL is declared on a resource, or group, without endpoints |
+| SG0029 | Error | A resource group declares its parent more than once |
+| SG0030 | Error | A resource group is generic, or nested in a generic type |
+| SG0031 | Error | A resource group is also a resource kit, or carries `[InGroup]` |
 
-See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles, and
-[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics.
+See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
+[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics, and
+[Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031.
 
 ## Execution-only vs generation-blocking rules
 
-SG0017, SG0018, and SG0019 are **execution-only** rules. They report problems that break the resource at
+SG0017, SG0018, SG0019, SG0024 and SG0028 are **execution-only** rules. They report problems that break the resource at
 runtime (an unset builder property, a project that is never registered, or a base class that cannot build
 a project) but they do **not** prevent source generation. They are reported as warnings so generation
 always proceeds — for example, a resource kit whose `BuildResource` does not yet register its declared
 project via `AddProject<T>()` is still generated (and the host kit is still emitted) so the user can
-complete the override instead of losing the whole output. Only Error-severity rules (SG0001–SG0016) block
-generation.
+complete the override instead of losing the whole output. Only Error-severity rules block generation.
+SG0024 keeps the first primary group, and SG0028's URL is skipped at runtime.
 
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 

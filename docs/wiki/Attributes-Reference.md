@@ -1,8 +1,10 @@
 # Attributes reference
 
-ResourceKit ships two public attributes in the `Purview.Aspire.ResourceKit` namespace. Both are
+ResourceKit's public attributes live in the `Purview.Aspire.ResourceKit` namespace. All of them are
 generated into the consuming compilation by the bundled source generator, so you do not reference a
-separate attribute package.
+separate attribute package. `[HostKit]` and `[ResourceDefinition]` are described here. The grouping and
+URL attributes (`[ResourceGroup]`, `[ResourceGroup<TParent>]`, `[InGroup<TGroup>]`, `[ResourceUrl]` and `[EndpointUrl]`) are
+described in [Groups and URLs](Groups-and-URLs.md).
 
 ## `HostKitAttribute` (`[HostKit]`)
 
@@ -133,4 +135,5 @@ you declare it yourself — see [Examples](Examples.md).
 ## See also
 
 - [Generated Output](Generated-Output.md) — what the generator emits from these attributes.
+- [Groups and URLs](Groups-and-URLs.md) — `[ResourceGroup]`, `[InGroup<TGroup>]`, `[ResourceUrl]`, `[EndpointUrl]`.
 - [Diagnostics](Diagnostics.md) — full diagnostic reference.

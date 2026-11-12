@@ -23,6 +23,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   to paths once, at call time, rather than re-walking the expression at `Build()`.
 - **Package validation** — `pack` compares the package with the published `1.1.0` baseline and fails
   on a removed or changed public API, the way a test fails on a behaviour change.
+- **Resource groups.** `[ResourceGroup]` marks a partial class as a named group, which can nest under
+  another (`[ResourceGroup<TParent>]` or `Parent = typeof(TParent)`), and `[InGroup<TGroup>]` adds a resource kit to one or more groups.
+  A group's `IsEnabled` and `Mode` (`<HostKit>:Groups:<Group>`) gate every kit in it and in its child
+  groups. In run mode each group is a `ResourceKitGroupResource` dashboard node that the kit's primary
+  group parents it to, and the node is excluded from the manifest. The host kit gains a typed `Groups`
+  accessor. Manual host kits use `ResourceKitGroup<THostKit>` and `AddResource(kit, groups)`. A resource that is not a kit,
+  such as DbGate beside SQL Server, joins a group's node with `builder.WithResourceGroup(group)`.
+- **Named dashboard URLs.** `[ResourceUrl(name, url)]` adds a URL, absolute or relative to an endpoint, and
+  `[EndpointUrl(endpoint)]` renames an endpoint's own URL. Each becomes a bindable `ResourceKitUrl` option
+  (`<HostKit>:<Kit>:Urls:<Name>`). Unlike Aspire's relative `WithUrl("/path")`, which rewrites every
+  endpoint URL, a relative `ResourceKitUrl` adds one URL for one endpoint. Manual kits override
+  `ResourceKitBase.Urls`, and any builder can call `WithResourceKitUrls(...)`.
+- **Diagnostics SG0021–SG0031** for groups and URLs, including cycle detection. No group can become its own
+  ancestor or member, at declaration, generation or runtime.
 
 ### Changed
 

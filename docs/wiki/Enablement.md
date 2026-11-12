@@ -49,6 +49,8 @@ Because it is an option, configuration can override either the host-wide mode or
 
 - The host `Mode` gates the whole host kit: every resource is disabled before it is built.
 - A resource `Mode` gates that resource only.
+- A resource group's `IsEnabled` and `Mode` gate every kit in the group and in its child groups, in the
+  same step as the host `Mode`. See [Groups and URLs](Groups-and-URLs.md#enablement).
 
 An excluded kit never runs `BuildResource(...)` or `ConfigureResource()`. Its host property is still
 constructed (so `HostKit.KeyVault` is non-null), but `IsEnabled` is `false` and any `ResourceBuilder`

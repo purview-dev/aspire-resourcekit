@@ -60,6 +60,17 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 	protected virtual ResourceKitMode Mode => ResourceKitMode.All;
 
 	/// <summary>
+	/// Gets the named URLs the dashboard shows for this resource.
+	/// </summary>
+	/// <remarks>
+	/// Defaults to none. Generated resource kits override this member with the URLs declared by
+	/// <c>[ResourceUrl]</c> and <c>[EndpointUrl]</c>, as bound from options; manual resource kits can override it
+	/// directly. The URLs are applied after <see cref="BuildResource"/> returns, through
+	/// <see cref="ResourceKitUrl.Apply"/>.
+	/// </remarks>
+	protected virtual IEnumerable<ResourceKitUrl> Urls => [];
+
+	/// <summary>
 	/// Gets the underlying Aspire resource builder for this resource.
 	/// </summary>
 	/// <remarks>
@@ -116,6 +127,10 @@ public abstract class ResourceKitBase<THostKit, TResource> : IResourceKit<THostK
 			return;
 
 		ResourceBuilder = BuildResource(builder);
+
+		ResourceKitUrl[] urls = [.. Urls.Where(static u => u.IsEnabled)];
+		if (urls.Length > 0)
+			ResourceBuilder.WithResourceKitUrls(urls);
 	}
 
 	/// <inheritdoc/>

@@ -32,6 +32,17 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			DiagnosticLibrary.ResourcePropertyNeverSet,
 			DiagnosticLibrary.ProjectDefinitionMismatch,
 			DiagnosticLibrary.ProjectResourceKitBaseMismatch,
+			DiagnosticLibrary.GroupTypeNotResourceGroup,
+			DiagnosticLibrary.ResourceGroupCycle,
+			DiagnosticLibrary.DuplicateResourceGroupName,
+			DiagnosticLibrary.MultiplePrimaryGroups,
+			DiagnosticLibrary.ResourceGroupCannotHaveExplicitBase,
+			DiagnosticLibrary.DuplicateUrlName,
+			DiagnosticLibrary.EndpointUrlRequiresEndpoints,
+			DiagnosticLibrary.RelativeUrlWithoutEndpoints,
+			DiagnosticLibrary.MultipleResourceGroupParents,
+			DiagnosticLibrary.ResourceGroupCannotBeGeneric,
+			DiagnosticLibrary.ResourceGroupCannotBeResourceKit,
 		];
 
 	public override void Initialize(AnalysisContext context)
@@ -46,6 +57,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 		{
 			ConcurrentBag<INamedTypeSymbol> hostKits = [];
 			ConcurrentBag<INamedTypeSymbol> resourceKits = [];
+			ConcurrentBag<INamedTypeSymbol> resourceGroups = [];
 
 			compilationStartContext.RegisterSymbolAction(
 				symbolContext =>
@@ -87,13 +99,24 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 							)
 						);
 					}
+
+					if (ResourceKitRules.HasResourceGroupAttribute(type))
+					{
+						resourceGroups.Add(type);
+						ReportRules(
+							symbolContext,
+							ResourceKitRules.EvaluateResourceGroup(type, symbolContext.CancellationToken)
+						);
+					}
 				},
 				SymbolKind.NamedType
 			);
 
 			compilationStartContext.RegisterCompilationEndAction(compilationEndContext =>
-				ReportCompilationRules(compilationEndContext, hostKits, resourceKits)
-			);
+			{
+				ReportCompilationRules(compilationEndContext, hostKits, resourceKits);
+				ReportGroupCompilationRules(compilationEndContext, resourceGroups);
+			});
 		});
 	}
 
@@ -162,6 +185,40 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 					duplicatePropertyName.Key
 				)
 			);
+		}
+	}
+
+	// A group's name identifies it in the dashboard, which compares names case-insensitively; its property
+	// name is a member of the generated Groups accessor, which C# compares ordinally.
+	static void ReportGroupCompilationRules(
+		CompilationAnalysisContext context,
+		ConcurrentBag<INamedTypeSymbol> resourceGroups
+	)
+	{
+		var groups = resourceGroups.ToArray();
+
+		var duplicates = groups
+			.GroupBy(ResourceKitRules.GroupName, StringComparer.OrdinalIgnoreCase)
+			.Where(static g => g.Count() > 1)
+			.Concat(
+				groups
+					.GroupBy(ResourceKitRules.GroupPropertyName, StringComparer.Ordinal)
+					.Where(static g => g.Count() > 1)
+			);
+
+		HashSet<ISymbol> reported = new(SymbolEqualityComparer.Default);
+		foreach (var duplicate in duplicates)
+		{
+			foreach (var group in duplicate.Where(reported.Add))
+			{
+				context.ReportDiagnostic(
+					Diagnostic.Create(
+						DiagnosticLibrary.DuplicateResourceGroupName,
+						GetLocation(group) ?? Location.None,
+						duplicate.Key
+					)
+				);
+			}
 		}
 	}
 

@@ -44,10 +44,21 @@ assigned.
 | `SG0018` | Warning | A project resource kit does not add the declared project via `AddProject<T>()`. |
 | `SG0019` | Warning | A project resource kit's explicit base does not use `ProjectResource`. |
 | `SG0020` | Error | An `OptionsHelper.Assign` action sets more than one property path. |
+| `SG0021` | Error | An `[InGroup<TGroup>]` type, or a group's `Parent`, is not a `[ResourceGroup]` class in this compilation. |
+| `SG0022` | Error | A resource group is its own ancestor. |
+| `SG0023` | Error | Two groups share a name (case-insensitive, as the dashboard compares names) or a property name. |
+| `SG0024` | Warning | A kit marks more than one group `Primary`; the first is used. |
+| `SG0025` | Error | A `[ResourceGroup]` class declares a base type. |
+| `SG0026` | Error | Two URLs on one kit or group share a name. |
+| `SG0027` | Error | An `[EndpointUrl]`, or a URL with an `Endpoint`, on a resource or group without endpoints. |
+| `SG0028` | Warning | A relative URL on a resource or group without endpoints; it is skipped at runtime. |
+| `SG0029` | Error | A group declares its parent more than once (`ResourceGroup<TParent>` and `Parent`, or both attributes). |
+| `SG0030` | Error | A group is generic, or nested in a generic type. |
+| `SG0031` | Error | A group is also a resource kit, or carries `[InGroup]`. |
 
 ## Execution-only versus generation-blocking
 
-`SG0017`, `SG0018` and `SG0019` are **execution-only**. They report things that break the resource at
+`SG0017`, `SG0018`, `SG0019`, `SG0024` and `SG0028` are **execution-only**. They report things that break the resource at
 runtime — an unset builder property, a project that is never registered, a base that cannot build a
 project — but they deliberately do **not** stop generation, and are warnings for that reason.
 
@@ -55,7 +66,7 @@ The point is practical: a resource kit whose `BuildResource` does not yet regist
 project is still generated, and the host kit still emitted, so you can finish the override instead of
 losing the whole output to a half-written method.
 
-Only the Error-severity rules, `SG0001`–`SG0016`, block generation.
+Only the Error-severity rules block generation.
 
 ## Fast triage
 
@@ -104,6 +115,19 @@ sealed partial class SqlServerKit
     }
 }
 ```
+
+### `SG0021`–`SG0031` — groups and URLs
+
+- `SG0021`: the type in `[InGroup<T>]`, or in `Parent = typeof(T)`, must be a `[ResourceGroup]` class declared
+  in the same project.
+- `SG0022` / `SG0031`: a group can never contain itself. Nest groups through one parent, as
+  `[ResourceGroup<TParent>]` or `Parent = typeof(TParent)` (not both: `SG0029`), and keep kits and groups as
+  separate classes.
+- `SG0025`: remove the base type from the group class; the generator supplies `ResourceKitGroup<THostKit>`.
+- `SG0026`: give each `[ResourceUrl]` a unique name. `[EndpointUrl]` takes its name from the endpoint, so two
+  `[EndpointUrl("https")]` also collide.
+- `SG0027` / `SG0028`: a group, or a kit for a resource without endpoints such as a `ParameterResource`, can
+  only show an **absolute** URL.
 
 ### `SG0020` — one property path per `Assign` action
 

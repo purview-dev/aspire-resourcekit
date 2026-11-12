@@ -20,6 +20,17 @@ public static class Platform
 		public const string PublishMarker = "publish-marker";
 	}
 
+	public static class ResourceGroups
+	{
+		public const string Platform = "platform";
+
+		public const string Data = "data";
+
+		public const string Services = "services";
+
+		public const string DocsUrl = "https://purview.dev/projects/aspire-resourcekit/";
+	}
+
 	public static class EndpointsDefinitions
 	{
 		public const string Health = "/health";
