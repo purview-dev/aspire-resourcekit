@@ -63,6 +63,7 @@ assigned.
 | `SG0037` | Error | Two children of one parent use the same generated property name. |
 | `SG0038` | Error | The generated `Parent` member collides with a user-authored member. |
 | `SG0039` | Warning | A child's explicit primary group differs from its parent's; visual placement follows the child's group. |
+| `SG0040` | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant. |
 
 ## Execution-only versus generation-blocking
 
@@ -156,6 +157,11 @@ parent or foreign-host parent throws `InvalidOperationException` even when the g
 an explicit child group overrides that. ResourceKit parentage does not add an Aspire visual parent, so the
 child then renders in its own group; if an Aspire parent relationship exists, it renders under the parent and
 the child's group is not where it appears. Use the same primary group or accept the placement deliberately.
+
+`SG0040` reports `Parent.ResourceBuilder.AddDatabase(...)` because a kit is already an `IResourceBuilder`.
+Use `Parent.AddDatabase(...)`. The "Use the resource kit directly" code fix removes the hop. It only offers
+the fix when the kit is the receiver of the next call, not when the builder is passed as an argument and the
+expected parameter type could differ.
 
 ### `SG0020` — one property path per `Assign` action
 

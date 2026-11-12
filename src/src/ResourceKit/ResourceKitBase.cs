@@ -284,6 +284,10 @@ public abstract class ResourceKitBase<THostKit, TResource>
 		if (parent is not IResourceKitGating gating)
 			return parent.IsEnabled;
 
+		// The parent is a gating kit, so its effective enablement is the only thing that matters. If the parent
+		// is unbuilt or building, the child cannot build yet. If the parent failed to build, the child cannot build. If the parent is disabled, the child cannot build. Otherwise, the
+		// parent is built and enabled, so the child can build.
+#pragma warning disable IDE0072 // Add missing cases
 		return gating.State switch
 		{
 			ResourceKitLifecycleState.Unbuilt or ResourceKitLifecycleState.Building =>
@@ -296,6 +300,7 @@ public abstract class ResourceKitBase<THostKit, TResource>
 			ResourceKitLifecycleState.Disabled => false,
 			_ => gating.EffectiveIsEnabled,
 		};
+#pragma warning restore IDE0072 // Add missing cases
 	}
 
 	[DebuggerHidden]

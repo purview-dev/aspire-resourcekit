@@ -10,5 +10,5 @@ namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 sealed partial class SubnetPrivateEndpointKit
 {
 	protected override IResourceBuilder<AzureSubnetResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		Parent.ResourceBuilder.AddSubnet(Name, "10.0.3.0/24");
+		Parent.AddSubnet(Name, "10.0.3.0/24");
 }

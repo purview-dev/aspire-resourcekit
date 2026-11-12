@@ -100,23 +100,13 @@ public sealed class ResourceKitHierarchyEnablementTests
 		protected override ResourceKitMode Mode => mode;
 	}
 
-	sealed class EnablementKit : ResourceKitBase<EnablementHostKit, EnablementResource>
+	sealed class EnablementKit(
+		EnablementHostKit hostKit,
+		string name,
+		bool hook = true,
+		ResourceKitMode mode = ResourceKitMode.All
+	) : ResourceKitBase<EnablementHostKit, EnablementResource>(hostKit, name)
 	{
-		readonly bool _hook;
-		readonly ResourceKitMode _mode;
-
-		public EnablementKit(
-			EnablementHostKit hostKit,
-			string name,
-			bool hook = true,
-			ResourceKitMode mode = ResourceKitMode.All
-		)
-			: base(hostKit, name)
-		{
-			_hook = hook;
-			_mode = mode;
-		}
-
 		public EnablementKit(
 			EnablementHostKit hostKit,
 			EnablementKit parent,
@@ -135,12 +125,12 @@ public sealed class ResourceKitHierarchyEnablementTests
 
 		public bool ConfigureCalled { get; private set; }
 
-		protected override ResourceKitMode Mode => _mode;
+		protected override ResourceKitMode Mode => mode;
 
 		protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder)
 		{
 			HookCalled = true;
-			return _hook;
+			return hook;
 		}
 
 		protected override IResourceBuilder<EnablementResource> BuildResource(IDistributedApplicationBuilder builder)

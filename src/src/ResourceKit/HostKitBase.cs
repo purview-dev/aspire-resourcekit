@@ -22,7 +22,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		with(ReferenceEqualityComparer.Instance),
 	];
 
-	Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> _parents = new(ReferenceEqualityComparer.Instance);
+	Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> _parents = [with(ReferenceEqualityComparer.Instance)];
 	ImmutableArray<IResourceKit<THostKit>> _orderedResources = [];
 	bool _resourcesSealed;
 
@@ -216,7 +216,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		}
 
 		ValidateNoCycles(resources, parents);
-		var ordered = OrderParentsFirst(resources, parents);
+		var ordered = HostKitBase<THostKit>.OrderParentsFirst(resources, parents);
 
 		return (ordered, parents);
 	}
@@ -257,7 +257,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		}
 	}
 
-	ImmutableArray<IResourceKit<THostKit>> OrderParentsFirst(
+	static ImmutableArray<IResourceKit<THostKit>> OrderParentsFirst(
 		ImmutableArray<IResourceKit<THostKit>> resources,
 		Dictionary<IResourceKit<THostKit>, IResourceKit<THostKit>> parents
 	)
@@ -302,6 +302,8 @@ public abstract class HostKitBase<THostKit> : IHostKit
 		if (ordered.Count != resources.Length)
 			throw new InvalidOperationException("The resource kit ownership graph is not acyclic.");
 
+		// The queue is ordered by registration index, so a parent always precedes its children, and siblings are
+		// ordered by registration index too.
 		return ordered.ToImmutable();
 	}
 
@@ -453,7 +455,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	void PlaceResourcesInGroupNodes()
 	{
 		List<(IResource Resource, IResourceBuilder<ResourceKitGroupResource> Node)> placements = [];
-		HashSet<IResource> kitResources = new(ReferenceEqualityComparer.Instance);
+		HashSet<IResource> kitResources = [with(ReferenceEqualityComparer.Instance)];
 		foreach (var resource in _orderedResources)
 		{
 			if (!resource.IsEnabled || resource is not IResourceBuilder<IResource> resourceBuilder)
@@ -515,7 +517,7 @@ public abstract class HostKitBase<THostKit> : IHostKit
 	// resource seen twice is a cycle, and a cycle has no top to nest, so null is returned.
 	static IResource? TopOfParentChain(IResource resource)
 	{
-		HashSet<IResource> seen = new(ReferenceEqualityComparer.Instance) { resource };
+		HashSet<IResource> seen = [with(ReferenceEqualityComparer.Instance), resource];
 		var current = resource;
 		while (ParentOf(current) is { } parent)
 		{

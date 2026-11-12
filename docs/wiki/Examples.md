@@ -31,7 +31,7 @@ sealed partial class PostgresDatabaseKit
 {
     protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddDatabase(Name);
+            Parent.AddDatabase(Name);
 }
 ```
 
@@ -58,7 +58,7 @@ sealed partial class SubnetWebKit
 {
     protected override IResourceBuilder<AzureSubnetResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddSubnet(Name, "10.0.1.0/24");
+            Parent.AddSubnet(Name, "10.0.1.0/24");
 }
 ```
 
@@ -245,7 +245,7 @@ sealed partial class PostgresDatabaseKit(ExampleHostKit hostKit, PostgresKit par
 
 	protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
 		BuildResource(IDistributedApplicationBuilder builder) =>
-			Parent.ResourceBuilder.AddDatabase(Name);
+			Parent.AddDatabase(Name);
 }
 ```
 

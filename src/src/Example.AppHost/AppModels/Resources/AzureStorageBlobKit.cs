@@ -11,5 +11,5 @@ sealed partial class AzureStorageBlobKit
 {
 	protected override IResourceBuilder<AzureBlobStorageResource> BuildResource(
 		IDistributedApplicationBuilder builder
-	) => Parent.ResourceBuilder.AddBlobs(Name);
+	) => Parent.AddBlobs(Name);
 }

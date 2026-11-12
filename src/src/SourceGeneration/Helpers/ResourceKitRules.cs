@@ -602,7 +602,7 @@ static class ResourceKitRules
 		if (nodes.IsEmpty)
 			return findings.ToImmutable();
 
-		Dictionary<string, int> byType = new(StringComparer.Ordinal);
+		Dictionary<string, int> byType = [with(StringComparer.Ordinal)];
 		for (var index = 0; index < nodes.Length; index++)
 			byType[nodes[index].KitType.MetadataFullName] = index;
 
@@ -755,7 +755,7 @@ static class ResourceKitRules
 	internal static bool IsInParentCycle(INamedTypeSymbol symbol)
 	{
 		var start = symbol.OriginalDefinition;
-		HashSet<INamedTypeSymbol> seen = new(SymbolEqualityComparer.Default) { start };
+		HashSet<INamedTypeSymbol> seen = [with(SymbolEqualityComparer.Default), start];
 		for (
 			var parent = GetGroupParent(start)?.OriginalDefinition;
 			parent is not null;
@@ -886,7 +886,7 @@ static class ResourceKitRules
 		CancellationToken cancellationToken
 	)
 	{
-		HashSet<string> seen = new(StringComparer.Ordinal);
+		HashSet<string> seen = [with(StringComparer.Ordinal)];
 		foreach (var (url, attribute) in GetUrls(symbol))
 		{
 			cancellationToken.ThrowIfCancellationRequested();
@@ -953,6 +953,7 @@ static class ResourceKitRules
 		if (TypeHelpers.Implements(resourceType, TypeLibrary.Aspire.Hosting.IProjectMetadata))
 			return true;
 
+		// The resource type is not a project, so it must be a resource with endpoints to be valid.
 		return TypeHelpers.Implements(resourceType, TypeLibrary.Aspire.Hosting.ApplicationModel.IResourceWithEndpoints);
 	}
 

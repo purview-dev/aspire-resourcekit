@@ -78,7 +78,8 @@ instead of keeping both responsibilities in one class:
 2. Remove the child creation from the parent.
 3. Add `Parent = typeof(TParentKit)` (and `PropertyName` when the class name is not the property name you
    want) to the child `[ResourceDefinition]`.
-4. Build the child with `Parent.ResourceBuilder.Add...`, and return that builder.
+4. Build the child with `Parent.Add...` (a resource kit is already an `IResourceBuilder<TResource>`; SG0040
+   reports the redundant `Parent.ResourceBuilder` form), and return that builder.
 5. Use `Parent` or the generated `hostKit.Parent.Child` from `ConfigureResource`.
 6. Guard cross-resource wiring with `HostKit.Parent.IsEnabled && HostKit.Parent.Child.IsEnabled`, because a
    disabled ancestor disables the child.
@@ -92,7 +93,7 @@ sealed partial class SubnetWebKit
 {
     protected override IResourceBuilder<AzureSubnetResource> BuildResource(
         IDistributedApplicationBuilder builder) =>
-        Parent.ResourceBuilder.AddSubnet(Name, "10.0.1.0/24");
+        Parent.AddSubnet(Name, "10.0.1.0/24");
 }
 ```
 

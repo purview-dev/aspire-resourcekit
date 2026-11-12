@@ -28,7 +28,7 @@ sealed partial class PostgresDatabaseKit
 {
     protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddDatabase(Name);
+            Parent.AddDatabase(Name);
 }
 ```
 
@@ -39,8 +39,10 @@ hostKit.Postgres.Database          // strongly typed child property on the paren
 PostgresDatabaseKit.Parent         // strongly typed parent instance on the child
 ```
 
-`Parent.ResourceBuilder` is available inside `BuildResource`, because the parent has finished building first.
-The child returns the resource it created; ResourceKit never creates a second copy.
+`Parent` is available inside `BuildResource`, because the parent has finished building first. A resource kit
+implements `IResourceBuilder<TResource>` itself, so `Parent.AddDatabase(Name)` is the short form;
+`Parent.ResourceBuilder.AddDatabase(Name)` works too but is redundant and raises **SG0040** (Info). The
+child returns the resource it created; ResourceKit never creates a second copy.
 
 `PropertyName` is still the child property name, and the default is derived from the class name exactly as
 for a root kit. Set it explicitly when the class name is not the property name you want
@@ -68,7 +70,7 @@ sealed partial class SubnetWebKit
 {
     protected override IResourceBuilder<AzureSubnetResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddSubnet(Name, "10.0.1.0/24");
+            Parent.AddSubnet(Name, "10.0.1.0/24");
 }
 
 [ResourceDefinition<AzureSubnetResource>(
@@ -79,7 +81,7 @@ sealed partial class SubnetDataKit
 {
     protected override IResourceBuilder<AzureSubnetResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddSubnet(Name, "10.0.2.0/24");
+            Parent.AddSubnet(Name, "10.0.2.0/24");
 }
 ```
 
@@ -109,7 +111,7 @@ sealed partial class PostgresDatabaseKit(ShopHostKit hostKit, PostgresKit parent
 
     protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddDatabase(Name);
+            Parent.AddDatabase(Name);
 }
 ```
 
@@ -252,7 +254,7 @@ ResourceKit does **not** add an Aspire visual parent relationship automatically.
 resource to render under the parent's resource, add it explicitly in `BuildResource`:
 
 ```csharp
-var database = Parent.ResourceBuilder.AddDatabase(Name);
+var database = Parent.AddDatabase(Name);
 database.WithParentRelationship(Parent.ResourceBuilder);
 return database;
 ```
@@ -271,6 +273,8 @@ builds its own resource tree. See [Resource groups and dashboard URLs](Groups-an
 | SG0036 | The generated child property collides with a member on the parent |
 | SG0037 | Two children of one parent use the same property name |
 | SG0038 | The generated `Parent` member collides with a user-authored member |
+| SG0039 | A child's primary group differs from its parent's; visual placement follows the child's group |
+| SG0040 | `.ResourceBuilder` is redundant when the kit is the next call's receiver; a code fix uses the kit directly |
 
 Invalid graphs block generation; the runtime validates manual graphs before creating any Aspire resource.
 See [Diagnostics](Diagnostics.md).

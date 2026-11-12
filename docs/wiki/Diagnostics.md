@@ -52,6 +52,7 @@ exiting the constructor" warning does not apply.
 | SG0037 | Error | Two children of the same parent use the same generated property name |
 | SG0038 | Error | The generated `Parent` member collides with a user-authored member |
 | SG0039 | Warning | A child uses an explicit primary group different from its parent's; visual placement follows the child's group |
+| SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
 [Project Resources](Project-Resources.md) for SG0018/SG0019 specifics,
@@ -96,6 +97,24 @@ OptionsHelper.Assign<ShopHostKitOptions>(
 
 Visual Studio offers a **"Split into separate assignments"** code fix that performs this conversion for you.
 See [OptionsHelper](OptionsHelper.md) and [Source Generator Behaviors](Source-Generator-Behaviors.md).
+
+## Redundant `ResourceBuilder` access (SG0040)
+
+A resource kit derives from `ResourceKitBase<THostKit, TResource>`, which implements
+`IResourceBuilder<TResource>`. When the kit is the receiver of the next call, the `.ResourceBuilder` hop is
+redundant:
+
+```csharp
+// Before (SG0040, Info)
+Parent.ResourceBuilder.AddDatabase(Name);
+
+// After — "Use the resource kit directly"
+Parent.AddDatabase(Name);
+```
+
+The code fix only fires when the hop is the receiver of a following member access/invocation. It deliberately
+does not fire in argument position, where the expected parameter type might be `IResourceBuilder<IResource>`
+and the kit's own `IResourceBuilder<TResource>` would not satisfy it.
 
 ## Fast troubleshooting checklist
 

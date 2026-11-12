@@ -23,7 +23,7 @@ static class ResourceKitHierarchyOrdering
 		if (ordered.Length == 0)
 			return EquatableArray<ResourceKitModel>.Empty;
 
-		Dictionary<string, int> indexByType = new(StringComparer.Ordinal);
+		Dictionary<string, int> indexByType = [with(StringComparer.Ordinal)];
 		for (var index = 0; index < ordered.Length; index++)
 			indexByType[ordered[index].ResourceKitType.MetadataFullName] = index;
 

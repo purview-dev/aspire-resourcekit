@@ -289,8 +289,12 @@ public sealed class ResourceKitHierarchyTests
 		var builder = DistributedApplication.CreateBuilder();
 		TestHostKit host = new([]);
 		MutableKit parent = new() { HostKit = host, Name = "parent" };
-		MutableKit child = new() { HostKit = host, Name = "child" };
-		child.ParentKit = parent;
+		MutableKit child = new()
+		{
+			HostKit = host,
+			Name = "child",
+			ParentKit = parent,
+		};
 		host.AddResource(child);
 
 		// Act
@@ -435,32 +439,16 @@ public sealed class ResourceKitHierarchyTests
 		public List<string> Events { get; } = events;
 	}
 
-	sealed class InstrumentedKit : ResourceKitBase<TestHostKit, TestResource>
+	sealed class InstrumentedKit(
+		TestHostKit hostKit,
+		string name,
+		List<string> events,
+		bool hook = true,
+		ResourceKitMode mode = ResourceKitMode.All,
+		bool throwOnBuild = false,
+		bool throwOnConfigure = false
+	) : ResourceKitBase<TestHostKit, TestResource>(hostKit, name)
 	{
-		readonly bool _hook;
-		readonly ResourceKitMode _mode;
-		readonly bool _throwOnBuild;
-		readonly bool _throwOnConfigure;
-		readonly List<string> _events;
-
-		public InstrumentedKit(
-			TestHostKit hostKit,
-			string name,
-			List<string> events,
-			bool hook = true,
-			ResourceKitMode mode = ResourceKitMode.All,
-			bool throwOnBuild = false,
-			bool throwOnConfigure = false
-		)
-			: base(hostKit, name)
-		{
-			_hook = hook;
-			_mode = mode;
-			_throwOnBuild = throwOnBuild;
-			_throwOnConfigure = throwOnConfigure;
-			_events = events;
-		}
-
 		public InstrumentedKit(
 			TestHostKit hostKit,
 			InstrumentedKit parent,
@@ -486,23 +474,24 @@ public sealed class ResourceKitHierarchyTests
 
 		public bool HookCalled { get; private set; }
 
-		protected override ResourceKitMode Mode => _mode;
+		protected override ResourceKitMode Mode => mode;
 
 		protected override bool IsResourceEnabled(IDistributedApplicationBuilder builder)
 		{
 			HookCalled = true;
-			return _hook;
+			return hook;
 		}
 
 		protected override IResourceBuilder<TestResource> BuildResource(IDistributedApplicationBuilder builder)
 		{
 			BuildCalled = true;
 			BuildCount++;
-			_events.Add($"Build:{Name}");
+			events.Add($"Build:{Name}");
 
-			if (_throwOnBuild)
+			if (throwOnBuild)
 				throw new InvalidOperationException($"The '{Name}' parent failed to build.");
 
+			// The resource builder is a simple wrapper that creates a new TestResource with the kit's name. The builder is added to the application builder's resources collection.
 			return builder.AddResource(new TestResource(Name));
 		}
 
@@ -510,9 +499,9 @@ public sealed class ResourceKitHierarchyTests
 		{
 			ConfigureCalled = true;
 			ConfigureCount++;
-			_events.Add($"Configure:{Name}");
+			events.Add($"Configure:{Name}");
 
-			if (_throwOnConfigure)
+			if (throwOnConfigure)
 				throw new InvalidOperationException($"The '{Name}' parent failed to configure.");
 		}
 	}

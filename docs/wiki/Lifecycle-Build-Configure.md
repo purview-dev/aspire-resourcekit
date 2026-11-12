@@ -74,9 +74,9 @@ protected override void ConfigureResource()
 Because `ConfigureResource()` runs after every resource is built, you can safely reach other resources
 through the host kit's generated properties.
 
-A child can use `Parent.ResourceBuilder` inside its own `BuildResource`, because the parent has completed its
-build first. The relationship is fixed at construction; a child never triggers its parent's or its own
-`Build` recursively.
+A child can use `Parent` directly inside its own `BuildResource` (`Parent.ResourceBuilder` also works but is
+redundant; SG0040), because the parent has completed its build first. The relationship is fixed at
+construction; a child never triggers its parent's or its own `Build` recursively.
 
 ## Failure policy
 

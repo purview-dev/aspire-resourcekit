@@ -148,11 +148,12 @@ sealed partial class PostgresDatabaseKit
 {
     protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddDatabase(Name);
+            Parent.AddDatabase(Name);
 }
 ```
 
-- The child reads `Parent.ResourceBuilder`; the parent has already finished `BuildResource`.
+- The child uses `Parent` directly; the parent has already finished `BuildResource`, and a resource kit is
+  itself an `IResourceBuilder<TResource>` (`Parent.ResourceBuilder` is redundant; SG0040).
 - `hostKit.Postgres.Database` is the strongly typed child; `Parent` is the strongly typed parent.
 - One parent per kit, any number of children, any depth.
 - A disabled parent disables every descendant, and a disabled ancestor never invokes a descendant's
@@ -166,7 +167,7 @@ sealed partial class PostgresDatabaseKit
   validates the graph before creating resources.
 
 The VNET/subnet shape from issue #57 is the same: a `VnetKit` root and one `SubnetKit` per subnet with
-`Parent = typeof(VnetKit)`, each building with `Parent.ResourceBuilder.AddSubnet(Name, prefix)`. Invalid
+`Parent = typeof(VnetKit)`, each building with `Parent.AddSubnet(Name, prefix)`. Invalid
 graphs report `SG0032`–`SG0038`.
 
 ## Build versus Configure

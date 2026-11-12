@@ -48,6 +48,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   graphs block generation; manual graphs are rejected at runtime before resource creation.
 - **SG0039** warns when a child's explicit primary group differs from its parent's. The child still builds,
   but visual placement follows its own group (or an existing Aspire parent chain), which is easy to miss.
+- **SG0040** (Info) and a "Use the resource kit directly" code fix simplify
+  `Parent.ResourceBuilder.AddDatabase(...)` to `Parent.AddDatabase(...)`; a resource kit already implements
+  `IResourceBuilder<TResource>`.
 
 ### Changed
 

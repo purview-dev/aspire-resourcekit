@@ -19,6 +19,7 @@ static partial class CodeGenEmiiter
 		if (location is null || location.Trim().Length == 0)
 			return $"{TypeLibrary.Aspire.Hosting.ApplicationModel.UrlDisplayLocation}.SummaryAndDetails";
 
+		// Ensure the location is fully-qualified.
 		return location.StartsWith("global::", StringComparison.Ordinal) ? location : $"global::{location}";
 	}
 

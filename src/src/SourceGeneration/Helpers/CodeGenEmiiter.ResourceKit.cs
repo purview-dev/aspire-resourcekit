@@ -107,11 +107,9 @@ partial class CodeGenEmiiter
 								$"Gets the <see cref=\"{parentKit.ResourceKitType}\" /> resource kit that owns this kit."
 							)
 							.Property(
-								new(
-									"Parent",
-									parentKit.ResourceKitType,
-									LeastAccessible(resourceKit.Accessibility, parentKit.Accessibility)
-								)
+								"Parent",
+								parentKit.ResourceKitType,
+								LeastAccessible(resourceKit.Accessibility, parentKit.Accessibility)
 							);
 					}
 

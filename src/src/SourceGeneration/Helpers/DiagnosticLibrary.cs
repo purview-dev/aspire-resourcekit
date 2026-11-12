@@ -260,6 +260,16 @@ static class DiagnosticLibrary
 		description: "ResourceKit parentage is lifecycle ownership; group membership is visual placement. A child with no [InGroup] inherits the parent's primary group. An explicit child group overrides that, so a mismatch is easy to miss."
 	);
 
+	public static readonly DiagnosticDescriptor RedundantResourceBuilderAccess = new(
+		id: "SG0040",
+		title: "Resource kit is already a resource builder",
+		messageFormat: "Use the resource kit directly; it implements IResourceBuilder<TResource>, so '.ResourceBuilder' is redundant",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true,
+		description: "A resource kit derives from ResourceKitBase<THostKit, TResource>, which implements IResourceBuilder<TResource>. Calling an extension method on the kit and on kit.ResourceBuilder is equivalent."
+	);
+
 	public static readonly DiagnosticDescriptor AssignSetsMultiplePropertyPaths = new(
 		id: "SG0020",
 		title: "OptionsHelper.Assign action must set exactly one property path",

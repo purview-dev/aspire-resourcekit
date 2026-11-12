@@ -34,6 +34,8 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   runtime before any Aspire resource is created.
 - **SG0039** warns when a child's explicit primary group differs from its parent's, because visual placement
   follows the child's group (or an existing Aspire parent chain), not the ResourceKit hierarchy.
+- **SG0040** (Info) and its code fix remove a redundant `.ResourceBuilder` hop from a kit receiver:
+  `Parent.ResourceBuilder.AddDatabase(...)` becomes `Parent.AddDatabase(...)`.
 
 ## 1.0.0
 

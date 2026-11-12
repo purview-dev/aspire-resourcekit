@@ -79,6 +79,20 @@ The fix lives in a separate code-fix assembly and uses a stable equivalence key.
 never acquires a `Microsoft.CodeAnalysis.Workspaces` dependency; the compiler loads the code-fix
 assembly without instantiating its Workspaces-dependent types, and the IDE activates them for fixes.
 
+## `RedundantResourceBuilderAccessAnalyzer` (SG0040)
+
+A resource kit implements `IResourceBuilder<TResource>` through `ResourceKitBase<THostKit, TResource>`. SG0040
+therefore reports a redundant `.ResourceBuilder` hop when the kit is the receiver of the next call:
+
+```csharp
+Parent.ResourceBuilder.AddDatabase(Name); // SG0040
+Parent.AddDatabase(Name);                 // preferred
+```
+
+The **"Use the resource kit directly"** code fix removes the hop. It intentionally does not fire when the
+builder value is passed as an argument, because the parameter may be typed as `IResourceBuilder<IResource>`
+rather than the kit's own `IResourceBuilder<TResource>`.
+
 ## `ResourceKitDiagnosticSuppressor` (SGSUP0001)
 
 The suppressor removes `CS8618` ("Non-nullable property must contain a non-null value when exiting

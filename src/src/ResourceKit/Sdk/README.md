@@ -88,7 +88,7 @@ Do not mix both attribute styles on the same class.
 ### Parent and child kits
 
 `Parent = typeof(TParentKit)` gives the child a typed `Parent` property and the parent a typed child
-property. Parents are constructed and built before children, so `Parent.ResourceBuilder` is available inside
+property. Parents are constructed and built before children, so `Parent` is available inside
 the child's `BuildResource`:
 
 ```csharp
@@ -98,7 +98,7 @@ sealed partial class PostgresDatabaseKit
 {
     protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
         BuildResource(IDistributedApplicationBuilder builder) =>
-            Parent.ResourceBuilder.AddDatabase(Name);
+            Parent.AddDatabase(Name);
 }
 ```
 

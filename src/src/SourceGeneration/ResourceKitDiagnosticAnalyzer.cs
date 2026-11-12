@@ -260,7 +260,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 					.Where(static g => g.Count() > 1)
 			);
 
-		HashSet<ISymbol> reported = new(SymbolEqualityComparer.Default);
+		HashSet<ISymbol> reported = [with(SymbolEqualityComparer.Default)];
 		foreach (var duplicate in duplicates)
 		{
 			foreach (var group in duplicate.Where(reported.Add))

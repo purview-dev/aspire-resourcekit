@@ -11,5 +11,5 @@ sealed partial class PostgresDatabaseKit
 {
 	protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> BuildResource(
 		IDistributedApplicationBuilder builder
-	) => Parent.ResourceBuilder.AddDatabase(Name);
+	) => Parent.AddDatabase(Name);
 }
