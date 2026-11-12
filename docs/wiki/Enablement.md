@@ -49,6 +49,8 @@ Because it is an option, configuration can override either the host-wide mode or
 
 - The host `Mode` gates the whole host kit: every resource is disabled before it is built.
 - A resource `Mode` gates that resource only.
+- A resource group's `IsEnabled` and `Mode` gate every kit in the group and in its child groups, in the
+  same step as the host `Mode`. See [Groups and URLs](Groups-and-URLs.md#enablement).
 
 An excluded kit never runs `BuildResource(...)` or `ConfigureResource()`. Its host property is still
 constructed (so `HostKit.KeyVault` is non-null), but `IsEnabled` is `false` and any `ResourceBuilder`
@@ -113,6 +115,30 @@ Publish-only resources no longer need a hook; declare the mode instead:
 [ResourceDefinition<AzureKeyVaultResource>("kv", ResourceKitMode.Publish)]
 sealed partial class KeyVaultKit;
 ```
+
+## Parent and child kits
+
+A child kit is enabled only when **every ancestor is enabled** as well as its own gates:
+
+```text
+EffectiveEnabled(child)
+    = EffectiveEnabled(parent)
+      AND ChildConfiguredEnabled
+      AND ChildModeEnabled
+      AND ChildResourceEnabled
+```
+
+- Disabling a parent disables every descendant, even when the child's options say `IsEnabled = true`.
+- A parent excluded by its `Mode` excludes descendants.
+- A child excluded by its own mode or hook leaves the parent and eligible siblings unaffected.
+- An ancestor-disabled kit never invokes a descendant's `IsResourceEnabled` hook.
+- Siblings are independent.
+
+`IsEnabled` remains the configured value before `Build` and the effective value afterwards. Use
+`ConfiguredIsEnabled` and `EffectiveIsEnabled` when code needs both explicitly. Accessing `ResourceBuilder`
+of a disabled, unbuilt or failed kit throws `InvalidOperationException`.
+
+See [Parent and child resource kits](Hierarchies.md) for the complete rules.
 
 ## Disabling a resource from options
 

@@ -1,6 +1,6 @@
 ---
 name: purview-resourcekit-migration
-description: "Use when converting an Aspire AppHost (typically Program.cs/AppHost.cs) into Purview.Aspire.ResourceKit patterns: generate a HostKit, split resources into ResourceKits with BuildResource/ConfigureResource, map existing config into generated options (IsEnabled/Name), replace direct wiring with AddAspireResourceKit, and update tests/fixtures/configuration to use OptionsHelper and ResourceKit semantics."
+description: "Use when converting an Aspire AppHost (typically Program.cs/AppHost.cs) into Purview.Aspire.ResourceKit patterns: generate a HostKit, split resources into ResourceKits with BuildResource/ConfigureResource, extract parent/child kits with Parent = typeof(TParentKit), map existing config into generated options (IsEnabled/Name), replace direct wiring with AddAspireResourceKit, and update tests/fixtures/configuration to use OptionsHelper and ResourceKit semantics."
 ---
 
 # Aspire AppHost → ResourceKit Migration Skill
@@ -68,6 +68,38 @@ partial class ApiResourceKit
 }
 ```
 
+#### 2.1) Extract a child resource created from another resource
+
+When the existing AppHost creates a resource from another resource's builder — `vnet.AddSubnet(...)`,
+`server.AddDatabase(...)`, `storage.AddBlobs(...)`, `namespace.AddTopic(...)` — model it as a child kit
+instead of keeping both responsibilities in one class:
+
+1. Keep the parent creation in the parent `BuildResource`.
+2. Remove the child creation from the parent.
+3. Add `Parent = typeof(TParentKit)` (and `PropertyName` when the class name is not the property name you
+   want) to the child `[ResourceDefinition]`.
+4. Build the child with `Parent.Add...` (a resource kit is already an `IResourceBuilder<TResource>`; SG0040
+   reports the redundant `Parent.ResourceBuilder` form), and return that builder.
+5. Use `Parent` or the generated `hostKit.Parent.Child` from `ConfigureResource`.
+6. Guard cross-resource wiring with `HostKit.Parent.IsEnabled && HostKit.Parent.Child.IsEnabled`, because a
+   disabled ancestor disables the child.
+
+```csharp
+[ResourceDefinition<AzureVirtualNetworkResource>("vnet")]
+sealed partial class VnetKit { /* builder.AddAzureVirtualNetwork(Name) */ }
+
+[ResourceDefinition<AzureSubnetResource>("snet-web", PropertyName = "Web", Parent = typeof(VnetKit))]
+sealed partial class SubnetWebKit
+{
+    protected override IResourceBuilder<AzureSubnetResource> BuildResource(
+        IDistributedApplicationBuilder builder) =>
+        Parent.AddSubnet(Name, "10.0.1.0/24");
+}
+```
+
+Move the old child config key from `{Host}:{Child}:IsEnabled` to the nested
+`{Host}:{Parent}:{Child}:IsEnabled`. See `purview-resourcekit-authoring` for the full hierarchy rules.
+
 ### 3) Move wiring to configure
 
 For dependencies/references among resources:
@@ -87,6 +119,7 @@ Map old configuration into generated options conventions:
 
 - Resource naming → `{HostKitOptionsSection}:{ResourceProperty}:Name`
 - Enable/disable flags → `{HostKitOptionsSection}:{ResourceProperty}:IsEnabled`
+- Child resources → `{HostKitOptionsSection}:{Parent}:{Child}:{Name|IsEnabled|Mode}`
 
 If tests or bootstrap code currently pass args directly, convert to `OptionsHelper.Assign<THostOptions>(...)`:
 

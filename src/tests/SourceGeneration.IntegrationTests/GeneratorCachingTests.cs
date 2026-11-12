@@ -43,6 +43,40 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 	{
 		// Arrange
 		var sources = TestHelper.GenerateSources().ToArray();
+
+		// Act & Assert
+		await AssertUnrelatedChangeReusesCachedOutputAsync(sources, cancellationToken);
+	}
+
+	[Test]
+	public async Task Generate_GivenGroupsAndUrlsAndUnrelatedSourceChange_HostKitOutputIsReusedFromCache(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		string[] sources =
+		[
+			.. TestHelper.GenerateSources(),
+			"""
+				namespace Testing.Groups;
+
+				// TestHelper's host kit is public, and a group must be at least as accessible as its host kit.
+				[ResourceGroup]
+				[ResourceUrl("Runbook", "https://example.com/runbook")]
+				public partial class PlatformGroup;
+
+				[ResourceGroup(Parent = typeof(PlatformGroup))]
+				public partial class DataGroup;
+				""",
+		];
+
+		// Act & Assert
+		await AssertUnrelatedChangeReusesCachedOutputAsync(sources, cancellationToken);
+	}
+
+	async Task AssertUnrelatedChangeReusesCachedOutputAsync(string[] sources, CancellationToken cancellationToken)
+	{
+		// Arrange
 		var harnessCompilation = (await GenerateAsync(sources, cancellationToken)).CompilationResult.Compilation;
 
 		var parseOptions = (CSharpParseOptions)harnessCompilation.SyntaxTrees.First().Options;

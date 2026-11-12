@@ -20,11 +20,14 @@ a single package reference.
 
 `HostKitGenerator` is an `IIncrementalGenerator`. It:
 
-1. Registers the embedded attributes (`HostKitAttribute`, `ResourceDefinitionAttribute`) as
-   post-initialization output.
-2. Runs a set of incremental value providers over the compilation.
-3. Emits a single hint-name file per host kit that contains the host kit, resource kit skeletons,
-   options, the typed `ResourceKitBase<TResource>`, and the AppHost extension method.
+1. Registers the embedded attributes (`HostKitAttribute`, `ResourceDefinitionAttribute`,
+   `ResourceGroupAttribute`, `ResourceUrlAttribute`, and their generic forms) as post-initialization output.
+2. Runs a set of incremental value providers over the compilation. The resource-kit aggregate is sorted by
+   metadata name and then evaluated as a parent/child graph (cycles, unavailable parents, duplicate child
+   property names) and topologically ordered before output.
+3. Emits a single hint-name file per host kit that contains the host kit, resource kit skeletons
+   (including typed `Parent`/child properties and nested options), the typed
+   `ResourceKitBase<TResource>`, resource groups, and the AppHost extension method.
 
 Generation is skipped when the generator is disabled via settings (`IsSourceGeneratorDisabled`).
 
@@ -37,11 +40,13 @@ the two never drift apart.
 
 - **Analyzer-owned rules** are reported only by the analyzer; the generator computes them for its
   `ShouldProcess` gating but does not re-report them (avoiding duplicate diagnostics).
-- **Generation-blocking rules** (Error severity, SG0001–SG0016) halt generation via the
-  `GeneratorResult.ShouldProcess` gate.
-- **Execution-only rules** (SG0017–SG0019, warnings) never block generation, so a resource kit with
-  incomplete `BuildResource`/`ConfigureResource` wiring is still generated and the host kit output is
-  still emitted.
+- **Generation-blocking rules** (Error severity, including the group and hierarchy rules SG0021–SG0038)
+  halt generation via the `GeneratorResult.ShouldProcess` gate.
+- **Execution-only rules** (SG0017–SG0019, SG0024 and SG0028, warnings) never block generation, so a
+  resource kit with incomplete `BuildResource`/`ConfigureResource` wiring is still generated and the host
+  kit output is still emitted.
+- **Suggestion rules** (SG0040, Info) and the group-placement warning SG0039 never block generation; they
+  surface a simplification or a visual-placement mismatch without changing the build result.
 
 See [Diagnostics](Diagnostics.md) for the full rule reference.
 
@@ -75,6 +80,20 @@ OptionsHelper.Assign<ShopHostKitOptions>(
 The fix lives in a separate code-fix assembly and uses a stable equivalence key. The generator assembly
 never acquires a `Microsoft.CodeAnalysis.Workspaces` dependency; the compiler loads the code-fix
 assembly without instantiating its Workspaces-dependent types, and the IDE activates them for fixes.
+
+## `RedundantResourceBuilderAccessAnalyzer` (SG0040)
+
+A resource kit implements `IResourceBuilder<TResource>` through `ResourceKitBase<THostKit, TResource>`. SG0040
+therefore reports a redundant `.ResourceBuilder` hop when the kit is the receiver of the next call:
+
+```csharp
+Parent.ResourceBuilder.AddDatabase(Name); // SG0040
+Parent.AddDatabase(Name);                 // preferred
+```
+
+The **"Use the resource kit directly"** code fix removes the hop. It intentionally does not fire when the
+builder value is passed as an argument, because the parameter may be typed as `IResourceBuilder<IResource>`
+rather than the kit's own `IResourceBuilder<TResource>`.
 
 ## `ResourceKitDiagnosticSuppressor` (SGSUP0001)
 

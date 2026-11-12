@@ -1,6 +1,6 @@
 {
 	"name": "aspire-resourcekit",
-	"version": "1.1.0",
+	"version": "2.0.0-prerelease.1",
 	"description": "Source-generator-powered framework for structuring .NET Aspire AppHost resource composition as strongly typed, test-friendly classes.",
 	"keywords": [],
 	"homepage": "https://purview.dev/projects/aspire-resourcekit/",

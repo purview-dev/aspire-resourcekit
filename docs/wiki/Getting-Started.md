@@ -10,7 +10,8 @@ an Aspire AppHost project and a service project ready to compose.
 ## Install the package
 
 > [!IMPORTANT]
-> `Purview.Aspire.ResourceKit` targets **.NET 10** only, so the AppHost project must be on `net10.0`.
+> `Purview.Aspire.ResourceKit` targets **.NET 10** and **.NET 11**, so the AppHost project must be on
+> `net10.0` or `net11.0`. Anything older is unsupported.
 > See [Versioning and compatibility](Versioning.md#supported-target-frameworks).
 
 Install the `Purview.Aspire.ResourceKit` package in your AppHost project.
@@ -136,5 +137,8 @@ A common progression:
 - Start with one resource kit class.
 - Add more resource kit classes as the AppHost grows.
 - Use generated options to toggle resources for local/dev/test scenarios.
+- Split a parent resource and its children (VNET/subnets, server/databases, storage/containers) into
+  separate kits with `Parent = typeof(TParentKit)`.
 
 For configuration details, continue with [Configuration and Options](Configuration-and-Options.md).
+For hierarchies, see [Parent and child resource kits](Hierarchies.md).

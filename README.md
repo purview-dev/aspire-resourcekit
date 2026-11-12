@@ -8,7 +8,9 @@
 If your AppHost is getting bigger, this helps you keep resource setup maintainable and discoverable by moving composition into focused resource classes and generating the plumbing for you.
 
 > [!IMPORTANT]
-> Requires **.NET 10**. The package targets `net10.0` only — there is no `net8.0` or `net9.0` asset.
+> Requires **.NET 10**. The package ships `net10.0` and `net11.0` assets — there is no `net8.0` or
+> `net9.0` asset. A .NET 10 AppHost resolves the `net10.0` asset; a .NET 11 AppHost resolves the
+> `net11.0` asset.
 > See [Versioning and compatibility](docs/wiki/Versioning.md#supported-target-frameworks).
 >
 > For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
@@ -17,6 +19,7 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > **Lifecycle quick links**
 >
 > - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
+> - Parent/child resource kits: [`docs/wiki/Hierarchies.md`](docs/wiki/Hierarchies.md)
 > - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
 
 ## Why teams use it
@@ -24,7 +27,11 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 - **Cleaner AppHost code** with resource logic split into dedicated classes.
 - **Strong typing + IntelliSense** instead of stringly-typed setup.
 - **Generated wiring** for host/resource options and registration.
+- **Parent/child resource hierarchies** for VNETs and subnets, SQL servers and databases, Service Bus
+  namespaces and topics/queues/subscriptions, or storage accounts and containers (issue #57).
 - **Predictable lifecycle** (`Build` then `Configure`) for inter-resource dependencies.
+- **Hierarchical kits** so a parent resource can own child kits, with typed `Parent` access, parent-first
+  build ordering, inherited enablement, and nested options.
 - **Testability** with options overrides and isolated resource composition.
 
 ## Quick example
@@ -80,6 +87,8 @@ Enablement is evaluated *before* resource construction:
 - `IsEnabled` is the persisted toggle (typically from generated options) and the single member consumers need to check.
 - `IsResourceEnabled(builder)` is the runtime hook used by `Build` to decide whether this resource should run now.
 - If any gate excludes the resource, both `BuildResource(...)` and `ConfigureResource()` are skipped for that resource.
+- A child kit is also disabled when any ancestor is disabled; an ancestor-disabled kit never runs a
+  descendant's `IsResourceEnabled` hook.
 
 Use `Mode` for publish-only or local-development-only resources, and `IsResourceEnabled(builder)` when enablement depends on runtime state beyond an execution mode (environment probes, dynamic configuration).
 
@@ -88,8 +97,10 @@ Use `Mode` for publish-only or local-development-only resources, and `IsResource
 From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit generates:
 
 - a host resource base class,
-- resource properties on the host,
-- host + per-resource options (when enabled),
+- typed parent/child properties and constructors for hierarchical kits,
+- host + per-resource options (when enabled), including nested child options,
+- typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
+- named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
 - an AppHost extension method to build/configure/register your host kit.
 
 ## Documentation
@@ -98,10 +109,13 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
 - [Getting started](docs/wiki/Getting-Started.md)
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
+- [Parent and child resource kits](docs/wiki/Hierarchies.md)
+- [Resource groups and dashboard URLs](docs/wiki/Groups-and-URLs.md)
 - [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)
 - [Release notes](docs/wiki/Release-Notes.md)
 - [Versioning and compatibility](docs/wiki/Versioning.md)
+- [.NET 11 toolchain and feature adoption](docs/wiki/Toolchain.md)
 - [Changelog](CHANGELOG.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)

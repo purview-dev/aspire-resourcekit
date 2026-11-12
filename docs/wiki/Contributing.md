@@ -61,8 +61,9 @@ Test projects:
 - `src/tests/SourceGeneration.IntegrationTests` — generated source content, caching, diagnostics,
   suppression, and the SG0020 code fix.
 - `src/tests/Repository.UnitTests` — asserts things about this repository itself: the conformance of the
-  authored skills in `skills/`, the architecture policy in `.config/architecture-policy.json`, and the
-  example AppHosts' build contract (no machine-global Aspire CLI).
+  authored skills in `skills/`, the architecture policy in `.config/architecture-policy.json`, the
+  `Purview.BuildSdk` feature opt-ins (`BuildSdkAdoptionTests`), and the example AppHosts' build contract
+  (no machine-global Aspire CLI).
 - `src/tests/SharedTestingInfra` — a shared-testing library, referenced rather than executed.
 
 Reports are written to `TestResults/`.
@@ -92,6 +93,18 @@ copies would drift. `skills-lock.json` is committed: it pins what this repositor
 ```bash
 npx skills add purview-dev/aspire-resourcekit
 ```
+
+Maintain the installed set through the BuildSdk targets, which run once for the whole solution:
+
+```bash
+just restore          # the targets read the restore graph and never restore on their own
+just skills-update    # re-add every source in skills-lock.json
+just skills-check     # fail if an agent directory other than .agents/skills and .claude/skills exists
+```
+
+`PurviewSkillsAgents` in `src/Directory.Build.props` names the two agents thus allowed; `just skills-fix`
+removes a directory it does not select. These are run on purpose, never from a build, a git hook or a
+CI job that commits.
 
 ## Architecture
 

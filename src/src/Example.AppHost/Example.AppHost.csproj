@@ -24,7 +24,12 @@
 				dotnet build -p:AspireUseCliBundle=true
 		-->
 		<AspireUseCliBundle Condition="'$(AspireUseCliBundle)' == ''">false</AspireUseCliBundle>
-		<NoWarn>$(NoWarn);CA1034;CA1062;</NoWarn>
+		<!--
+			ASPIREAZURE003 marks AzureVirtualNetworkResource/AzureSubnetResource as evaluation APIs. The
+			hierarchy example (issue #57) intentionally demonstrates the production user's VNET/subnet
+			composition with the installed SDK surface; suppressing the evaluation notice is deliberate.
+		-->
+		<NoWarn>$(NoWarn);ASPIREAZURE003;CA1034;CA1062;</NoWarn>
 		<NoWarn Condition="'$(AspireUseCliBundle)' != 'true'">$(NoWarn);ASPIRE010</NoWarn>
 		<!--
 			Declares the two suppressions above as deliberate so Purview.BuildSdk's style policy
@@ -54,6 +59,7 @@
 	<ItemGroup>
 		<PackageReference Include="Aspire.Hosting" />
 		<PackageReference Include="Aspire.Hosting.Azure.KeyVault" />
+		<PackageReference Include="Aspire.Hosting.Azure.Network" />
 		<PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
 		<PackageReference Include="Aspire.Hosting.Azure.Redis" />
 		<PackageReference Include="Aspire.Hosting.Azure.Storage" />

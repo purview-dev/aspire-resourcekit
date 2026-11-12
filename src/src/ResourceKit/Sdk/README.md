@@ -5,8 +5,9 @@ This package contains the runtime abstractions and source-generator contracts fo
 Use this README when integrating the **`Purview.Aspire.ResourceKit` NuGet package** into your host project.
 
 > [!IMPORTANT]
-> Requires **.NET 10**. The package ships a single `lib/net10.0` asset — there is no `net8.0` or
-> `net9.0` target to fall back to.
+> Requires **.NET 10**. The package ships `lib/net10.0` and `lib/net11.0` assets — there is no
+> `net8.0` or `net9.0` target to fall back to. A .NET 10 AppHost resolves the net10.0 asset; a
+> .NET 11 AppHost resolves the net11.0 asset.
 
 ## Package goals
 
@@ -43,7 +44,8 @@ partial class APIResourceKit;
 Options:
 
 - `Name` — logical Aspire resource name.
-- `PropertyName` — generated host property name.
+- `PropertyName` — generated host or parent property name.
+- `Parent` — `typeof(TParentKit)` when this kit is owned by another resource kit.
 
 ### `ResourceDefinition` vs `ResourceDefinition<TResource>`
 
@@ -83,6 +85,49 @@ partial class APIResourceKit : ResourceKitBase<ProjectResource>
 
 Do not mix both attribute styles on the same class.
 
+### Parent and child kits
+
+`Parent = typeof(TParentKit)` gives the child a typed `Parent` property and the parent a typed child
+property. Parents are constructed and built before children, so `Parent` is available inside
+the child's `BuildResource`:
+
+```csharp
+[ResourceDefinition<AzurePostgresFlexibleServerDatabaseResource>(
+    "db", PropertyName = "Database", Parent = typeof(PostgresKit))]
+sealed partial class PostgresDatabaseKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.AddDatabase(Name);
+}
+```
+
+Child options nest under the parent (`<HostKit>:<Parent>:<Child>`). Disabling a parent disables every
+descendant, and a child with no `[InGroup]` inherits its parent's primary group. This is composition
+ownership, not a general dependency or an automatic Aspire visual parent relationship.
+
+### Resource groups and dashboard URLs
+
+`[ResourceGroup]` marks a partial class as a named, nestable group (`[ResourceGroup<TParent>]` or
+`Parent = typeof(TParent)`), and
+`[InGroup<TGroup>]` adds a resource kit to it. A group can be switched off or given a `Mode` from
+`<HostKit>:Groups:<Group>`, which applies to every kit in it. In run mode each group appears as a
+dashboard node with its kits nested underneath.
+
+`[ResourceUrl(name, url)]` adds a named dashboard URL: absolute, or relative to an endpoint.
+`[EndpointUrl(endpoint)]` renames an endpoint's own URL. Each URL becomes a `ResourceKitUrl` option under
+`<HostKit>:<Kit>:Urls:<Name>`.
+
+```csharp
+[ResourceGroup("data")]
+sealed partial class DataGroup;
+
+[ResourceDefinition<ProjectResource>("api")]
+[InGroup<DataGroup>]
+[ResourceUrl("Health", "/health", DisplayText = "Health")]
+[EndpointUrl("https", DisplayText = "API")]
+partial class APIResourceKit { /* ... */ }
+```
 ## Minimal package usage
 
 ```csharp
@@ -250,8 +295,27 @@ variables.
 | SG0018 | Warning | Project resource kit does not add the declared project via `AddProject<T>()` (execution-only) |
 | SG0019 | Warning | Project resource kit explicit base does not use `ProjectResource` (execution-only) |
 | SG0020 | Error | `OptionsHelper.Assign` action sets more than one property path |
-
-SG0017–SG0019 are execution-only warnings: they indicate the resource will fail at runtime but never
+| SG0021 | Error | `[InGroup<TGroup>]` type or group `Parent` is not a `[ResourceGroup]` class |
+| SG0022 | Error | Resource group parent cycle |
+| SG0023 | Error | Duplicate resource group name |
+| SG0024 | Warning | More than one primary group on a resource kit (execution-only) |
+| SG0025 | Error | Resource group declares a base type |
+| SG0026 | Error | Duplicate URL name on a resource kit or group |
+| SG0027 | Error | Endpoint URL on a resource or group without endpoints |
+| SG0028 | Warning | Relative URL on a resource or group without endpoints (execution-only) |
+| SG0029 | Error | Resource group declares its parent more than once |
+| SG0030 | Error | Resource group is generic |
+| SG0031 | Error | Resource group is also a resource kit or a group member |
+| SG0032 | Error | A resource kit declares itself as its parent |
+| SG0033 | Error | Resource kit parent cycle; the message prints the path |
+| SG0034 | Error | Parent type is not a resource kit |
+| SG0035 | Error | Parent is not part of this host kit composition |
+| SG0036 | Error | Generated child property collides with a member on the parent |
+| SG0037 | Error | Duplicate child property name under one parent |
+| SG0038 | Error | Generated `Parent` member collides with a user-authored member |
+| SG0039 | Warning | Child primary group differs from its parent's; visual placement follows the child's group |
+| SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
+SG0017–SG0019, SG0024 and SG0028 are execution-only warnings: they indicate the resource will fail at runtime but never
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 

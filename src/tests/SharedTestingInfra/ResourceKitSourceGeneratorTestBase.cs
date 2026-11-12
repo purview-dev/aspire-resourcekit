@@ -6,8 +6,9 @@ public abstract class ResourceKitSourceGeneratorTestBase<TGenerator>
 	: TUnitSourceGeneratorTestBase<TGenerator, ResourceKitSourceGeneratorTestOptions>
 	where TGenerator : class, IIncrementalGenerator, new()
 {
-	// Generated attribute files: EmbeddedAttribute, HostKitAttribute, ResourceDefinitionAttribute.
-	public static readonly int ExpectedGeneratedFileCount = 3;
+	// Generated attribute files: EmbeddedAttribute, HostKitAttribute, ResourceDefinitionAttribute,
+	// ResourceGroupAttribute, ResourceUrlAttribute.
+	public static readonly int ExpectedGeneratedFileCount = 5;
 
 	public static readonly int ExpectedFileCountPlusGen = ExpectedGeneratedFileCount + 1;
 }

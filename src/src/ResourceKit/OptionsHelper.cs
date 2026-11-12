@@ -86,6 +86,33 @@ public static class OptionsHelper
 	}
 
 	/// <summary>
+	/// Gets the dot-separated member path for a property selector on the specified options type without
+	/// boxing the selected value.
+	/// </summary>
+	/// <typeparam name="TOptions">The root options type.</typeparam>
+	/// <typeparam name="TValue">The selected member type.</typeparam>
+	/// <param name="selector">A member selector expression.</param>
+	/// <returns>The dot-separated member path (for example, <c>Level1.Level2.Name</c>).</returns>
+	/// <remarks>
+	/// <para>
+	/// The <see cref="PathFor{TOptions}(Expression{Func{TOptions, object}})"/> overload returns
+	/// <see cref="object"/>, so a value-type member is boxed by the compiler on every call. Prefer this
+	/// overload when the member type is known: it keeps the value in its natural type all the way
+	/// through expression analysis.
+	/// </para>
+	/// <para>
+	/// This is the same non-boxing shape a C# 15 union exposes through <c>TryGetValue</c> - resolve the
+	/// value once, then consume it as its natural type rather than through <c>Value</c>.
+	/// </para>
+	/// </remarks>
+	public static string PathFor<TOptions, TValue>(Expression<Func<TOptions, TValue>> selector)
+	{
+		ArgumentNullException.ThrowIfNull(selector);
+
+		return GetMemberPath(selector);
+	}
+
+	/// <summary>
 	/// Gets the configuration section name for the specified options type.
 	/// </summary>
 	/// <typeparam name="TOptions">The root options type.</typeparam>
@@ -176,7 +203,7 @@ public static class OptionsHelper
 			: (TOptions)instance;
 	}
 
-	static string GetMemberPath<TOptions>(Expression<Func<TOptions, object?>> selector)
+	static string GetMemberPath<TOptions, TValue>(Expression<Func<TOptions, TValue>> selector)
 	{
 		ArgumentNullException.ThrowIfNull(selector);
 

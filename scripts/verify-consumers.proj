@@ -64,12 +64,18 @@
 	<Target Name="AssertPackageShape" DependsOnTargets="PackPackage">
 		<Unzip SourceFiles="@(_PackedNupkg)" DestinationFolder="$(UnzipDir)" OverwriteReadOnlyFiles="true" />
 
-		<!-- The framework floor is declared once, in Versions.props; assert the package matches it. -->
+		<!-- The framework floor and newest leg are declared once, in Versions.props; assert the package matches. -->
 		<XmlPeek
 			XmlInputPath="$(RepoRoot)/src/Versions.props"
 			Query="/Project/PropertyGroup/DefaultTargetFramework/text()"
 		>
 			<Output TaskParameter="Result" PropertyName="MinimumTargetFramework" />
+		</XmlPeek>
+		<XmlPeek
+			XmlInputPath="$(RepoRoot)/src/Versions.props"
+			Query="/Project/PropertyGroup/LatestTargetFramework/text()"
+		>
+			<Output TaskParameter="Result" PropertyName="LatestTargetFramework" />
 		</XmlPeek>
 
 		<ItemGroup>
@@ -80,6 +86,7 @@
 			<_ShippedCodeFixes Include="$(UnzipDir)/$(MergedCodeFixes)" />
 			<_ShippedRuntime Include="$(UnzipDir)/lib/**/$(PackageId).dll" />
 			<_ShippedFloorRuntime Include="$(UnzipDir)/lib/$(MinimumTargetFramework)/$(PackageId).dll" />
+			<_ShippedLatestRuntime Include="$(UnzipDir)/lib/$(LatestTargetFramework)/$(PackageId).dll" />
 			<_ShippedBuildTransitive Include="$(UnzipDir)/buildTransitive/$(PackageId).props" />
 			<_ShippedReadme Include="$(UnzipDir)/README.md" />
 			<_ShippedLogo Include="$(UnzipDir)/purview-logo-light.png" />
@@ -112,8 +119,12 @@
 			Text="The package ships no lib/$(MinimumTargetFramework)/$(PackageId).dll, so it does not support the framework floor declared in src/Versions.props."
 		/>
 		<Error
-			Condition="'@(_ShippedRuntime->Count())' != '1'"
-			Text="The package ships @(_ShippedRuntime->Count()) runtime assets (@(_ShippedRuntime)); .NET 10 is the declared minimum and the only supported leg, so exactly one lib folder is expected."
+			Condition="'@(_ShippedLatestRuntime)' == ''"
+			Text="The package ships no lib/$(LatestTargetFramework)/$(PackageId).dll, so it does not support the newest leg declared in src/Versions.props."
+		/>
+		<Error
+			Condition="'@(_ShippedRuntime->Count())' != '2'"
+			Text="The package ships @(_ShippedRuntime->Count()) runtime assets (@(_ShippedRuntime)); exactly two lib folders are expected - $(MinimumTargetFramework) (the floor) and $(LatestTargetFramework) (the newest supported leg)."
 		/>
 		<Error
 			Condition="'@(_ShippedBuildTransitive)' == ''"
@@ -132,6 +143,10 @@
 		3. Build a throwaway consumer that installs the produced package. The declarations below carry
 		no base types and no members of their own, so they compile only if the packaged generator ran
 		and emitted the kit bases - a green build is the consumer claim being proved.
+
+		The consumer multi-targets net10.0 and net11.0 and the package ships a matching lib asset for
+		each. That is the compatibility claim: both AppHost frameworks resolve their own runtime asset,
+		and the generator runs in both compiler hosts from the same analyzer asset.
 	-->
 	<Target Name="BuildConsumer" DependsOnTargets="AssertPackageShape">
 		<MakeDir Directories="$(ConsumerDir)" />
@@ -155,7 +170,7 @@
 
 		<WriteLinesToFile
 			File="$(ConsumerDir)/Consumer.csproj"
-			Lines="&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;;&lt;PropertyGroup&gt;;&lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;;&lt;EmitCompilerGeneratedFiles&gt;true&lt;/EmitCompilerGeneratedFiles&gt;;&lt;/PropertyGroup&gt;;&lt;ItemGroup&gt;;&lt;PackageReference Include=&quot;$(PackageId)&quot; Version=&quot;$(PackedVersion)&quot; /&gt;;&lt;PackageReference Include=&quot;Aspire.Hosting&quot; Version=&quot;$(AspireVersionPinned)&quot; /&gt;;&lt;/ItemGroup&gt;;&lt;/Project&gt;"
+			Lines="&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;;&lt;PropertyGroup&gt;;&lt;TargetFrameworks&gt;net10.0%3Bnet11.0&lt;/TargetFrameworks&gt;;&lt;EmitCompilerGeneratedFiles&gt;true&lt;/EmitCompilerGeneratedFiles&gt;;&lt;/PropertyGroup&gt;;&lt;ItemGroup&gt;;&lt;PackageReference Include=&quot;$(PackageId)&quot; Version=&quot;$(PackedVersion)&quot; /&gt;;&lt;PackageReference Include=&quot;Aspire.Hosting&quot; Version=&quot;$(AspireVersionPinned)&quot; /&gt;;&lt;/ItemGroup&gt;;&lt;/Project&gt;"
 			Overwrite="true"
 		/>
 
@@ -174,6 +189,8 @@
 		<ItemGroup>
 			<_ConsumerGenerated Include="$(ConsumerDir)/obj/**/*.g.cs" />
 			<_ConsumerHostKit Include="$(ConsumerDir)/obj/**/*ConsumerHostKit*.g.cs" />
+			<_ConsumerGeneratedNet10 Include="$(ConsumerDir)/obj/**/net10.0/**/*.g.cs" />
+			<_ConsumerGeneratedNet11 Include="$(ConsumerDir)/obj/**/net11.0/**/*.g.cs" />
 		</ItemGroup>
 
 		<Error
@@ -183,6 +200,14 @@
 		<Error
 			Condition="'@(_ConsumerHostKit)' == ''"
 			Text="No generated file mentions ConsumerHostKit; the generator ran but emitted nothing for the attributed host kit."
+		/>
+		<Error
+			Condition="'@(_ConsumerGeneratedNet10)' == ''"
+			Text="The .NET 10 consumer produced no generated files; the packaged analyzer did not run on the framework floor."
+		/>
+		<Error
+			Condition="'@(_ConsumerGeneratedNet11)' == ''"
+			Text="The .NET 11 consumer produced no generated files; the .NET 10 package is not forward-compatible with a .NET 11 AppHost."
 		/>
 
 		<Message

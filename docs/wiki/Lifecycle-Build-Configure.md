@@ -7,11 +7,14 @@ reason about.
 
 When the generated extension method is invoked, ResourceKit performs:
 
-1. Instantiate resource kits from options.
-2. `Build` each enabled resource.
-3. `Configure` each enabled resource.
+1. Instantiate root resource kits from options, then each child with its parent instance.
+2. Validate the complete ownership graph and compute a stable parent-before-child order.
+3. Resolve the composition gates (host mode, groups and ancestors).
+4. `Build` each enabled resource, parents before children.
+5. `Configure` each enabled resource in the same order.
 
-This happens before `DistributedApplication.Build()` completes.
+This happens before `DistributedApplication.Build()` completes. Graph validation runs before any Aspire
+resource is created, so an invalid manual composition fails fast.
 
 ## The two lifecycle pairs
 
@@ -70,6 +73,19 @@ protected override void ConfigureResource()
 
 Because `ConfigureResource()` runs after every resource is built, you can safely reach other resources
 through the host kit's generated properties.
+
+A child can use `Parent` directly inside its own `BuildResource` (`Parent.ResourceBuilder` also works but is
+redundant; SG0040), because the parent has completed its build first. The relationship is fixed at
+construction; a child never triggers its parent's or its own `Build` recursively.
+
+## Failure policy
+
+- Exceptions from `BuildResource` and `ConfigureResource` propagate unchanged.
+- A failed parent aborts the build; descendants are not built.
+- `Configure` skips a kit whose parent failed.
+- A host builds and configures at most once; repeated calls are no-ops.
+
+See [Parent and child resource kits](Hierarchies.md).
 
 ## Enablement gates both phases
 

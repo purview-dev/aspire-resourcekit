@@ -2,7 +2,7 @@
 name: purview-resourcekit-testing
 description: >-
   Use when testing a Purview.Aspire.ResourceKit AppHost - the TUnit.Aspire fixture pattern,
-  integration-testing a running AppHost, overriding generated options from a test with OptionsHelper
+  integration-testing a running AppHost, overriding generated options from a test with OptionsHelper, testing parent/child hierarchies and nested child options
   or raw args, unit-testing the manual kit pattern, and the treenode filter for running the tiers.
 metadata:
   product: Purview.Aspire.ResourceKit
@@ -17,16 +17,16 @@ AppHost.
 
 ## Test tiers
 
-ResourceKit requires **.NET 10** (the package targets `net10.0` only). This repository uses
+ResourceKit requires **.NET 10** (the floor; the package also ships a `net11.0` asset). This repository uses
 [TUnit](https://thomhurst.github.io/TUnit/) with [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/),
 under `src/tests`:
 
 | Project | Covers |
 | --- | --- |
-| `ResourceKit.UnitTests` | runtime behaviour of the kit base types, run modes and `OptionsHelper` |
+| `ResourceKit.UnitTests` | runtime behaviour of the kit base types, hierarchies, graph validation, run modes, real Aspire models and `OptionsHelper` |
 | `ResourceKit.IntegrationTests` | starts the example AppHosts and asserts against real resources |
 | `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` | generator output, diagnostics, suppression, code fixes, caching |
-| `Repository.UnitTests` | the repository itself: authored skills and the architecture policy |
+| `Repository.UnitTests` | the repository itself: authored skills, the architecture policy and its `Purview.BuildSdk` opt-ins |
 
 Reports land in `TestResults/`. The project **name** sets the tier (`*.UnitTests` → `Category=Unit`);
 nothing is tagged per test.
@@ -69,6 +69,12 @@ public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example
 
 `SharedType.PerTestSession` matters: starting an AppHost per test is slow enough to change how you
 write the suite.
+
+For a hierarchy, assert the parent and child Aspire resources directly instead of only the generated
+property shape: build the real `DistributedApplication` model, check the child resource is created through
+`Parent.ResourceBuilder`, and check that a disabled parent removes the whole subtree. `ResourceKit.UnitTests`
+does this for PostgreSQL, VNET/subnets, storage and Service Bus without provisioning infrastructure. The
+child's options path is nested (`HostKit:Parent:Child:IsEnabled`).
 
 ## Overriding options from a test
 

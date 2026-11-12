@@ -36,6 +36,37 @@ The generated host options type exposes a `SectionName` constant that is used to
 public const string SectionName = "ShopHostKit";
 ```
 
+### Child resource kits
+
+When a kit declares `Parent = typeof(TParentKit)`, only roots are top-level host options. Children nest under
+the parent's options, so the configuration path mirrors the ownership hierarchy:
+
+```json
+{
+  "ShopHostKit": {
+    "Postgres": {
+      "IsEnabled": true,
+      "Database": {
+        "IsEnabled": true,
+        "Name": "db"
+      }
+    }
+  }
+}
+```
+
+```csharp
+public sealed partial class PostgresKitOptions
+{
+    public bool IsEnabled { get; set; } = true;
+
+    public PostgresDatabaseKit.PostgresDatabaseKitOptions Database { get; init; } = new();
+}
+```
+
+`OptionsHelper` resolves the nested path (`ShopHostKit:Postgres:Database:IsEnabled`). Existing root paths are
+unchanged. See [Parent and child resource kits](Hierarchies.md).
+
 Generated options are emitted as nested `sealed partial` classes. You can extend both host and resource
 option types with custom properties.
 
@@ -94,13 +125,17 @@ Typical keys (example):
 - `ShopHostKit:API:Name`
 - `ShopHostKit:API:IsEnabled`
 - `ShopHostKit:API:Mode`
+- `ShopHostKit:API:Urls:Health:IsEnabled` (a declared `[ResourceUrl("Health", ...)]`)
+- `ShopHostKit:Postgres:Database:IsEnabled` (a child resource kit)
 - `ShopHostKit:Mode`
+- `ShopHostKit:Groups:Data:IsEnabled`, `:Mode`, `:ShowInDashboard` (a `[ResourceGroup]`)
 
 Configuration is bound by the generated extension method:
 
 - Host options bind to `ShopHostKitOptions.SectionName` (for example `ShopHostKit`) and
   `ValidateOnStart()` is called.
 - Resource options are nested by generated resource property name.
+- Group options are nested under `Groups`, by group property name. See [Groups and URLs](Groups-and-URLs.md).
 
 ## Disable a resource
 

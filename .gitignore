@@ -660,13 +660,6 @@ sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/openframeworks+visualstudio,visualstudiocode,jetbrains,react,node,astro,aspnetcore,ncrunch,go
 
-# Agent skills installed by the skills CLI.
-#
-# The skills CLI is the single installer for agent skills (Purview.BuildSdk 1.0.6 removed the
-# package-side mirror), and it writes into every agent's own directory. What a developer installed is
-# their choice, not a repository artefact, so these directories are ignored and `skills-lock.json` -
-# the record of what this repository pins - is committed instead.
-.agents/
 .claude/
 
 !scripts/*

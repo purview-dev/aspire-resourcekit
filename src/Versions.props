@@ -1,14 +1,21 @@
 <Project>
 	<PropertyGroup>
 		<!--
-			.NET 10 is the minimum the runtime supports, and the only leg built.
+			.NET 10 is the published minimum; the package ships lib/net10.0 and lib/net11.0.
 
-			It is declared here, once, and every project inherits it through
-			Directory.Build.props. Re-introducing multi-targeting is a product decision, not a default:
-			declare TargetFrameworks in the projects that need it and give each framework its own
-			lowest-compatible Microsoft.Extensions.* floor, because the floor a published package
-			declares becomes the floor every consumer inherits.
+			DefaultTargetFramework names the floor, not the whole set: Purview.BuildSdk 2.x resolves the
+			build from its curated 'Current' set (net10.0;net11.0). Every dependency is declared at the
+			.NET 10 servicing band (10.0.15 / 10.11.0), because the floor a published package declares
+			becomes the floor every consumer inherits - including a .NET 11 consumer, which can resolve
+			the net10.0 assets perfectly well. Do not add a net11-only package version merely because
+			the net11.0 leg exists.
 		-->
 		<DefaultTargetFramework>net10.0</DefaultTargetFramework>
+		<!--
+			The newest shipped leg. Keep this in step with Purview.BuildSdk's 'Current' set; the package
+			shape assertion in scripts/verify-consumers.proj reads both properties so a TFM set change
+			cannot silently drop a lib folder from the package.
+		-->
+		<LatestTargetFramework>net11.0</LatestTargetFramework>
 	</PropertyGroup>
 </Project>

@@ -32,6 +32,22 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			DiagnosticLibrary.ResourcePropertyNeverSet,
 			DiagnosticLibrary.ProjectDefinitionMismatch,
 			DiagnosticLibrary.ProjectResourceKitBaseMismatch,
+			DiagnosticLibrary.GroupTypeNotResourceGroup,
+			DiagnosticLibrary.ResourceGroupCycle,
+			DiagnosticLibrary.DuplicateResourceGroupName,
+			DiagnosticLibrary.MultiplePrimaryGroups,
+			DiagnosticLibrary.ResourceGroupCannotHaveExplicitBase,
+			DiagnosticLibrary.DuplicateUrlName,
+			DiagnosticLibrary.EndpointUrlRequiresEndpoints,
+			DiagnosticLibrary.RelativeUrlWithoutEndpoints,
+			DiagnosticLibrary.MultipleResourceGroupParents,
+			DiagnosticLibrary.ResourceGroupCannotBeGeneric,
+			DiagnosticLibrary.ResourceGroupCannotBeResourceKit,
+			DiagnosticLibrary.ResourceKitCannotParentItself,
+			DiagnosticLibrary.ResourceKitParentCycle,
+			DiagnosticLibrary.ResourceKitParentNotResourceKit,
+			DiagnosticLibrary.ResourceKitParentUnavailable,
+			DiagnosticLibrary.DuplicateResourceKitChildPropertyName,
 		];
 
 	public override void Initialize(AnalysisContext context)
@@ -46,6 +62,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 		{
 			ConcurrentBag<INamedTypeSymbol> hostKits = [];
 			ConcurrentBag<INamedTypeSymbol> resourceKits = [];
+			ConcurrentBag<INamedTypeSymbol> resourceGroups = [];
 
 			compilationStartContext.RegisterSymbolAction(
 				symbolContext =>
@@ -87,13 +104,24 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 							)
 						);
 					}
+
+					if (ResourceKitRules.HasResourceGroupAttribute(type))
+					{
+						resourceGroups.Add(type);
+						ReportRules(
+							symbolContext,
+							ResourceKitRules.EvaluateResourceGroup(type, symbolContext.CancellationToken)
+						);
+					}
 				},
 				SymbolKind.NamedType
 			);
 
 			compilationStartContext.RegisterCompilationEndAction(compilationEndContext =>
-				ReportCompilationRules(compilationEndContext, hostKits, resourceKits)
-			);
+			{
+				ReportCompilationRules(compilationEndContext, hostKits, resourceKits);
+				ReportGroupCompilationRules(compilationEndContext, resourceGroups);
+			});
 		});
 	}
 
@@ -136,16 +164,22 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			);
 		}
 
+		ReportHierarchyRules(context, resourceKitArray);
+
+		// Only roots are host properties. A child property is scoped to its parent, and SG0037 owns duplicates
+		// inside that scope.
 		Dictionary<string, int> seenPropertyNames = [with(StringComparer.Ordinal)];
 		foreach (var resourceKit in resourceKitArray)
 		{
+			if (ResourceKitRules.GetParent(resourceKit) is not null)
+				continue;
+
 			var allAttributes = ResourceDefinitionAttributeData.AllAttributeData(resourceKit).ToArray();
 			var matchedAttribute = allAttributes.FirstOrDefault();
 			if (matchedAttribute.Attribute is null)
 				continue;
 
-			var propertyName =
-				matchedAttribute.Instance.PropertyName
+			var propertyName = matchedAttribute.Instance.PropertyName
 				?? resourceKit.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes);
 			if (string.IsNullOrWhiteSpace(propertyName))
 				continue;
@@ -163,6 +197,82 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 					duplicatePropertyName.Key
 				)
 			);
+		}
+	}
+
+	static void ReportHierarchyRules(CompilationAnalysisContext context, INamedTypeSymbol[] resourceKitArray)
+	{
+		var ordered = resourceKitArray
+			.OrderBy(static symbol => new TypeIdentity(symbol).MetadataFullName, StringComparer.Ordinal)
+			.ToArray();
+
+		var nodes = ordered
+			.Select(static symbol =>
+			{
+				var matched = ResourceDefinitionAttributeData.AllAttributeData(symbol.GetAttributes()).FirstOrDefault();
+				var propertyName = matched.Instance.PropertyName
+					?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)
+					?? symbol.Name;
+				var parent = ResourceKitRules.GetParent(symbol);
+
+				return new ResourceKitRules.HierarchyNode(
+					new TypeIdentity(symbol),
+					parent is null ? TypeIdentity.Empty : new TypeIdentity(parent),
+					symbol.Name,
+					propertyName
+				);
+			})
+			.ToImmutableArray();
+
+		foreach (var finding in ResourceKitRules.EvaluateHierarchy(nodes))
+		{
+			var symbol = ordered[finding.NodeIndex];
+
+			// SG0034 already explains a parent type that is not a resource kit; do not also call it unavailable.
+			if (finding.Descriptor == DiagnosticLibrary.ResourceKitParentUnavailable)
+			{
+				var parent = ResourceKitRules.GetParent(symbol);
+				if (parent is not null && !ResourceKitRules.HasResourceDefinitionAttribute(parent))
+					continue;
+			}
+
+			context.ReportDiagnostic(
+				Diagnostic.Create(finding.Descriptor, GetLocation(symbol) ?? Location.None, [.. finding.MessageArgs])
+			);
+		}
+	}
+
+	// A group's name identifies it in the dashboard, which compares names case-insensitively; its property
+	// name is a member of the generated Groups accessor, which C# compares ordinally.
+	static void ReportGroupCompilationRules(
+		CompilationAnalysisContext context,
+		ConcurrentBag<INamedTypeSymbol> resourceGroups
+	)
+	{
+		var groups = resourceGroups.ToArray();
+
+		var duplicates = groups
+			.GroupBy(ResourceKitRules.GroupName, StringComparer.OrdinalIgnoreCase)
+			.Where(static g => g.Count() > 1)
+			.Concat(
+				groups
+					.GroupBy(ResourceKitRules.GroupPropertyName, StringComparer.Ordinal)
+					.Where(static g => g.Count() > 1)
+			);
+
+		HashSet<ISymbol> reported = [with(SymbolEqualityComparer.Default)];
+		foreach (var duplicate in duplicates)
+		{
+			foreach (var group in duplicate.Where(reported.Add))
+			{
+				context.ReportDiagnostic(
+					Diagnostic.Create(
+						DiagnosticLibrary.DuplicateResourceGroupName,
+						GetLocation(group) ?? Location.None,
+						duplicate.Key
+					)
+				);
+			}
 		}
 	}
 

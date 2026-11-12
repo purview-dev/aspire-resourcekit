@@ -16,20 +16,37 @@ sealed class ExampleHostKit : HostKitBase<ExampleHostKit>
 
 	public PostgresKit Postgres { get; init; }
 
+	public PostgresDatabaseKit PostgresDatabase { get; init; }
+
+	public ResourceKitGroup<ExampleHostKit> PlatformGroup { get; init; }
+
+	public ResourceKitGroup<ExampleHostKit> DataGroup { get; init; }
+
+	public ResourceKitGroup<ExampleHostKit> ServicesGroup { get; init; }
+
 	public ExampleHostKit()
 	{
+		PlatformGroup = new(Platform.ResourceGroups.Platform)
+		{
+			Urls = [new() { Url = Platform.ResourceGroups.DocsUrl, DisplayText = "ResourceKit docs" }],
+		};
+		DataGroup = new(Platform.ResourceGroups.Data, PlatformGroup);
+		ServicesGroup = new(Platform.ResourceGroups.Services, PlatformGroup);
+
 		AzureStorage = new(this);
 		ExampleAPI = new(this);
 		KeyVault = new(this);
 		PublishMarker = new(this);
 		Redis = new(this);
 		Postgres = new(this);
+		PostgresDatabase = new(this, Postgres);
 
-		AddResource(AzureStorage);
-		AddResource(ExampleAPI);
+		AddResource(AzureStorage, DataGroup);
+		AddResource(ExampleAPI, ServicesGroup);
 		AddResource(KeyVault);
 		AddResource(PublishMarker);
-		AddResource(Redis);
-		AddResource(Postgres);
+		AddResource(Redis, DataGroup);
+		AddResource(Postgres, DataGroup);
+		AddResource(PostgresDatabase);
 	}
 }

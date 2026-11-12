@@ -33,19 +33,45 @@ exiting the constructor" warning does not apply.
 | SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` |
 | SG0019 | Warning | A project resource kit declares an explicit base class that does not use `ProjectResource` |
 | SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
+| SG0021 | Error | An `[InGroup<TGroup>]` type argument, or a group's `Parent`, is not a `[ResourceGroup]` class |
+| SG0022 | Error | A resource group is its own ancestor |
+| SG0023 | Error | Two resource groups share a name (case-insensitive) or a property name |
+| SG0024 | Warning | A resource kit marks more than one group as `Primary` |
+| SG0025 | Error | A resource group declares a base type |
+| SG0026 | Error | Two URLs on one resource kit or group share a name |
+| SG0027 | Error | An endpoint URL is declared on a resource, or group, without endpoints |
+| SG0028 | Warning | A relative URL is declared on a resource, or group, without endpoints |
+| SG0029 | Error | A resource group declares its parent more than once |
+| SG0030 | Error | A resource group is generic, or nested in a generic type |
+| SG0031 | Error | A resource group is also a resource kit, or carries `[InGroup]` |
+| SG0032 | Error | A resource kit declares itself as its parent |
+| SG0033 | Error | The parent chain contains a cycle; the message prints the path |
+| SG0034 | Error | The declared parent type is not a resource kit |
+| SG0035 | Error | The declared parent is not part of this host kit composition |
+| SG0036 | Error | The generated child property collides with a member on the parent |
+| SG0037 | Error | Two children of the same parent use the same generated property name |
+| SG0038 | Error | The generated `Parent` member collides with a user-authored member |
+| SG0039 | Warning | A child uses an explicit primary group different from its parent's; visual placement follows the child's group |
+| SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
 
-See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles, and
-[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics.
+See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
+[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics,
+[Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031, and
+[Parent and child resource kits](Hierarchies.md) for SG0032–SG0040.
+
+A parent cycle is reported on one kit in the cycle and includes the full path, for example
+`PostgresKit -> DatabaseKit -> MigrationKit -> PostgresKit`. Invalid hierarchies block generation; manual
+graphs are validated at runtime before any Aspire resource is created.
 
 ## Execution-only vs generation-blocking rules
 
-SG0017, SG0018, and SG0019 are **execution-only** rules. They report problems that break the resource at
+SG0017, SG0018, SG0019, SG0024 and SG0028 are **execution-only** rules. They report problems that break the resource at
 runtime (an unset builder property, a project that is never registered, or a base class that cannot build
 a project) but they do **not** prevent source generation. They are reported as warnings so generation
 always proceeds — for example, a resource kit whose `BuildResource` does not yet register its declared
 project via `AddProject<T>()` is still generated (and the host kit is still emitted) so the user can
-complete the override instead of losing the whole output. Only Error-severity rules (SG0001–SG0016) block
-generation.
+complete the override instead of losing the whole output. Only Error-severity rules block generation.
+SG0024 keeps the first primary group, and SG0028's URL is skipped at runtime.
 
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 
@@ -72,13 +98,35 @@ OptionsHelper.Assign<ShopHostKitOptions>(
 Visual Studio offers a **"Split into separate assignments"** code fix that performs this conversion for you.
 See [OptionsHelper](OptionsHelper.md) and [Source Generator Behaviors](Source-Generator-Behaviors.md).
 
+## Redundant `ResourceBuilder` access (SG0040)
+
+A resource kit derives from `ResourceKitBase<THostKit, TResource>`, which implements
+`IResourceBuilder<TResource>`. When the kit is the receiver of the next call, the `.ResourceBuilder` hop is
+redundant:
+
+```csharp
+// Before (SG0040, Info)
+Parent.ResourceBuilder.AddDatabase(Name);
+
+// After — "Use the resource kit directly"
+Parent.AddDatabase(Name);
+```
+
+The code fix only fires when the hop is the receiver of a following member access/invocation. It deliberately
+does not fire in argument position, where the expected parameter type might be `IResourceBuilder<IResource>`
+and the kit's own `IResourceBuilder<TResource>` would not satisfy it.
+
 ## Fast troubleshooting checklist
 
 1. Ensure host/resource classes are marked `partial`.
 2. Ensure exactly one `[HostKit]` class exists in the compilation.
-3. Ensure resource property names are unique (explicit `PropertyName` can help).
+3. Ensure root property names are unique, and child property names are unique within each parent
+   (explicit `PropertyName` can help).
 4. Ensure each resource uses a compatible base and definition attribute style.
 5. Set explicit `Name` when inference cannot determine resource name.
+6. If the kit declares `Parent = typeof(...)`, ensure that type is a resource kit in the same composition;
+   a child in a different primary group than its parent gets SG0039, and a redundant
+   `Parent.ResourceBuilder` gets SG0040.
 
 ## Common fixes
 

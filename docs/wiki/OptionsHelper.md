@@ -30,6 +30,17 @@ You can also pass an explicit root section name:
 OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>("MySection", c => c.API.IsEnabled = false);
 ```
 
+Child ResourceKit options are nested under their parent, so the same selector works at any depth:
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.Postgres.Database.IsEnabled = false
+).Build();
+// --ShopHostKit:Postgres:Database:IsEnabled=false
+```
+
+See [Parent and child resource kits](Hierarchies.md) for the ownership model and configuration shape.
+
 ## AsEnvironmentVariables
 
 Call `AsEnvironmentVariables()` before `Build()` to produce environment variables instead:
@@ -96,6 +107,15 @@ If you need a property path as a plain string (for example, to build keys or log
 ```csharp
 var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions>(f => f.API.Name);
 // "API.Name"
+```
+
+When the selected member is a value type, use the two-type-parameter overload. The `object?`-returning
+overload boxes the value into the expression tree; the generic overload keeps the member in its
+natural type:
+
+```csharp
+var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions, bool>(f => f.API.IsEnabled);
+// "API.IsEnabled"
 ```
 
 ## SectionNameFor

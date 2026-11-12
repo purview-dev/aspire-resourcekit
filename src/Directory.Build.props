@@ -2,12 +2,73 @@
 	<Import Project="Versions.props" Condition="Exists('$(MSBuildThisFileDirectory)Versions.props')" />
 
 	<PropertyGroup>
-		<TargetFramework Condition="'$(TargetFrameworks)' == ''">$(DefaultTargetFramework)</TargetFramework>
+		<!--
+			No TargetFramework/TargetFrameworks here: Purview.BuildSdk 2.x owns the curated set and its
+			'Current' default is net10.0;net11.0. The .NET 10 leg is the published floor; the .NET 11
+			leg is a real shipped asset and the leg that exercises the C# 15 / .NET 11 feature set
+			(MemorySafetyRules=2 by SDK default, and Runtime Async opted into below).
+		-->
 		<NamespacePrefix>Purview.Aspire.ResourceKit</NamespacePrefix>
 		<RepositoryUrl>https://github.com/purview-dev/aspire-resourcekit</RepositoryUrl>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.BuildSdk" Project="Sdk.props" />
+
+	<PropertyGroup Label=".NET 11 feature opt-ins">
+		<!--
+			Runtime Async is opt-in in Purview.BuildSdk 2.0.1; 2.0.0 defaulted it on. The net11.0 leg
+			exists to exercise the .NET 11 feature set, so opting in explicitly restores the documented
+			behaviour instead of inheriting a changed patch-release default. The SDK applies it only to
+			net11.0+ targets, so the net10.0 floor is unaffected. BuildSdkAdoptionTests guards this.
+		-->
+		<PurviewRuntimeAsync>true</PurviewRuntimeAsync>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Aspire AppHost single-target">
+		<!--
+			Aspire AppHosts cannot multi-target: Aspire.AppHost.Sdk resolves a RID and orchestration
+			assets per project, and its targets are not outer-build aware. Example.Service is launched by
+			an AppHost with a 'dotnet run' project argument and no framework argument, which also requires
+			a single target. Purview.BuildSdk's Current set is net10.0;net11.0 and it assigns
+			TargetFrameworks even when a project already declared TargetFramework, so the examples clear
+			the outer-build list after the SDK import. They stay on the package floor, which also lets the
+			net10.0 integration tests reference them (a net10.0 project cannot reference a net11.0 one).
+		-->
+		<TargetFrameworks
+			Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Example'))"
+		></TargetFrameworks>
+		<TargetFramework Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Example'))"
+			>$(DefaultTargetFramework)</TargetFramework>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Agent skills">
+		<!--
+			The skills CLI installs into one directory per agent. Naming the two this repository uses
+			makes CheckPurviewSkills/FixPurviewSkills enforce that shape - '.agents/skills' is the CLI's
+			canonical store and is always allowed - instead of accepting whatever agent happens to be
+			installed on a developer's machine. Update/install also pass these as -a flags, so a new
+			skill lands in both rather than wherever auto-detect points.
+		-->
+		<PurviewSkillsAgents>universal,claude-code</PurviewSkillsAgents>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Package compatibility">
+		<!--
+			Package validation is the packaging equivalent of a test: it compares the package being built
+			with the last published release and fails when a public API was removed or changed in a way
+			SemVer does not allow. The baseline is the last stable release, not the version in
+			package.json (which may already be the next pre-release).
+		-->
+		<EnablePackageValidation Condition="'$(IsPackable)' == 'true' AND '$(EnablePackageValidation)' == ''"
+			>true</EnablePackageValidation>
+		<!--
+			1.1.0 is the first release that declared the .NET 10-only floor. Validating against 1.0.0
+			would re-flag that deliberate removal of the net8.0/net9.0 legs on every build.
+		-->
+		<PackageValidationBaselineVersion
+			Condition="'$(IsPackable)' == 'true' AND '$(PackageValidationBaselineVersion)' == ''"
+			>1.1.0</PackageValidationBaselineVersion>
+	</PropertyGroup>
 
 	<PropertyGroup Label="Purview site URL metadata">
 		<PurviewHomepage>https://purview.dev/</PurviewHomepage>

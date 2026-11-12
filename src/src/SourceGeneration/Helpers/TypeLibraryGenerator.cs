@@ -6,6 +6,8 @@ static partial class TypeLibraryGenerator
 	// Generated type information...
 	public static readonly string[] TrimSuffixes = ["ResourceKit", "Resource", "Kit"];
 
+	public static readonly string[] GroupTrimSuffixes = ["ResourceGroup", "Group"];
+
 	public const string OptionsBaseClassSuffix = "Options";
 
 	public const string PurviewAspireResourceKitNamespace = "Purview.Aspire.ResourceKit";
@@ -18,6 +20,24 @@ static partial class TypeLibraryGenerator
 
 	[TypeRef(nameof(ResourceDefinitionAttribute), PurviewAspireResourceKitNamespace, 1, true)]
 	static readonly TypeIdentity GenericResourceDefinitionAttribute = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceGroupAttribute = default;
+
+	[TypeRef(nameof(ResourceGroupAttribute), PurviewAspireResourceKitNamespace, 1, true)]
+	static readonly TypeIdentity GenericResourceGroupAttribute = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity InGroupAttribute = default;
+
+	[TypeRef(nameof(InGroupAttribute), PurviewAspireResourceKitNamespace, 1, true)]
+	static readonly TypeIdentity GenericInGroupAttribute = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceUrlAttribute = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity EndpointUrlAttribute = default;
 
 	// Library types
 	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
@@ -34,6 +54,15 @@ static partial class TypeLibraryGenerator
 
 	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
 	static readonly TypeIdentity ResourceKitMode = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, 1, true)]
+	static readonly TypeIdentity ResourceKitGroup = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceKitGroupResource = default;
+
+	[TypeRef(PurviewAspireResourceKitNamespace, IncludeInGetTypes = true)]
+	static readonly TypeIdentity ResourceKitUrl = default;
 
 	// Other required types
 	[TypeRef("Microsoft.Extensions.Configuration")]
@@ -52,6 +81,15 @@ static partial class TypeLibraryGenerator
 
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity ProjectResource = default;
+
+	[TypeRef("Aspire.Hosting.ApplicationModel")]
+	static readonly TypeIdentity IResourceWithEndpoints = default;
+
+	[TypeRef("Aspire.Hosting.ApplicationModel")]
+	static readonly TypeIdentity UrlDisplayLocation = default;
+
+	[TypeRef("System.Collections.Generic", 1)]
+	static readonly TypeIdentity IEnumerable = default;
 
 	[TypeRef("Aspire.Hosting")]
 	static readonly TypeIdentity IProjectMetadata = default;

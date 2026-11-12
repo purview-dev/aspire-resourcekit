@@ -8,8 +8,34 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
 ## Next (unreleased)
 
 - **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost
-  must be on `net10.0`, and the package ships a single `lib/net10.0` asset. See
-  [Supported target frameworks](Versioning.md#supported-target-frameworks).
+  must be on `net10.0` or `net11.0`, and the package ships `lib/net10.0` (the floor) and
+  `lib/net11.0` (the newest leg). See
+  [Supported target frameworks](Versioning.md#supported-target-frameworks) and
+  [.NET 11 toolchain and feature adoption](Toolchain.md).
+- **.NET 11 leg and tooling** — the repository builds with the .NET 11 GA SDK, `Purview.BuildSdk` 2.0.1
+  and TUnit 1.83. The net11.0 leg opts into the SDK's Runtime Async (`PurviewRuntimeAsync=true`) and
+  takes its memory-safety rules; the net10.0 leg keeps the 10.0.15 `Microsoft.Extensions.*` floor.
+  `OptionsHelper.PathFor<TOptions, TValue>` adds a non-boxing selector overload, and pack validation
+  now compares against the published 1.1.0 baseline.
+- **Resource groups.** `[ResourceGroup]` and `[InGroup<TGroup>]` gather kits under named, nestable groups.
+  A group can be switched off or given a mode from configuration, and in run mode it appears as a node in the dashboard
+  with its kits nested underneath. See [Groups and URLs](Groups-and-URLs.md).
+- **Named dashboard URLs.** `[ResourceUrl]` and `[EndpointUrl]` declare a kit's or group's dashboard links as
+  options. A relative URL adds one link for one endpoint, instead of rewriting every endpoint URL as
+  `WithUrl("/path")` does.
+- **Diagnostics SG0021-SG0031** for groups and URLs. A group can never become its own ancestor or member.
+- **Parent and child resource kits** (issue #57). `Parent = typeof(TParentKit)` gives the child a typed
+  `Parent`, the parent a typed child property, parent-before-child build ordering, inherited enablement, and
+  nested options (`<HostKit>:<Parent>:<Child>`). VNET/subnets, SQL server/database, Service Bus and storage
+  account/container hierarchies are supported without a second composition framework. See
+  [Parent and child resource kits](Hierarchies.md).
+- **Diagnostics SG0032-SG0038** for self-parenting, cycles, unavailable parents, child property collisions,
+  duplicate child property names, and generated `Parent` member collisions. Manual graphs are validated at
+  runtime before any Aspire resource is created.
+- **SG0039** warns when a child's explicit primary group differs from its parent's, because visual placement
+  follows the child's group (or an existing Aspire parent chain), not the ResourceKit hierarchy.
+- **SG0040** (Info) and its code fix remove a redundant `.ResourceBuilder` hop from a kit receiver:
+  `Parent.ResourceBuilder.AddDatabase(...)` becomes `Parent.AddDatabase(...)`.
 
 ## 1.0.0
 

@@ -13,3 +13,15 @@ partial class ParameterKit
 	protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddParameter(Name, "value");
 }
+
+// Proves the packaged analyzer emits the typed Parent/child surface (issue #57) in a real
+// PackageReference consumer, on both target frameworks.
+[ResourceDefinition<ParameterResource>("c", Parent = typeof(ParameterKit))]
+partial class ChildParameterKit
+{
+	protected override IResourceBuilder<ParameterResource> BuildResource(IDistributedApplicationBuilder builder)
+	{
+		_ = Parent.ResourceBuilder;
+		return builder.AddParameter(Name, "child-value");
+	}
+}

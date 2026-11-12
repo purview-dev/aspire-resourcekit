@@ -15,6 +15,22 @@ public interface IResourceKit<THostKit>
 	THostKit HostKit { get; init; }
 
 	/// <summary>
+	/// Gets the resource kit that owns this resource kit, or <see langword="null"/> when this kit is a root.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Parentage is composition ownership: the parent is built before the child, the child can read the
+	/// parent's <c>ResourceBuilder</c> while building, and disabling the parent disables every descendant.
+	/// It is not a general resource dependency and it does not add an Aspire visual parent relationship.
+	/// </para>
+	/// <para>
+	/// The relationship is fixed when the kit is constructed. Implementations that do not derive from
+	/// <see cref="ResourceKitBase{THostKit, TResource}"/> inherit this default and are roots.
+	/// </para>
+	/// </remarks>
+	IResourceKit<THostKit>? ParentKit => null;
+
+	/// <summary>
 	/// Gets the logical name of the resource.
 	/// </summary>
 	string Name { get; init; }

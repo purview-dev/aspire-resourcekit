@@ -2,13 +2,19 @@
 	<PropertyGroup>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<RoslynVersion>5.9.0</RoslynVersion>
-		<TUnitVersion>1.76.0</TUnitVersion>
-		<PurviewSourceGeneratorFrameworkVersion>1.3.0</PurviewSourceGeneratorFrameworkVersion>
-		<PurviewTelemetryVersion>5.2.0</PurviewTelemetryVersion>
-		<DotNetRuntimeVersion>10.0.13</DotNetRuntimeVersion>
+		<TUnitVersion>1.83.0</TUnitVersion>
+		<PurviewSourceGeneratorFrameworkVersion>2.0.0</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewTelemetryVersion>6.0.0</PurviewTelemetryVersion>
+		<!--
+			The lowest common servicing band for the .NET 10 floor. A package project must not raise a
+			consumer's Microsoft.Extensions.* floor to the .NET 11 band just because the repository builds
+			with the .NET 11 SDK: 10.0.15 is the latest .NET 10 patch and the highest version every
+			supported consumer can resolve without being forced forward. See docs/wiki/Toolchain.md.
+		-->
+		<DotNetRuntimeVersion>10.0.15</DotNetRuntimeVersion>
 		<MSExtensionVersion>10.11.0</MSExtensionVersion>
 		<OTelVersion>1.20.1</OTelVersion>
-		<AspireVersion>13.6.4</AspireVersion>
+		<AspireVersion>13.6.5</AspireVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynVersion)" />
@@ -19,8 +25,15 @@
 		<PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.ApplicationInsights" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.KeyVault" Version="$(AspireVersion)" />
+		<PackageVersion Include="Aspire.Hosting.Azure.Network" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Redis" Version="$(AspireVersion)" />
+		<!--
+			Example/test-only: the hierarchy acceptance scenario builds real VNET/subnet and Service Bus models
+			with the installed Aspire surface (see issue #57). Keep these at AspireVersion; do not let them
+			raise the consumer-visible Aspire floor.
+		-->
+		<PackageVersion Include="Aspire.Hosting.Azure.ServiceBus" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Microsoft.Azure.StackExchangeRedis" Version="$(AspireVersion)" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
@@ -34,7 +47,7 @@
 			Include="Microsoft.Extensions.Options.ConfigurationExtensions"
 			Version="$(DotNetRuntimeVersion)"
 		/>
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="11.0.100" />
 		<PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(DotNetRuntimeVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynVersion)" />
@@ -52,8 +65,7 @@
 		<PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
-		<PackageVersion Include="Purview.Skills.Testing" Version="1.2.0" />
-		<PackageVersion Include="Purview.Architecture.Testing" Version="1.2.0" />
+		<PackageVersion Include="Purview.Skills.Testing" Version="2.0.1" />
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OTelVersion)" />

@@ -70,6 +70,10 @@ partial class CodeGenEmiiter
 				context.HostKit.ShouldGenerateOptions ? "Options.Mode" : ModeExpression(context.HostKit.Mode)
 			);
 
+			// Write the typed resource group accessor
+			if (context.HasResourceGroups)
+				GenerateGroupsProperty(context);
+
 			// Write the Resource Kit properties
 			if (context.Model.HasResourceKits)
 			{
@@ -90,6 +94,9 @@ partial class CodeGenEmiiter
 
 			// Write the partial lifecycle hooks.
 			GenerateLifecyclePartialMethods(context, cancellationToken);
+
+			if (context.HasResourceGroups)
+				GenerateGroupsClass(context, cancellationToken);
 
 			if (context.Model.HostKit.Value.ShouldGenerateOptions)
 			{
@@ -152,6 +159,32 @@ partial class CodeGenEmiiter
 		}
 	}
 
+	static void GenerateGroupsProperty(OutputContext context)
+	{
+		var groupsType = context.HostKit.HostKitType.Nested(GroupsClassName);
+
+		context
+			.Writer.XmlSummary("Gets the resource groups composed by this host kit.")
+			.XmlException(
+				TypeLibrary.System.InvalidOperationException,
+				"Thrown if the groups have not been initialized. Call Build first."
+			);
+
+		context.Writer.Property(
+			new("Groups", groupsType, TypeDeclarationAccessibility.Public)
+			{
+				HasGetter = true,
+				HasSetter = true,
+				SetterAccessibility = TypeDeclarationAccessibility.Private,
+			},
+			writeGetterBody =>
+				writeGetterBody.Return(
+					$"field ?? throw new {TypeLibrary.System.InvalidOperationException}({"The resource groups have not been initialized. Call Build first.".StringLiteral()})"
+				),
+			writeSetterBody => writeSetterBody.Assignment("field", "value")
+		);
+	}
+
 	static void GenerateResourceKitProperties(OutputContext context, CancellationToken cancellationToken)
 	{
 		context.Debug(
@@ -159,13 +192,7 @@ partial class CodeGenEmiiter
 			1
 		);
 
-		foreach (
-			var resourceKit in context
-				.Model.ResourceKits.AsImmutableArray()
-				.SelectMany(r => r.Items.AsImmutableArray())
-				.Where(m => m.ShouldProcess)
-				.Select(m => m.Value)
-		)
+		foreach (var resourceKit in context.HierarchyOrder.AsImmutableArray().Where(static kit => !kit.HasParent))
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -180,7 +207,11 @@ partial class CodeGenEmiiter
 				.XmlException(TypeLibrary.System.ArgumentNullException, "Thrown if the resource is set to null.");
 
 			context.Writer.Property(
-				new(resourceKit.PropertyName, resourceKit.ResourceKitType, TypeDeclarationAccessibility.Public)
+				new(
+					resourceKit.PropertyName,
+					resourceKit.ResourceKitType,
+					LeastAccessible(context.HostKit.Accessibility, resourceKit.Accessibility)
+				)
 				{
 					HasGetter = true,
 					HasSetter = true,
@@ -235,29 +266,34 @@ partial class CodeGenEmiiter
 				.MethodCall("OnPreBuild", ["builder"])
 				.NewLine();
 
-			foreach (
-				var resourceKit in context
-					.ResourceKits.AsImmutableArray()
-					.SelectMany(static r => r.Items.AsImmutableArray())
-			)
+			if (context.HasResourceGroups)
+			{
+				context
+					.Writer.Comment("Creating the resource groups, parents before their children.")
+					.Assignment(
+						"Groups",
+						new ObjectCreationOptions(context.HostKit.ShouldGenerateOptions ? ["Options"] : [])
+					)
+					.NewLine();
+			}
+
+			foreach (var resourceKit in context.HierarchyOrder)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
 
 				context.Writer.Comment($"Creating {resourceKit.ResourceKitType.Name} Resource Kit.");
-				if (context.HostKit.ShouldGenerateOptions)
-				{
-					context.Writer.Assignment(
-						resourceKit.PropertyName,
-						new ObjectCreationOptions(["this", $"Options.{resourceKit.PropertyName}"])
-					);
-				}
-				else
-				{
-					context.Writer.Assignment(
-						resourceKit.PropertyName,
-						new ObjectCreationOptions(["this", resourceKit.ResourceName.StringLiteral()])
-					);
-				}
+
+				List<string> arguments = ["this"];
+				if (context.ParentOf(resourceKit) is { } parent)
+					arguments.Add(context.AccessPathOf(parent));
+
+				arguments.Add(
+					context.HostKit.ShouldGenerateOptions
+						? context.OptionsPathOf(resourceKit)
+						: resourceKit.ResourceName.StringLiteral()
+				);
+
+				context.Writer.Assignment(context.AccessPathOf(resourceKit), new ObjectCreationOptions([.. arguments]));
 
 				context.Writer.NewLine();
 			}
@@ -267,14 +303,20 @@ partial class CodeGenEmiiter
 			else
 			{
 				context.Writer.Comment("Register the discovered app resources with the base class.");
-				foreach (
-					var resourceKit in context
-						.ResourceKits.AsImmutableArray()
-						.SelectMany(static r => r.Items.AsImmutableArray())
-				)
+				foreach (var resourceKit in context.HierarchyOrder)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					context.Writer.MethodCall("AddResource", resourceKit.PropertyName);
+
+					// The primary group is first; it decides where the kit is shown in the dashboard.
+					string[] arguments =
+					[
+						context.AccessPathOf(resourceKit),
+						.. resourceKit
+							.Groups.AsImmutableArray()
+							.Where(g => context.ResourceGroups.AsImmutableArray().Any(m => m.GroupType == g))
+							.Select(g => $"Groups.{PropertyNameOf(context, g)}"),
+					];
+					context.Writer.MethodCall("AddResource", arguments);
 				}
 			}
 
@@ -402,12 +444,31 @@ partial class CodeGenEmiiter
 					}
 				);
 
+			if (context.HasResourceGroups)
+			{
+				context
+					.Writer.NewLine()
+					.XmlSummary("Gets or sets options for the resource groups, one property per group.")
+					.Property(
+						new(
+							"Groups",
+							context.HostKit.OptionsType.Nested(GroupsOptionsClassName),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							HasGetter = true,
+							IsInitOnly = true,
+							Initializer = "new()",
+						}
+					);
+
+				GenerateGroupsOptionsClass(context, cancellationToken);
+			}
+
 			if (context.HasResourceKits)
 			{
 				foreach (
-					var resourceKit in context
-						.ResourceKits.AsImmutableArray()
-						.SelectMany(static r => r.Items.AsImmutableArray())
+					var resourceKit in context.HierarchyOrder.AsImmutableArray().Where(static kit => !kit.HasParent)
 				)
 				{
 					cancellationToken.ThrowIfCancellationRequested();

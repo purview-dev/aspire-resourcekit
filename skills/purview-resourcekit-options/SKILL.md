@@ -2,9 +2,10 @@
 name: purview-resourcekit-options
 description: >-
   Use when configuring Purview.Aspire.ResourceKit through options - the generated host and resource
-  options shape, extending them with custom properties, selecting a run mode with Mode, section-name
-  resolution, disabling a resource with IsEnabled, overriding enablement with IsResourceEnabled, and
-  building args or environment variables with OptionsHelper.
+  options shape including nested child-kit options, extending them with custom properties, selecting a run mode with Mode, inherited enablement, section-name
+  resolution, disabling a resource with IsEnabled, disabling a resource group, overriding a declared
+  dashboard URL, overriding enablement with IsResourceEnabled, and building args or environment
+  variables with OptionsHelper.
 metadata:
   product: Purview.Aspire.ResourceKit
   repository: purview-dev/aspire-resourcekit
@@ -40,6 +41,47 @@ Host options bind to `SectionName` and `ValidateOnStart()` is called; resource o
 generated resource property name. Typical keys: `ShopHostKit:API:Name`, `ShopHostKit:API:IsEnabled`,
 `ShopHostKit:API:Mode`, `ShopHostKit:Mode`.
 
+### Child kits
+
+Only roots are host-level options. A kit declared with `Parent = typeof(TParentKit)` nests its options
+under the parent, so the configuration path mirrors the ownership hierarchy:
+
+```csharp
+public sealed partial class PostgresKitOptions
+{
+    public bool IsEnabled { get; set; } = true;
+    public PostgresDatabaseKit.PostgresDatabaseKitOptions Database { get; init; } = new();
+}
+```
+
+```json
+{ "ShopHostKit": { "Postgres": { "Database": { "IsEnabled": false } } } }
+```
+
+`OptionsHelper.Assign<ShopHostKitOptions>(o => o.Postgres.Database.IsEnabled = false)` produces
+`--ShopHostKit:Postgres:Database:IsEnabled=false`. A nested child can be disabled independently, but never
+re-enabled while an ancestor is disabled. See `purview-resourcekit-authoring` for the hierarchy rules.
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.Postgres.Database.IsEnabled = false
+).Build();
+```
+
+Two further option families appear when they are declared:
+
+- **Resource groups.** `[ResourceGroup]` adds `ShopHostKit:Groups:<Group>:{IsEnabled|Mode|ShowInDashboard}`.
+  A kit builds only when its own gates pass **and** every group it belongs to, and every ancestor of
+  those groups, is enabled for the run. The host kit checks this before `IsResourceEnabled`, in the same
+  step as the host `Mode`, so `IsEnabled` and `IsResourceEnabled` keep their meaning.
+- **Named URLs.** `[ResourceUrl("Health", ...)]` and `[EndpointUrl("https")]` add
+  `ShopHostKit:API:Urls:<Name>:{Url|DisplayText|Endpoint|DisplayLocation|IsEnabled}`. Each one is a
+  `ResourceKitUrl`. An endpoint URL is named after its endpoint in PascalCase (`otlp-grpc` → `OtlpGrpc`).
+
+```text
+--ShopHostKit:Groups:Data:IsEnabled=false   # every kit in Data and its child groups
+--ShopHostKit:API:Urls:Health:IsEnabled=false
+```
 ## Extending them
 
 Generated options are nested `sealed partial` classes, so you add your own properties on the host kit
@@ -140,6 +182,11 @@ Two consequences worth stating plainly:
   through options is *never* re-enabled by the hook. That is deliberate: configuration is the outer gate.
 - **`ResourceBuilder` cannot be accessed while the resource is disabled** — the property guards
   itself and throws `InvalidOperationException`.
+
+A child adds the ancestor gate. If any ancestor is disabled, the child is effectively disabled even when
+its own `IsEnabled` is `true`, and its hook is not invoked. `IsEnabled` is the configured value before
+`Build` and the effective value afterwards; `ConfiguredIsEnabled` and `EffectiveIsEnabled` expose both
+explicitly.
 
 Override the hook when enablement depends on runtime state that is not a mode:
 

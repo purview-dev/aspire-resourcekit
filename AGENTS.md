@@ -14,9 +14,17 @@ At a high level:
 
 This is a .NET repository centered on Aspire and source generation.
 
-- **.NET 10 is the floor and the only leg**: `src/Versions.props` declares `DefaultTargetFramework`,
-  every project inherits it, and the package ships a single `lib/net10.0` asset. Do not add a
-  multi-targeting leg without giving it its own lowest-compatible `Microsoft.Extensions.*` floor.
+- **.NET 10 is the floor; .NET 11 is the newest leg**: `src/Versions.props` declares
+  `DefaultTargetFramework` (`net10.0`) and `LatestTargetFramework` (`net11.0`).
+  `Purview.BuildSdk` 2.x resolves the build from its `Current` set (`net10.0;net11.0`), and the package
+  ships `lib/net10.0` and `lib/net11.0`. The .NET 10 leg declares the lowest-compatible
+  `Microsoft.Extensions.*` floor; do not raise it to the 11.x band just because the net11.0 leg exists.
+- **.NET 11 opt-ins**: `MemorySafetyRules=2` (the C# 15 updated memory-safety rules) is a BuildSdk
+  default for `net11.0` targets. Runtime Async is **not** a default in BuildSdk 2.0.1 — it became
+  opt-in there (2.0.0 defaulted it on) — so the repository sets `PurviewRuntimeAsync=true` in
+  `src/Directory.Build.props`, guarded by `BuildSdkAdoptionTests`. Neither switch applies to the
+  `net10.0` leg, and do not expect a `net10.0` target to compile C# 15 union/closed declarations: the
+  runtime types those features require are not in the .NET 10 framework.
 - The two Roslyn components (`SourceGeneration`, `SourceGeneration.CodeFixes`) target `netstandard2.0`
   by SDK rule — a generator runs inside the compiler and IDE host, not on the consumer's framework.
 - Uses the **Purview DotNet Project SDK** (`Purview.BuildSdk`) for project defaults and conventions.
@@ -107,17 +115,20 @@ and the `.agents/**.*` entry in `.config/purview-build.json` went with it.
 gitignored. This repository's own skills are never installed into it — that would leave two copies to
 drift apart. Read them at their authored path, `skills/<name>/SKILL.md`.
 
+The installed set is maintained with `just skills-update` and checked with `just skills-check`
+(`Justfile.skills.just`); both need a restore first, and neither runs as part of a build.
+
 ```bash
 npx skills add purview-dev/aspire-resourcekit
 ```
 
 | Skill | Answers |
 | --- | --- |
-| `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, the Build/Configure lifecycle, project resources |
-| `skills/purview-resourcekit-options/` | generated options, extending them, run modes (`Mode`), `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
-| `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, running the tiers |
-| `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means and how to fix it |
-| `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition |
+| `skills/purview-resourcekit-authoring/` | declaring a `[HostKit]` and resource kits, attribute styles, parent/child hierarchies, the Build/Configure lifecycle, project resources, groups and URLs |
+| `skills/purview-resourcekit-options/` | generated options including nested child options, extending them, run modes (`Mode`), inherited `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
+| `skills/purview-resourcekit-testing/` | TUnit.Aspire fixtures, overriding options from a test, hierarchy model tests, running the tiers |
+| `skills/purview-resourcekit-diagnostics/` | what an `SG00xx` means, including hierarchy, group-placement and redundant-`ResourceBuilder` rules, and how to fix it |
+| `skills/purview-resourcekit-migration/` | converting an existing inline AppHost into ResourceKit composition, including extracting child resource kits |
 
 Every skill carries the `purview-resourcekit` prefix. Skills install into one flat directory per
 agent, shared with every skill a developer has installed from anywhere, so an unprefixed name

@@ -4,7 +4,9 @@ description: >-
   Use when composing an Aspire AppHost with Purview.Aspire.ResourceKit - declaring a [HostKit] and
   [ResourceDefinition] resource kits, choosing the generic or non-generic attribute style, the
   Build/BuildResource and Configure/ConfigureResource lifecycle, project resources through
-  AddProject, and registering the generated AddAspireResourceKit extension.
+  AddProject, parent/child kits with Parent = typeof(TParentKit) and inherited enablement, grouping
+  kits with [ResourceGroup]/[InGroup<TGroup>], named dashboard URLs with
+  [ResourceUrl]/[EndpointUrl], and registering the generated AddAspireResourceKit extension.
 metadata:
   product: Purview.Aspire.ResourceKit
   repository: purview-dev/aspire-resourcekit
@@ -19,9 +21,9 @@ one resource kit per resource, and a generated extension method that wires them 
 dotnet add package Purview.Aspire.ResourceKit
 ```
 
-Requires **.NET 10**: the package ships a single `lib/net10.0` asset, and the two attributes below are
-generated into the consuming compilation by the bundled source generator — there is no separate
-attribute package to reference.
+Requires **.NET 10** or **.NET 11**: the package ships `lib/net10.0` and `lib/net11.0` assets, and the
+attributes below are generated into the consuming compilation by the bundled source generator —
+there is no separate attribute package to reference.
 
 ## The shape
 
@@ -67,8 +69,9 @@ need more. Every participating class must be `partial` (`SG0001`).
 | Argument | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `Name` | `string?` | derived from the class name, suffix trimmed | the logical Aspire resource name |
-| `PropertyName` | `string?` | derived from the class name | the generated host property name; must be a valid C# identifier (`SG0008`) |
+| `PropertyName` | `string?` | derived from the class name | the generated host or parent property name; must be a valid C# identifier (`SG0008`) |
 | `Mode` | `ResourceKitMode` | `All` | execution mode for this resource |
+| `Parent` | `Type?` | `null` | the owning resource kit: `Parent = typeof(TParentKit)` |
 | `AspireResourceType` | generic type argument | `null` | the Aspire `IResource` type — generic style only |
 
 `Mode` accepts a named property or a constructor argument on both attributes, and configuration can
@@ -125,6 +128,50 @@ An attributed class must not declare a parameterised constructor or an executabl
 (`SG0012`). The generator supplies the wiring — a resource kit's primary constructor receives the
 host kit and its options.
 
+## Parent and child kits
+
+`Parent = typeof(TParentKit)` turns a kit into a child. The generator emits a typed `Parent` property on the
+child and a typed child property on the parent, and constructs parents before children:
+
+```csharp
+[ResourceDefinition<AzurePostgresFlexibleServerResource>("postgres")]
+sealed partial class PostgresKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            builder.AddAzurePostgresFlexibleServer(Name);
+}
+
+[ResourceDefinition<AzurePostgresFlexibleServerDatabaseResource>(
+    "db", PropertyName = "Database", Parent = typeof(PostgresKit))]
+sealed partial class PostgresDatabaseKit
+{
+    protected override IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource>
+        BuildResource(IDistributedApplicationBuilder builder) =>
+            Parent.AddDatabase(Name);
+}
+```
+
+- The child uses `Parent` directly; the parent has already finished `BuildResource`, and a resource kit is
+  itself an `IResourceBuilder<TResource>` (`Parent.ResourceBuilder` is redundant; SG0040).
+- `hostKit.Postgres.Database` is the strongly typed child; `Parent` is the strongly typed parent.
+- One parent per kit, any number of children, any depth.
+- A disabled parent disables every descendant, and a disabled ancestor never invokes a descendant's
+  `IsResourceEnabled` hook. Siblings are independent.
+- Child options nest under the parent (`ShopHostKit:Postgres:Database:IsEnabled`).
+- A child with no `[InGroup]` inherits its parent's **primary** group. Grouping never changes build order.
+  An explicit child group whose primary group differs from the parent's warns `SG0039`; the child renders in
+  its own group unless an Aspire visual parent places it under the parent.
+- ResourceKit parentage is composition ownership, not a general dependency, and it does **not** create an
+  Aspire visual parent relationship. Add `WithParentRelationship(Parent.ResourceBuilder)` yourself when you
+  want that.
+- Manual kits use `ResourceKitBase(hostKit, parent, name)` and register both kits with the host; the host
+  validates the graph before creating resources.
+
+The VNET/subnet shape from issue #57 is the same: a `VnetKit` root and one `SubnetKit` per subnet with
+`Parent = typeof(VnetKit)`, each building with `Parent.AddSubnet(Name, prefix)`. Invalid
+graphs report `SG0032`–`SG0038`.
+
 ## Build versus Configure
 
 Two lifecycle pairs, and keeping them separate is what makes the composition deterministic:
@@ -146,7 +193,8 @@ kit's generated properties:
 ```csharp
 protected override void ConfigureResource()
 {
-    ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+    if (HostKit.Postgres.IsEnabled && HostKit.Postgres.Database.IsEnabled)
+        ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
 
     if (HostKit.Redis.IsEnabled)
         ResourceBuilder.WithReference(HostKit.Redis).WaitFor(HostKit.Redis);
@@ -193,6 +241,43 @@ evaluated first, then `IsResourceEnabled(builder)` — **only when `IsEnabled` i
 the combined result is assigned back to `IsEnabled`. A `false` result skips both `BuildResource(...)`
 and `ConfigureResource()`. The `purview-resourcekit-options` skill covers the full model, including why
 a kit disabled through options is never re-enabled by the hook.
+
+## Groups and dashboard URLs
+
+Group related kits with a `[ResourceGroup]` class, and add a kit to a group with `[InGroup<TGroup>]`. A
+kit can be in several groups, and its first group, or the one marked `Primary = true`, is where the
+dashboard nests it:
+
+```csharp
+[ResourceGroup("platform")] sealed partial class PlatformGroup;
+[ResourceGroup<PlatformGroup>("data")] sealed partial class DataGroup;  // or Parent = typeof(PlatformGroup)
+
+[ResourceDefinition<AzurePostgresFlexibleServerResource>("postgres")]
+[InGroup<DataGroup>]
+[ResourceUrl("Docs", "https://example.com/postgres")]   // absolute: shown as-is
+sealed partial class PostgresKit { /* ... */ }
+
+[ResourceDefinition<Projects.Example_Service>("api")]
+[ResourceUrl("Health", "/health", DisplayText = "Health")]  // one URL, against https then http
+[EndpointUrl("https", DisplayText = "API")]                  // renames the endpoint's own URL
+sealed partial class ApiKit { /* ... */ }
+```
+
+- A group class must be `partial`, non-generic and must have no base type: the generator derives it from
+  `ResourceKitGroup<THostKit>` (`SG0025`, `SG0030`). A class is a kit or a group, never both (`SG0031`), and a
+  parent chain can never loop back (`SG0022`). It must be at least as accessible as the host kit.
+- In run mode, at the end of `Configure`, each group with a built kit is added as a `ResourceKitGroupResource`
+  node, named after the group, or `<name>-group` when a resource already has that name. The node is
+  excluded from the manifest. A kit whose resource already has a parent (its own
+  `WithParentRelationship`, or an integration such as AspireC4 that builds its own tree) keeps it, and the
+  top of that chain is nested in the group instead, unless the chain ends at another kit or a group node.
+- A resource an integration adds beside a kit's own (DbGate, pgweb) isn't a kit. Place it with
+  `sql.WithDbGate(dbGate => dbGate.WithResourceGroup(HostKit.Groups.Persistence))`. `WithDbGate` returns the SQL builder,
+  so the callback is the only place to reach DbGate's.
+- Prefer `[ResourceUrl]` to `WithUrl("/path")`. Aspire's relative `WithUrl` rewrites the path of
+  **every** endpoint URL; `[ResourceUrl]` adds one URL.
+- `HostKit.Groups.Data.Resources` lists a group's kits for cross-resource wiring in `ConfigureResource`.
+- Manual host kits pass groups to `AddResource(kit, group, ...)` and override `Urls`.
 
 ## Growing a composition
 

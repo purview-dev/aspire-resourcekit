@@ -23,7 +23,7 @@ namespace Purview.Aspire.ResourceKit.Repository;
 /// </remarks>
 public sealed class ExampleAppHostTests
 {
-	static readonly string RepositoryRoot = FindRepositoryRoot();
+	static readonly string RepositoryRoot = RepositoryPaths.Root;
 
 	[Test]
 	[Arguments("src/src/Example.AppHost/Example.AppHost.csproj")]
@@ -73,25 +73,5 @@ public sealed class ExampleAppHostTests
 			.That(File.Exists(solution))
 			.IsTrue()
 			.Because($"the marker walk resolved '{RepositoryRoot}', which does not look like this repository");
-	}
-
-	static string FindRepositoryRoot()
-	{
-		// The same '.git/' marker walk Purview.BuildSdk uses to find the repository root.
-		for (
-			var directory = new DirectoryInfo(AppContext.BaseDirectory);
-			directory is not null;
-			directory = directory.Parent
-		)
-		{
-			if (Directory.Exists(Path.Combine(directory.FullName, ".git")))
-			{
-				return directory.FullName;
-			}
-		}
-
-		throw new InvalidOperationException(
-			$"No '.git' directory was found above '{AppContext.BaseDirectory}', so the repository root is unresolvable."
-		);
 	}
 }

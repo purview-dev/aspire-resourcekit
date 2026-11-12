@@ -39,4 +39,3 @@ jobs:
           github-packages: ${{ vars.PURVIEW_PUBLISH_GITHUB_PACKAGES == 'true' }}
           github-packages-keep-versions: ${{ vars.PURVIEW_GITHUB_PACKAGES_KEEP_VERSIONS || '1' }}
           github-packages-retention-hours: ${{ vars.PURVIEW_GITHUB_PACKAGES_RETENTION_HOURS || '24' }}
-          test-filter: "/*/*/*/*[Category=Unit]"

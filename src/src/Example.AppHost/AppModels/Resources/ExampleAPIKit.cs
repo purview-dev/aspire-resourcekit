@@ -1,12 +1,16 @@
 using System.ComponentModel.DataAnnotations;
+using Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Groups;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources;
 
 [ResourceDefinition<Projects.Example_Service>(Platform.ResourceKits.API)]
+[InGroup<ServicesGroup>]
+[ResourceUrl("Health", Platform.EndpointsDefinitions.Health, DisplayText = "Health")]
+[EndpointUrl("https", DisplayText = "API")]
 sealed partial class ExampleAPIKit
 {
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddProject<Projects.Example_Service>(Name).WithUrl("/health", "Health");
+		builder.AddProject<Projects.Example_Service>(Name);
 
 	protected override void ConfigureResource()
 	{
@@ -33,8 +37,11 @@ sealed partial class ExampleAPIKit
 				.Build()
 		);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
-		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
+		if (HostKit.Postgres.IsEnabled && HostKit.Postgres.Database.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+
+		if (HostKit.AzureStorage.IsEnabled && HostKit.AzureStorage.Blobs.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
 		if (HostKit.KeyVault.IsEnabled)
 			ResourceBuilder.WithReference(HostKit.KeyVault).WaitFor(HostKit.KeyVault);

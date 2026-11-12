@@ -3,6 +3,12 @@ namespace Purview.Aspire.ResourceKit.Example.ManualAppHost.AppModels.Resources;
 sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 	: ResourceKitBase<ExampleHostKit, ProjectResource>(hostKit, Platform.ResourceKits.API)
 {
+	protected override IEnumerable<ResourceKitUrl> Urls =>
+		[
+			new() { Url = Platform.EndpointsDefinitions.Health, DisplayText = "Health" },
+			new() { Endpoint = "https", DisplayText = "API" },
+		];
+
 	protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
 		builder.AddProject<Projects.Example_Service>(Name);
 
@@ -11,7 +17,7 @@ sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 		if (HostKit.PublishMarker.IsEnabled)
 			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", HostKit.PublishMarker);
 
-		ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+		ResourceBuilder.WithReference(HostKit.PostgresDatabase).WaitFor(HostKit.PostgresDatabase);
 		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
 
 		if (HostKit.KeyVault.IsEnabled)
