@@ -1,0 +1,79 @@
+# The purview.dev catalogue record for this project (ADR 0013 in purview-dev/purview-dev).
+# The site reads this file from the default branch of this repository, so the record
+# changes in the same pull request as the thing it describes.
+#
+# `$schema` is an editor hint and nothing more: the enforcing validation is the site's
+# loader, which `just check-projects` runs there.
+$schema: https://raw.githubusercontent.com/purview-dev/purview-dev/main/src/src/lib/manifest/schema.ts
+
+id: aspire-resourcekit
+name: Aspire ResourceKit
+shortDescription: Strongly typed, source-generated resource kits for .NET Aspire.
+description: >-
+  A source-generator-powered framework for structuring .NET Aspire AppHost
+  resource composition as strongly typed, test-friendly classes. Generated
+  host wiring, typed options, and enablement toggles keep large AppHosts
+  maintainable and discoverable.
+origin: >-
+  Large Aspire AppHosts repeatedly accumulated procedural resource wiring and configuration,
+  creating a need for a typed, testable way to package those conventions.
+useWhen: >-
+  Your Aspire AppHost has reusable resource groups, configuration, or enablement rules that
+  should be strongly typed, discoverable, and testable.
+avoidWhen: >-
+  Your AppHost is small and direct resource declarations remain clearer than introducing a
+  resource-kit abstraction.
+repository: purview-dev/aspire-resourcekit
+category: aspire
+status: stable
+order: 50
+docs:
+  source: github-path
+  path: docs/wiki
+  rootPage: Getting-Started.md
+  exclude:
+    - _Sidebar.md
+    - Home.md
+    - index.md
+targetFrameworks:
+  - net10.0
+packages:
+  - id: Purview.Aspire.ResourceKit
+    description: Runtime and source generator for resource kits.
+    primary: true
+useCases:
+  - audience: architect
+    title: Typed, testable resource groups in a large AppHost
+    scenario: >-
+      A large Aspire AppHost accumulates procedural resource wiring and configuration that is hard
+      to test and easy to misconfigure.
+    code: |
+      [HostKit]
+      partial class ShopHostKit;
+
+      [ResourceDefinition<Projects.Example_Service>("api")]
+      partial class ApiResourceKit
+      {
+          protected override IResourceBuilder<ProjectResource> BuildResource(
+              IDistributedApplicationBuilder builder)
+              => builder.AddProject<Projects.Example_Service>(Name);
+      }
+    language: csharp
+    outcome: >-
+      Resource definitions become strongly typed, source-generated classes with generated host
+      wiring and typed options.
+    evidence: >-
+      One [HostKit] plus one [ResourceDefinition] per resource replaces procedural AppHost code, and
+      the analyzer validates the wiring at compile time.
+    docsPage: examples
+  - audience: team-lead
+    title: Configure and toggle resources without editing the AppHost
+    scenario: >-
+      You want enablement rules and configuration to be declarative and discoverable instead of
+      buried in the AppHost entry point.
+    outcome: >-
+      Typed options and enablement toggles are generated for each resource kit, so behaviour is
+      configured rather than coded.
+    evidence: >-
+      Resource kits can be unit tested with the testing helpers, independent of a running AppHost.
+    docsPage: configuration-and-options
