@@ -22,6 +22,8 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > - Parent/child resource kits: [`docs/wiki/Hierarchies.md`](docs/wiki/Hierarchies.md)
 > - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
 
+**Documentation:** [Aspire ResourceKit documentation](https://purview.dev/docs/aspire-resourcekit/)
+
 ## Why teams use it
 
 - **Cleaner AppHost code** with resource logic split into dedicated classes.
