@@ -49,7 +49,7 @@
 			installed on a developer's machine. Update/install also pass these as -a flags, so a new
 			skill lands in both rather than wherever auto-detect points.
 		-->
-		<PurviewSkillsAgents>universal,claude-code</PurviewSkillsAgents>
+		<PurviewSkillsAgents>universal</PurviewSkillsAgents>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Package compatibility">

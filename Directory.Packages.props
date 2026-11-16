@@ -3,8 +3,8 @@
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<RoslynVersion>5.9.0</RoslynVersion>
 		<TUnitVersion>1.83.0</TUnitVersion>
-		<PurviewSourceGeneratorFrameworkVersion>2.0.0</PurviewSourceGeneratorFrameworkVersion>
-		<PurviewTelemetryVersion>6.0.0</PurviewTelemetryVersion>
+		<PurviewSourceGeneratorFrameworkVersion>2.1.0</PurviewSourceGeneratorFrameworkVersion>
+		<PurviewTelemetryVersion>6.0.1</PurviewTelemetryVersion>
 		<!--
 			The lowest common servicing band for the .NET 10 floor. A package project must not raise a
 			consumer's Microsoft.Extensions.* floor to the .NET 11 band just because the repository builds
@@ -70,7 +70,7 @@
 		<PackageVersion Include="TUnit.Core" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Aspire" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
-		<PackageVersion Include="Purview.Skills.Testing" Version="2.0.1" />
+		<PackageVersion Include="Purview.Skills.Testing" Version="2.1.0" />
 		<PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MSExtensionVersion)" />
 		<PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(OTelVersion)" />
