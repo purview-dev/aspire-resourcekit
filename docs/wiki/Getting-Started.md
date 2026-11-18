@@ -54,12 +54,17 @@ partial class ApiResourceKit
 ```
 
 > [!NOTE]
-> For a project resource you can use the Aspire-generated project reference type
+> For a project resource on **Aspire 13.6**, use the Aspire-generated project reference type
 > (`Projects.Example_Service`, the type accepted by `AddProject<T>()`) instead of the concrete
 > `ProjectResource`. The generator maps it to `ProjectResource` for the generated base class, and the
 > analyzer validates that `BuildResource` adds the same project via `AddProject<T>()` (SG0018) and that an
-> explicit base, when used, resolves to `ProjectResource` (SG0019). See
-> [Project Resources](Project-Resources.md).
+> explicit base, when used, resolves to `ProjectResource` (SG0019).
+>
+> On **Aspire 17**, use Project V2 instead:
+> `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]` and
+> `builder.AddDotnetProject(Name, "../Api/Api.csproj")`. SG0018 validates the declared path, SG0019 the
+> explicit base, and SG0041 reports a `ProjectPath` on a non-V2 resource. The legacy form still works on
+> 17, where `AddProject<T>` reports `CS0618`. See [Project Resources](Project-Resources.md).
 
 ### Choose an attribute style
 

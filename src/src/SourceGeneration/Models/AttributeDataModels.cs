@@ -31,6 +31,9 @@ readonly partial record struct ResourceDefinitionAttributeData(
 	[Property(IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
 	[Argument("mode", IsEnum = true, DefaultValue = "Purview.Aspire.ResourceKit.ResourceKitMode.All")]
 		string? Mode,
+	// Aspire 17 Project V2: the project path declared alongside [ResourceDefinition<DotnetProjectResource>].
+	// Named-property only, so it does not add another attribute constructor overload.
+	[Property] string? ProjectPath,
 	[GenericTypeArgument] TypeIdentity AspireResourceType
 );
 

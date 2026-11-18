@@ -1,13 +1,22 @@
 # Examples: Generated vs Manual
 
-The repository ships two example AppHosts that compose the same set of resources in two different
-styles:
+The repository ships four example AppHosts: the same composition in generated and manual styles, on
+both Aspire lines.
 
-- `src/src/Example.AppHost` — the **source-generated** pattern (attributes, no hand-written wiring).
-- `src/src/Example.ManualAppHost` — the **manual** pattern (hand-written `HostKitBase` and
-  `ResourceKitBase` composition, no generator).
+| Aspire line | Generated | Manual |
+| --- | --- | --- |
+| 17+ (Project V2) | `src/src/Example.AppHost17` | `src/src/Example.ManualAppHost17` |
+| Pre-17 (13.6) | `src/src/Example.Pre17.AppHost` | `src/src/Example.Pre17.ManualAppHost` |
 
-Both hosts build the same logical resources through `Purview.Aspire.ResourceKit.Example` constants in
+The **generated** projects use attributes and no hand-written wiring. The **manual** projects implement
+`HostKitBase` / `ResourceKitBase` by hand and disable the source generator. The Aspire 17 pair adds the
+API with `AddDotnetProject` and declares `ProjectPath` on the resource kit; the Pre-17 pair uses
+`AddProject<Projects.Example_Service>`.
+
+The Aspire 17 examples require the Aspire CLI bundle at build time (ASPIRE013); the Pre-17 pair does
+not. See [Contributing](Contributing.md#building-and-testing).
+
+All four hosts build the same logical resources through `Purview.Aspire.ResourceKit.Example` constants in
 `Example.ServiceDefaults/Platform.cs`:
 
 | Resource | Name | Aspire type |
@@ -17,7 +26,8 @@ Both hosts build the same logical resources through `Purview.Aspire.ResourceKit.
 | VNET (publish-only) | `vnet` (+ child kits `snet-web`, `snet-data`, `snet-private-endpoint`) | `AzureVirtualNetworkResource` |
 | Redis | `redis` | `AzureManagedRedisResource` |
 | Key Vault | `kv` | `AzureKeyVaultResource` |
-| API | `api` | `ProjectResource` (`Projects.Example_Service`) |
+| API (Pre-17) | `api` | `ProjectResource` (`Projects.Example_Service`) |
+| API (17+) | `api` | `DotnetProjectResource` (`AddDotnetProject`) |
 | Publish marker | `publish-marker` | `ParameterResource` |
 
 The Postgres database and storage blob are separate child kits, so their builders come from the parent:
@@ -68,17 +78,17 @@ Key Vault and the publish marker are publish-only. The generated AppHost declare
 attribute (`ResourceKitMode.Publish`), and the manual AppHost overrides the `Mode` property:
 
 ```csharp
-// Example.AppHost (generated)
+// Example.Pre17.AppHost (generated)
 [ResourceDefinition<AzureKeyVaultResource>(Platform.ResourceKits.KeyVault, ResourceKitMode.Publish)]
 sealed partial class KeyVaultKit;
 
-// Example.ManualAppHost (manual)
+// Example.Pre17.ManualAppHost (manual)
 protected override ResourceKitMode Mode => ResourceKitMode.Publish;
 ```
 
 See [Enablement](Enablement.md) for the full mode list.
 
-## Generated pattern (`Example.AppHost`)
+## Generated pattern (`Example.Pre17.AppHost`)
 
 `AppHost.cs` registers everything with a single generated call:
 
@@ -182,7 +192,7 @@ sealed partial class ExampleAPIKit
 The generator emits the host kit members, options, `ResourceKitBase<TResource>` base classes, and the
 extension method. See [Generated Output](Generated-Output.md).
 
-## Manual pattern (`Example.ManualAppHost`)
+## Manual pattern (`Example.Pre17.ManualAppHost`)
 
 `AppHost.cs` registers a host kit instance directly via the generic extension:
 

@@ -8,8 +8,12 @@ This page covers the repository layout and the day-to-day commands for working o
 - `src/src/ResourceKit` — runtime APIs consumed by AppHost projects (the packable project).
 - `src/src/SourceGeneration` — the Roslyn incremental generator, analyzers, suppressor, and attributes.
 - `src/src/SourceGeneration.CodeFixes` — the SG0020 IDE code fix provider.
-- `src/src/Example.*` — sample Aspire applications (`Example.AppHost` generated pattern,
-  `Example.ManualAppHost` manual pattern, `Example.Service`, `Example.ServiceDefaults`).
+- `src/src/Example.*` — sample Aspire applications:
+  - `Example.Pre17.AppHost` / `Example.Pre17.ManualAppHost` — Aspire 13.6 (`Aspire.AppHost.Sdk`,
+    `AddProject<T>`) generated and manual patterns.
+  - `Example.AppHost17` / `Example.ManualAppHost17` — Aspire 17 Project V2
+    (`Microsoft.NET.Sdk`, `AddDotnetProject`) generated and manual patterns.
+  - `Example.Service` / `Example.ServiceDefaults` — the shared service and constants both families use.
 - `src/tests/*` — unit and integration tests for the runtime and the generator.
 - `docs/wiki` — this documentation suite.
 
@@ -30,17 +34,31 @@ just pack           # produce NuGet packages into ./artifacts
 just verify-consumers  # pack, assert the package shape, build a real consumer against it
 just lint-check     # CSharpier formatting check
 just lint-fix       # CSharpier format
-just scrub          # remove bin/obj, clean, restore, stop build server
+just scrub          # delete bin/obj and artifacts, stop the build servers, restore from scratch
 just version        # show the current version from package.json
+just bump patch     # bump package.json's version (major, minor or patch)
 ```
 
-Nothing here needs the Aspire CLI installed. The example AppHosts build against the NuGet-delivered
-DCP and dashboard packages (`AspireUseCliBundle=false`), which the AppHost SDK turns into
-`Aspire.Dashboard.Sdk.<rid>` and `Aspire.Hosting.Orchestration.<rid>` references for the build machine's
-RID. Opting them into the CLI bundle instead (`-p:AspireUseCliBundle=true`) makes a *build* need a
-resolvable bundle, and resolving one is a network install performed mid-build, once per AppHost — two of
-which then race on the NuGet cache and fail each other with ASPIRE009. `ExampleAppHostTests` keeps the
-opt-in out of the project files for exactly that reason.
+The shared recipes live in `.build/just/` and are copied verbatim from the `purview-buildsdk-justfile`
+skill; the root `Justfile` sets this repository's variables and adds its own recipes.
+
+The two example families have different build contracts:
+
+- The **Pre17** examples use `Aspire.AppHost.Sdk` 13.6.5 with `AspireUseCliBundle=false`, so they build
+  against the NuGet-delivered DCP and dashboard packages (`Aspire.Dashboard.Sdk.<rid>` /
+  `Aspire.Hosting.Orchestration.<rid>`) and need no Aspire CLI. Do not opt them into the bundle: resolving
+  one is a network install performed mid-build, once per AppHost, and two of them race on the NuGet cache
+  and fail with ASPIRE009.
+- The **Aspire 17** examples use `Microsoft.NET.Sdk` + `Aspire.Hosting.AppHost` and `AddDotnetProject`.
+  ASPIRE013 makes the Aspire CLI bundle a hard build requirement. Install the pinned CLI before building:
+
+  ```bash
+  dotnet tool install --global Aspire.Cli --version "$(cat .config/aspire-version)"
+  aspire setup
+  ```
+
+  Both pipelines do this before the build. `ExampleAppHostTests` guards both contracts and that
+  `.config/aspire-version` matches `Directory.Packages.props`' `Aspire17Version`.
 
 ## Testing conventions
 
@@ -95,17 +113,18 @@ copies would drift. `skills-lock.json` is committed: it pins what this repositor
 npx skills add purview-dev/aspire-resourcekit
 ```
 
-Maintain the installed set through the BuildSdk targets, which run once for the whole solution:
+Maintain the installed set through the skills recipes, which run the skills CLI from the repository
+root and need no restore:
 
 ```bash
-just restore          # the targets read the restore graph and never restore on their own
-just skills-update    # re-add every source in skills-lock.json
+just skills-install   # restore exactly what skills-lock.json records - how a fresh clone starts
+just skills-update    # re-add every source in skills-lock.json at its latest, then fix
 just skills-check     # fail if an agent directory other than .agents/skills and .claude/skills exists
 ```
 
-`PurviewSkillsAgents` in `src/Directory.Build.props` names the two agents thus allowed; `just skills-fix`
-removes a directory it does not select. These are run on purpose, never from a build, a git hook or a
-CI job that commits.
+`Skills.Agents` in `.config/purview-build-sdk.json` names the one agent thus allowed (`universal`,
+the `.agents/skills` store); `just skills-fix` removes a directory it does not select. These are run
+on purpose, never from a build, a git hook or a CI job that commits.
 
 ## Architecture
 

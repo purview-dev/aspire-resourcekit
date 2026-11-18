@@ -1,9 +1,80 @@
 # Project resources
 
-ResourceKit has first-class support for Aspire project resources (`AddProject<T>()`) with generator
-and analyzer validation to catch wiring mistakes.
+ResourceKit supports both Aspire project resource models, with generator and analyzer validation to
+catch wiring mistakes:
 
-## Declaring a project resource kit
+| Aspire | Registration | Declaration |
+| --- | --- | --- |
+| 17+ (Project V2) | `AddDotnetProject(name, path)` | `[ResourceDefinition<DotnetProjectResource>(ProjectPath = "...")]` |
+| 13.6 (legacy) | `AddProject<TProject>()` | `[ResourceDefinition<Projects.MyService>]` |
+
+The legacy form still works on Aspire 17, where `AddProject<T>` reports `CS0618`; the V2 form is the
+one to use for a new Aspire 17 AppHost. The package declares the 13.6 floor, so a 13.6 consumer never
+has to reference `Aspire.Hosting.Dotnet`.
+
+## Aspire 17 Project V2
+
+Declare the project path on the attribute and add the same path with `AddDotnetProject`:
+
+```csharp
+using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Dotnet;
+using Purview.Aspire.ResourceKit;
+
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Example.Service/Example.Service.csproj")]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj");
+}
+```
+
+The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>`. `DotnetProjectResource`
+implements `IResourceWithEndpoints` and `IResourceWithEnvironment`, so URLs, references and
+`WithEnvironment` work as they do for any other resource.
+
+`ProjectPath` is a named argument on both `[ResourceDefinition]` and
+`[ResourceDefinition<TResource>]`. It is a build-time declaration, not a bindable option.
+
+### The declared path must be added (SG0018)
+
+`BuildResource` must call `AddDotnetProject` with the declared path. The comparison normalises `\`
+and `/`, so either separator is accepted; a computed (non-literal) path is accepted because it cannot
+be compared at compile time.
+
+```csharp
+// OK
+builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj");
+
+// SG0018 (warning): the declared path is never added.
+builder.AddDotnetProject(Name, "../Other.Service/Other.Service.csproj");
+```
+
+Without `ProjectPath`, ResourceKit still checks that `BuildResource` calls `AddDotnetProject` at all,
+but it has no path to compare.
+
+### `ProjectPath` is V2-only (SG0041)
+
+`ProjectPath` is ignored by any resource that is not a `DotnetProjectResource`, including the legacy
+`Projects.*` form. SG0041 reports the contradiction so a path that is never used cannot look
+validated.
+
+### Explicit base must use DotnetProjectResource (SG0019)
+
+When a V2 project kit declares an explicit base class (non-generic attribute style), the base must
+resolve to `DotnetProjectResource`. SG0019 is an execution-only warning.
+
+```csharp
+[ResourceDefinition("api", ProjectPath = "../Example.Service/Example.Service.csproj")]
+partial class ApiResourceKit : ResourceKitBase<DotnetProjectResource>
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj");
+}
+```
+
+## Aspire 13.6 legacy project resources
 
 Use the Aspire-generated project reference type directly in the attribute. The generator maps it to
 `ProjectResource` for the generated base class:
@@ -29,7 +100,7 @@ partial class ApiResourceKit
 - maps it to `ProjectResource` for the generated base class,
 - enables the two project-specific execution-only rules below.
 
-## The declared project must be added (SG0018)
+### The declared project must be added (SG0018)
 
 `BuildResource` must register the same project it declares via `AddProject<T>()`.
 
@@ -53,10 +124,10 @@ SG0018 is an **execution-only** warning: generation still proceeds so you can co
 without losing the host kit output. At runtime the declared project is not registered, so the resource
 fails.
 
-## Explicit base must use ProjectResource (SG0019)
+### Explicit base must use ProjectResource (SG0019)
 
-When a project resource kit declares an explicit base class (non-generic attribute style), the base
-must resolve to `ProjectResource`.
+When a legacy project resource kit declares an explicit base class (non-generic attribute style), the
+base must resolve to `ProjectResource`.
 
 ```csharp
 [ResourceDefinition("api")]
@@ -72,10 +143,10 @@ warning) because that base cannot build the declared project.
 
 ## Generic vs non-generic styles
 
-- **Generic style** (`[ResourceDefinition<Projects.Example_Service>(...)]`) is recommended for project
-  resources: the type is declared on the attribute and the base is supplied by the generator.
-- **Non-generic style** (`[ResourceDefinition(...)]` + explicit base) requires the base to use
-  `ProjectResource` (SG0019).
+- **Generic style** (`[ResourceDefinition<TResource>(...)]`) is recommended for project resources:
+  the type is declared on the attribute and the base is supplied by the generator.
+- **Non-generic style** (`[ResourceDefinition(...)]` + explicit base) requires the base to use the
+  declared project resource type (SG0019).
 
 See [Attributes Reference](Attributes-Reference.md) for the base-type rules shared by all resources.
 

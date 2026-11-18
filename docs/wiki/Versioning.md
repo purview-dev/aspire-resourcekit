@@ -39,7 +39,7 @@ Once a version is stable, the following are treated as public contracts:
 
 - The attributes `[HostKit]`, `[ResourceDefinition]`, and `[ResourceDefinition<TResource>]`,
   including their named arguments (`Name`, `PropertyName`, `ExtensionMethodName`, `GenerateOptions`,
-  `Mode`).
+  `Mode`, `Parent`, `ProjectPath`).
 - The runtime types and members consumed by AppHost code (`HostKitBase`, `ResourceKitBase`,
   `ResourceKitMode`, `OptionsHelper`, and the `IResourceBuilder`/`WithEnvironment` extensions).
 - The names and shapes of generated members (`BuildResource`, `ConfigureResource`,

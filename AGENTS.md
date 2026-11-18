@@ -31,14 +31,19 @@ This is a .NET repository centered on Aspire and source generation.
 - Uses centrally-managed package versions (`Directory.Packages.props`).
 - Uses **TUnit** and **TUnit.Mocks** for testing.
 - Uses `Microsoft.Testing.Platform` via package-managed tooling.
-- **No build needs the Aspire CLI installed.** The example AppHosts set
-  `AspireUseCliBundle=false`, so they build against the NuGet-delivered DCP and dashboard packages
-  (`Aspire.Dashboard.Sdk.<rid>` / `Aspire.Hosting.Orchestration.<rid>`, added by the AppHost SDK for the
-  build machine's RID). Do not put `AspireUseCliBundle=true` back in a project file: it makes a *build*
-  require a resolvable CLI bundle, and resolving one is a network install performed mid-build once per
-  AppHost — two of which race on the NuGet cache and fail each other with ASPIRE009. That is what broke
-  the release pipeline. `ExampleAppHostTests` guards the invariant; pass `-p:AspireUseCliBundle=true` for
-  a one-off build that wants the bundle path.
+- **Two example families, two build contracts.**
+  - `Example.Pre17.AppHost` / `Example.Pre17.ManualAppHost` use `Aspire.AppHost.Sdk` 13.6.5 and
+    `AspireUseCliBundle=false`, so they build against the NuGet-delivered DCP and dashboard packages
+    (`Aspire.Dashboard.Sdk.<rid>` / `Aspire.Hosting.Orchestration.<rid>`) and need no Aspire CLI. Do not
+    change that: resolving a bundle mid-build runs a network install once per AppHost, and the two race
+    on the NuGet cache and fail with ASPIRE009 — the failure that broke the release pipeline.
+  - `Example.AppHost17` / `Example.ManualAppHost17` use `Microsoft.NET.Sdk` plus
+    `Aspire.Hosting.AppHost` 17 and `AddDotnetProject`. ASPIRE013 makes the Aspire CLI bundle a hard
+    build requirement for a C# AppHost; both pipelines install `Aspire.Cli` from
+    `.config/aspire-version` and run `aspire setup` before the build. Do not set
+    `AspireUseCliBundle=false` on these.
+
+  `ExampleAppHostTests` guards both contracts and that the CLI version matches `Aspire17Version`.
 
 The skills this repository **authors** live in the root `skills/` folder — read them there, at
 `skills/<name>/SKILL.md`. Skills a *package* ships are installed into `.agents/skills/` by the skills
@@ -119,8 +124,10 @@ and the `.agents/**.*` entry in `.config/purview-build.json` went with it.
 gitignored. This repository's own skills are never installed into it — that would leave two copies to
 drift apart. Read them at their authored path, `skills/<name>/SKILL.md`.
 
-The installed set is maintained with `just skills-update` and checked with `just skills-check`
-(`Justfile.skills.just`); both need a restore first, and neither runs as part of a build.
+The installed set is maintained with `just skills-update` and checked with `just skills-check`.
+Those recipes run the skills CLI through `.build/just/skills.mts`, so they need no restore and no
+build, and neither runs as part of one. Agent selection lives in `.config/purview-build-sdk.json`;
+`skills-lock.json` is what a fresh clone restores with `just skills-install`.
 
 ```bash
 npx skills add purview-dev/aspire-resourcekit

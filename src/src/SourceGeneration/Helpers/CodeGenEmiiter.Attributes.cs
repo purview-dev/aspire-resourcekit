@@ -277,6 +277,23 @@ partial class CodeGenEmiiter
 						}
 					);
 
+				attributeBody
+					.XmlSummary(
+						"Gets or sets the path to a .NET project added with AddDotnetProject (Aspire 17+).",
+						"Used with <c>[ResourceDefinition&lt;DotnetProjectResource&gt;]</c>. The generator validates that",
+						"<c>BuildResource</c> adds the same path through <c>AddDotnetProject</c>; SG0018 reports a mismatch."
+					)
+					.Property(
+						new(
+							"ProjectPath",
+							TypeLibrary.System.String.MakeNullable(attributeBody),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							IsInitOnly = true,
+						}
+					);
+
 				AddModeProperty(attributeBody);
 			}
 		);

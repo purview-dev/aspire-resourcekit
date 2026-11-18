@@ -168,7 +168,7 @@ static class DiagnosticLibrary
 	public static readonly DiagnosticDescriptor ProjectDefinitionMismatch = new(
 		id: "SG0018",
 		title: "Project resource definition mismatch",
-		messageFormat: "The '{0}' resource kit declares project '{1}' but BuildResource must add the same project via AddProject<T>()",
+		messageFormat: "The '{0}' resource kit declares project '{1}' but BuildResource must add the same project via AddProject<T>() or AddDotnetProject(...)",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
@@ -177,12 +177,22 @@ static class DiagnosticLibrary
 
 	public static readonly DiagnosticDescriptor ProjectResourceKitBaseMismatch = new(
 		id: "SG0019",
-		title: "Project resource kit base must use ProjectResource",
-		messageFormat: "The '{0}' resource kit declares a project but its explicit base class '{1}' does not use ProjectResource",
+		title: "Project resource kit base must use the declared project resource type",
+		messageFormat: "The '{0}' resource kit declares a project but its explicit base class '{1}' does not use ProjectResource or DotnetProjectResource",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
 		description: "Execution-only concern: the explicit base cannot build the declared project resource; generation is not blocked."
+	);
+
+	public static readonly DiagnosticDescriptor ProjectPathRequiresDotnetProjectResource = new(
+		id: "SG0041",
+		title: "ProjectPath requires a DotnetProjectResource",
+		messageFormat: "'{0}' sets ProjectPath, which is only used with [ResourceDefinition<DotnetProjectResource>] (Aspire 17+); the declared resource is '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "ProjectPath is the Aspire 17 Project V2 declaration. A ProjectResource (AddProject<T>) or any other resource type does not use it, so the path is ignored."
 	);
 
 	public static readonly DiagnosticDescriptor ResourceKitCannotParentItself = new(

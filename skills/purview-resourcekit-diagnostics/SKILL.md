@@ -41,8 +41,8 @@ assigned.
 | `SG0015` | Error | Generic `ResourceDefinition<TResource>` with an explicit base. |
 | `SG0016` | Error | No Aspire resource type could be inferred or found. |
 | `SG0017` | Warning | An `IResourceBuilder<T>` property is never assigned in `BuildResource` or `ConfigureResource`. |
-| `SG0018` | Warning | A project resource kit does not add the declared project via `AddProject<T>()`. |
-| `SG0019` | Warning | A project resource kit's explicit base does not use `ProjectResource`. |
+| `SG0018` | Warning | A project resource kit does not add the declared project via `AddProject<T>()` or `AddDotnetProject(...)`. |
+| `SG0019` | Warning | A project resource kit's explicit base does not use `ProjectResource` or `DotnetProjectResource`. |
 | `SG0020` | Error | An `OptionsHelper.Assign` action sets more than one property path. |
 | `SG0021` | Error | An `[InGroup<TGroup>]` type, or a group's `Parent`, is not a `[ResourceGroup]` class in this compilation. |
 | `SG0022` | Error | A resource group is its own ancestor. |
@@ -64,12 +64,17 @@ assigned.
 | `SG0038` | Error | The generated `Parent` member collides with a user-authored member. |
 | `SG0039` | Warning | A child's explicit primary group differs from its parent's; visual placement follows the child's group. |
 | `SG0040` | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant. |
+| `SG0041` | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored. |
 
 ## Execution-only versus generation-blocking
 
 `SG0017`, `SG0018`, `SG0019`, `SG0024` and `SG0028` are **execution-only**. They report things that break the resource at
 runtime — an unset builder property, a project that is never registered, a base that cannot build a
 project — but they deliberately do **not** stop generation, and are warnings for that reason.
+
+`SG0041` is a different kind of warning: the resource still builds and runs, but its `ProjectPath` is
+ignored because the resource is not a `DotnetProjectResource`. It is a declaration advisory, not an
+execution-only rule.
 
 The point is practical: a resource kit whose `BuildResource` does not yet register its declared
 project is still generated, and the host kit still emitted, so you can finish the override instead of

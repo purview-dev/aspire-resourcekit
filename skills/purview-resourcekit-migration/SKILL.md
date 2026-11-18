@@ -35,7 +35,7 @@ By the end of migration:
 Before changing code, inspect:
 
 - AppHost entrypoint (`Program.cs` or `AppHost.cs`).
-- Existing resource registrations (`AddProject`, `AddContainer`, `AddRedis`, `AddAzure*`, etc.).
+- Existing resource registrations (`AddProject`/`AddDotnetProject`, `AddContainer`, `AddRedis`, `AddAzure*`, etc.).
 - Cross-resource calls (`WithReference`, endpoints, parent/child wiring).
 - Conditional logic (`if`, environment checks, flags) currently gating resources.
 - Existing `appsettings*.json` and CLI arg usage.
@@ -67,6 +67,28 @@ partial class ApiResourceKit
         => builder.AddProject<Projects.Example_Service>(Name);
 }
 ```
+
+#### 2.0.1) Aspire 17: migrate `AddProject` to Project V2
+
+On an Aspire 17 AppHost, `AddProject<T>` is obsolete (`CS0618`) and the AppHost SDK is gone. Convert
+the same shape to `DotnetProjectResource` and declare the path once on the attribute:
+
+```csharp
+using Aspire.Hosting.Dotnet;
+
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
+}
+```
+
+- Keep the resource `Name` and every `WithReference`/`WithEnvironment` call; `DotnetProjectResource`
+  supports them.
+- `ProjectPath` is validated against the literal passed to `AddDotnetProject` after normalising `\`
+  and `/` (SG0018). A computed path is accepted but cannot be validated.
+- On Aspire 13.6, keep the legacy `Projects.*` form; the package still declares the 13.6 floor.
 
 #### 2.1) Extract a child resource created from another resource
 

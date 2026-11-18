@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!--
+			The 17 AppHosts bring Aspire 17, so this test app pins its own packages rather than inheriting
+			the repository's 13.6 central versions (which would be a downgrade).
+		-->
+		<ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- The SDK adds TUnit without a version because the repository normally manages it centrally. -->
+		<PackageReference Update="TUnit" Version="$(TUnitVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Aspire.Hosting" Version="$(Aspire17Version)" />
+		<PackageReference Include="Aspire.Hosting.Testing" Version="$(Aspire17Version)" />
+		<PackageReference Include="TUnit.Aspire" Version="$(TUnitVersion)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Example.AppHost17\Example.AppHost17.csproj" />
+		<ProjectReference Include="..\..\src\Example.ManualAppHost17\Example.ManualAppHost17.csproj" />
+		<ProjectReference Include="..\..\src\Example.ServiceDefaults\Example.ServiceDefaults.csproj" />
+	</ItemGroup>
+</Project>

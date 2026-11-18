@@ -69,7 +69,7 @@ strongly typed assignments:
 ```csharp
 using TUnit.Aspire;
 
-public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.Example_AppHost>
+public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.Example_Pre17_AppHost>
 {
 	public const string AzureStorageName = "custom-options-azure-storage-example";
 

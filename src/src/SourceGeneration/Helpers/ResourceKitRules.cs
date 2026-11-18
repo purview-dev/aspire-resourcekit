@@ -40,6 +40,7 @@ static class ResourceKitRules
 		DiagnosticLibrary.ResourcePropertyNeverSet.Id,
 		DiagnosticLibrary.ProjectDefinitionMismatch.Id,
 		DiagnosticLibrary.ProjectResourceKitBaseMismatch.Id,
+		DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource.Id,
 		DiagnosticLibrary.GroupTypeNotResourceGroup.Id,
 		DiagnosticLibrary.ResourceGroupCycle.Id,
 		DiagnosticLibrary.DuplicateResourceGroupName.Id,
@@ -187,7 +188,11 @@ static class ResourceKitRules
 		var isGenericResourceDefinition = matchedAttribute.Attribute.AttributeClass!.IsGenericType;
 		var propertyName = matchedAttribute.Instance.PropertyName
 			?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
-		var (_, isValidResourceType, declaredProject) = ResolveResourceType(matchedAttribute, symbol);
+		var (resolvedResourceType, isValidResourceType, declaredProject) = ResolveResourceType(
+			matchedAttribute,
+			symbol
+		);
+		var declaredProjectPath = matchedAttribute.Instance.ProjectPath;
 
 		if (allAttributes.Length > 1)
 		{
@@ -256,9 +261,63 @@ static class ResourceKitRules
 		}
 
 		EvaluateParent(symbol, diagnostics);
+		EvaluateProjectDeclaration(
+			symbol,
+			matchedAttribute,
+			declaredProject,
+			declaredProjectPath,
+			resolvedResourceType,
+			hasExplicitBaseType,
+			compilation,
+			diagnostics,
+			cancellationToken
+		);
+
+		EvaluateResourceBuilderProperties(symbol, compilation, diagnostics, cancellationToken);
+		EvaluateGroupMemberships(symbol, diagnostics, cancellationToken);
+		EvaluateUrls(
+			symbol,
+			ResourceHasEndpoints(matchedAttribute, symbol),
+			isValidResourceType ? DisplayName(matchedAttribute, symbol) : null,
+			diagnostics,
+			cancellationToken
+		);
+
+		return diagnostics.ToImmutable();
+	}
+
+	/// <summary>
+	/// Evaluates the project-resource declaration, for both the legacy <c>Projects.*</c> form
+	/// (<c>AddProject&lt;T&gt;</c>) and Aspire 17 Project V2 (<c>DotnetProjectResource</c> +
+	/// <c>AddDotnetProject</c>).
+	/// </summary>
+	static void EvaluateProjectDeclaration(
+		INamedTypeSymbol symbol,
+		(ResourceDefinitionAttributeData Instance, AttributeData Attribute) matchedAttribute,
+		INamedTypeSymbol? declaredProject,
+		string? declaredProjectPath,
+		TypeIdentity resolvedResourceType,
+		bool hasExplicitBaseType,
+		Compilation compilation,
+		ImmutableArray<RuleEvaluation>.Builder diagnostics,
+		CancellationToken cancellationToken
+	)
+	{
+		var isDotnetProjectResource = resolvedResourceType == TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource;
 
 		if (declaredProject is not null)
 		{
+			// The legacy Projects.* form. ProjectPath is a V2 signal and is ignored here, so report the
+			// contradiction rather than let the author believe the path is validated.
+			if (!string.IsNullOrWhiteSpace(declaredProjectPath))
+				ReportProjectPathRequiresDotnetProjectResource(
+					symbol,
+					matchedAttribute.Attribute,
+					TypeLibrary.Aspire.Hosting.ApplicationModel.ProjectResource,
+					diagnostics,
+					cancellationToken
+				);
+
 			var (addsDeclaredProject, addProjectLocation) = BuildResourceAddsProject(
 				symbol,
 				declaredProject,
@@ -277,37 +336,73 @@ static class ResourceKitRules
 				);
 			}
 
-			if (hasExplicitBaseType)
-			{
-				var baseResourceType = ResolveAspireResourceTypeFromBaseClass(symbol, TypeIdentity.Empty);
-				if (
-					baseResourceType != TypeIdentity.Empty
-					&& baseResourceType != TypeLibrary.Aspire.Hosting.ApplicationModel.ProjectResource
-				)
-				{
-					diagnostics.Add(
-						new(
-							DiagnosticLibrary.ProjectResourceKitBaseMismatch,
-							IsBlocking: false,
-							GetLocation(symbol),
-							[symbol.Name, baseResourceType.MetadataFullName]
-						)
-					);
-				}
-			}
+			EvaluateProjectKitBase(
+				symbol,
+				hasExplicitBaseType,
+				TypeLibrary.Aspire.Hosting.ApplicationModel.ProjectResource,
+				diagnostics
+			);
+			return;
 		}
 
-		EvaluateResourceBuilderProperties(symbol, compilation, diagnostics, cancellationToken);
-		EvaluateGroupMemberships(symbol, diagnostics, cancellationToken);
-		EvaluateUrls(
-			symbol,
-			ResourceHasEndpoints(matchedAttribute, symbol),
-			isValidResourceType ? DisplayName(matchedAttribute, symbol) : null,
-			diagnostics,
-			cancellationToken
-		);
+		if (isDotnetProjectResource)
+		{
+			var (addsDeclaredProject, addProjectLocation) = BuildResourceAddsDotnetProject(
+				symbol,
+				declaredProjectPath,
+				compilation,
+				cancellationToken
+			);
+			if (!addsDeclaredProject)
+			{
+				diagnostics.Add(
+					new(
+						DiagnosticLibrary.ProjectDefinitionMismatch,
+						IsBlocking: false,
+						addProjectLocation ?? GetLocation(symbol),
+						[
+							symbol.Name,
+							declaredProjectPath ?? TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource.Name,
+						]
+					)
+				);
+			}
 
-		return diagnostics.ToImmutable();
+			EvaluateProjectKitBase(
+				symbol,
+				hasExplicitBaseType,
+				TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource,
+				diagnostics
+			);
+			return;
+		}
+
+		if (!string.IsNullOrWhiteSpace(declaredProjectPath))
+			ReportProjectPathRequiresDotnetProjectResource(
+				symbol,
+				matchedAttribute.Attribute,
+				resolvedResourceType,
+				diagnostics,
+				cancellationToken
+			);
+	}
+
+	static void ReportProjectPathRequiresDotnetProjectResource(
+		INamedTypeSymbol symbol,
+		AttributeData attribute,
+		TypeIdentity declaredResourceType,
+		ImmutableArray<RuleEvaluation>.Builder diagnostics,
+		CancellationToken cancellationToken
+	)
+	{
+		diagnostics.Add(
+			new(
+				DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource,
+				IsBlocking: false,
+				GetLocation(attribute, cancellationToken) ?? GetLocation(symbol),
+				[symbol.Name, declaredResourceType.MetadataFullName]
+			)
+		);
 	}
 
 	public static ImmutableArray<RuleEvaluation> EvaluateResourceGroup(
@@ -1224,6 +1319,106 @@ static class ResourceKitRules
 		}
 
 		return (false, addProjectLocation);
+	}
+
+	/// <summary>
+	/// Verifies the explicit base of a project resource kit resolves to the resource type the declaration
+	/// implies: <c>ProjectResource</c> for the legacy <c>Projects.*</c> form, <c>DotnetProjectResource</c>
+	/// for Aspire 17 Project V2.
+	/// </summary>
+	static void EvaluateProjectKitBase(
+		INamedTypeSymbol symbol,
+		bool hasExplicitBaseType,
+		TypeIdentity expectedResourceType,
+		ImmutableArray<RuleEvaluation>.Builder diagnostics
+	)
+	{
+		if (!hasExplicitBaseType)
+			return;
+
+		var baseResourceType = ResolveAspireResourceTypeFromBaseClass(symbol, TypeIdentity.Empty);
+		if (baseResourceType == TypeIdentity.Empty || baseResourceType == expectedResourceType)
+			return;
+
+		diagnostics.Add(
+			new(
+				DiagnosticLibrary.ProjectResourceKitBaseMismatch,
+				IsBlocking: false,
+				GetLocation(symbol),
+				[symbol.Name, baseResourceType.MetadataFullName]
+			)
+		);
+	}
+
+	/// <summary>
+	/// Determines whether <c>BuildResource</c> adds the Aspire 17 Project V2 resource via
+	/// <c>AddDotnetProject(...)</c>. When <paramref name="declaredProjectPath"/> is supplied, the call's
+	/// literal path must match it after normalising separators; a computed path is accepted because it
+	/// cannot be compared at compile time.
+	/// </summary>
+	static (bool AddsDeclaredProject, Location? AddDotnetProjectLocation) BuildResourceAddsDotnetProject(
+		INamedTypeSymbol type,
+		string? declaredProjectPath,
+		Compilation compilation,
+		CancellationToken cancellationToken
+	)
+	{
+		Location? addLocation = null;
+		var normalizedDeclared = NormalizeProjectPath(declaredProjectPath);
+
+		foreach (var method in type.GetMembers("BuildResource").OfType<IMethodSymbol>())
+		{
+			foreach (var reference in method.DeclaringSyntaxReferences)
+			{
+				var syntax = reference.GetSyntax(cancellationToken);
+				var model = compilation.GetSemanticModel(syntax.SyntaxTree);
+				foreach (var invocation in syntax.DescendantNodes().OfType<InvocationExpressionSyntax>())
+				{
+					if (
+						invocation.Expression
+							is not MemberAccessExpressionSyntax
+							{
+								Name: IdentifierNameSyntax { Identifier.ValueText: "AddDotnetProject" },
+							}
+						|| invocation.ArgumentList.Arguments.Count == 0
+					)
+						continue;
+
+					addLocation ??= invocation.GetLocation();
+
+					// No declared path: any AddDotnetProject call satisfies the declaration.
+					if (normalizedDeclared is null)
+						return (true, null);
+
+					var pathArgument = invocation.ArgumentList.Arguments.FirstOrDefault(static argument =>
+						argument.NameColon?.Name.Identifier.ValueText == "path"
+					) ?? invocation.ArgumentList.Arguments.ElementAtOrDefault(1);
+					if (pathArgument is null)
+						continue;
+
+					var constant = model.GetConstantValue(pathArgument.Expression, cancellationToken);
+					// A computed path cannot be compared here; do not warn on a call we cannot inspect.
+					if (!constant.HasValue)
+						return (true, null);
+
+					if (
+						constant.Value is string path
+						&& string.Equals(NormalizeProjectPath(path), normalizedDeclared, StringComparison.Ordinal)
+					)
+						return (true, null);
+				}
+			}
+		}
+
+		return (false, addLocation);
+	}
+
+	static string? NormalizeProjectPath(string? path)
+	{
+		if (path is null || string.IsNullOrWhiteSpace(path))
+			return null;
+
+		return path.Replace('\\', '/').Trim();
 	}
 
 	public static TypeIdentity ResolveAspireResourceTypeFromBaseClass(

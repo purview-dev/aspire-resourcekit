@@ -41,16 +41,10 @@
 			>$(DefaultTargetFramework)</TargetFramework>
 	</PropertyGroup>
 
-	<PropertyGroup Label="Agent skills">
-		<!--
-			The skills CLI installs into one directory per agent. Naming the two this repository uses
-			makes CheckPurviewSkills/FixPurviewSkills enforce that shape - '.agents/skills' is the CLI's
-			canonical store and is always allowed - instead of accepting whatever agent happens to be
-			installed on a developer's machine. Update/install also pass these as -a flags, so a new
-			skill lands in both rather than wherever auto-detect points.
-		-->
-		<PurviewSkillsAgents>universal</PurviewSkillsAgents>
-	</PropertyGroup>
+	<!--
+		Agent-skill settings live in .config/purview-build-sdk.json, not here. The skills CLI owns
+		installation and agent selection; `just skills-check` and `just skills-fix` enforce the shape.
+	-->
 
 	<PropertyGroup Label="Package compatibility">
 		<!--

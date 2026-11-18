@@ -18,7 +18,7 @@ resource is created, so an invalid manual composition fails fast.
 
 ## The two lifecycle pairs
 
-- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject`, `AddRedis`,
+- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject` / `AddDotnetProject`, `AddRedis`,
   `AddAzureStorage`, and so on).
 - `Configure` / `ConfigureResource()`: **attach resources to each other** after construction
   (references, bindings, cross-resource wiring).

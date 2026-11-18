@@ -19,7 +19,7 @@ For every `[ResourceDefinition]`, the host kit gets a lazily initialized propert
 property before `Build` throws, and setting it twice throws:
 
 ```csharp
-public Purview.Aspire.ResourceKit.Example.AppHost.AppModels.Resources.ExampleAPIKit ExampleAPI
+public Purview.Aspire.ResourceKit.Example.Pre17.AppHost.AppModels.Resources.ExampleAPIKit ExampleAPI
 {
     get
     {

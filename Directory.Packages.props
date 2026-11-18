@@ -14,7 +14,14 @@
 		<DotNetRuntimeVersion>10.0.15</DotNetRuntimeVersion>
 		<MSExtensionVersion>10.11.0</MSExtensionVersion>
 		<OTelVersion>1.20.1</OTelVersion>
+		<!--
+			The library's published Aspire floor. Aspire 17 support is additive: the generator resolves
+			DotnetProjectResource by metadata name, and the public package still declares this floor so a
+			13.6 consumer is not forced forward. Aspire17Version is for tests and the 17 consumer
+			verification only.
+		-->
 		<AspireVersion>13.6.5</AspireVersion>
+		<Aspire17Version>17.0.0</Aspire17Version>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynVersion)" />
@@ -22,6 +29,10 @@
 		<PackageVersion Include="Aspire.Azure.Security.KeyVault" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="$(AspireVersion)" />
 		<PackageVersion Include="Aspire.Hosting" Version="$(AspireVersion)" />
+		<!-- Project V2 verification. The 17 examples manage these versions themselves: an implicit
+		     Aspire.Hosting.AppHost reference from the legacy AppHost SDK cannot coexist with a central
+		     PackageVersion item (NU1009). -->
+		<PackageVersion Include="Aspire.Hosting.Dotnet" Version="$(Aspire17Version)" />
 		<!--
 			TUnit.Aspire depends on Aspire.Hosting.Testing at a 13.6.4 floor. Pin it to the Aspire band
 			the rest of the repository uses so the test host and Aspire.Hosting are the same patch.

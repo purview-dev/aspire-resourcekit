@@ -3,8 +3,10 @@ using TUnit.Aspire;
 
 namespace Purview.Aspire.ResourceKit;
 
-[ClassDataSource<ExampleAppHostFixture<Projects.Example_ManualAppHost>>(Shared = SharedType.PerTestSession)]
-public sealed class ExampleManualAppHostIntegrationTests(ExampleAppHostFixture<Projects.Example_ManualAppHost> fixture)
+[ClassDataSource<ExampleAppHostFixture<Projects.Example_Pre17_ManualAppHost>>(Shared = SharedType.PerTestSession)]
+public sealed class ExampleManualAppHostIntegrationTests(
+	ExampleAppHostFixture<Projects.Example_Pre17_ManualAppHost> fixture
+)
 {
 	[Test]
 	public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)

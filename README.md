@@ -41,16 +41,19 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 ```csharp
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Dotnet;
 using Purview.Aspire.ResourceKit;
 
 [HostKit]
 partial class ShopHostKit;
 
-[ResourceDefinition<ProjectResource>("api")]
+// Aspire 17 Project V2. On Aspire 13.6, use [ResourceDefinition<Projects.Example_Service>] with
+// builder.AddProject<Projects.Example_Service>(Name) instead; both forms are supported.
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
 partial class ApiResourceKit
 {
-    protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddProject<Projects.Example_Service>(Name);
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
 }
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -58,6 +61,9 @@ builder.AddAspireResourceKit();
 ```
 
 The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
+
+`ProjectPath` is validated against `AddDotnetProject` by SG0018. The package declares the Aspire 13.6
+floor, so a 13.6 consumer is not forced onto 17. See [Project resources](docs/wiki/Project-Resources.md).
 
 > [!TIP]
 > **Agent skills for your coding agent**
@@ -80,7 +86,7 @@ The extension method name is generated from your host metadata; in this reposito
 
 ResourceKit has two layers of lifecycle methods:
 
-- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject`, `AddRedis`, etc.).
+- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject` / `AddDotnetProject`, `AddRedis`, etc.).
 - `Configure` / `ConfigureResource()`: **attach resources to each other** (references, bindings, cross-resource wiring).
 
 Enablement is evaluated *before* resource construction:

@@ -82,6 +82,11 @@ static partial class TypeLibraryGenerator
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity ProjectResource = default;
 
+	// Aspire 17 Project V2. Declared by metadata name so a 13.6 consumer that does not reference
+	// Aspire.Hosting.Dotnet simply never resolves it.
+	[TypeRef("Aspire.Hosting.Dotnet")]
+	static readonly TypeIdentity DotnetProjectResource = default;
+
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity IResourceWithEndpoints = default;
 

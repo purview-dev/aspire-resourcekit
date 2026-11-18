@@ -5,6 +5,17 @@ upgrade from the `1.0.0-prerelease.*` line. The full, machine-readable history l
 [`CHANGELOG.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/CHANGELOG.md) and on
 the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/releases).
 
+## 2.1.0
+
+- **Aspire 17 Project V2** — `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]`
+  with `AddDotnetProject`. The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>`; SG0018
+  validates the declared path (normalising `\`/`/`), SG0019 validates an explicit base, and the new SG0041
+  reports a `ProjectPath` on a resource that is not `DotnetProjectResource`. See
+  [Project Resources](Project-Resources.md).
+- **Aspire 13.6 still supported.** The package keeps the `Aspire.Hosting` 13.6.5 floor and resolves
+  `DotnetProjectResource` by metadata name, so a 13.6 consumer is unaffected. `verify-consumers` builds
+  both a 13.6 and a 17 consumer from the packed package.
+
 ## Next (unreleased)
 
 - **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost

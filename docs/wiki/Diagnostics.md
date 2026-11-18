@@ -30,8 +30,8 @@ exiting the constructor" warning does not apply.
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` cannot declare explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
 | SG0017 | Warning | An `IResourceBuilder<T>` property is never assigned in `BuildResource` or `ConfigureResource` |
-| SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` |
-| SG0019 | Warning | A project resource kit declares an explicit base class that does not use `ProjectResource` |
+| SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` or `AddDotnetProject(...)` |
+| SG0019 | Warning | A project resource kit's explicit base does not use `ProjectResource` or `DotnetProjectResource` |
 | SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
 | SG0021 | Error | An `[InGroup<TGroup>]` type argument, or a group's `Parent`, is not a `[ResourceGroup]` class |
 | SG0022 | Error | A resource group is its own ancestor |
@@ -53,9 +53,10 @@ exiting the constructor" warning does not apply.
 | SG0038 | Error | The generated `Parent` member collides with a user-authored member |
 | SG0039 | Warning | A child uses an explicit primary group different from its parent's; visual placement follows the child's group |
 | SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
+| SG0041 | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
-[Project Resources](Project-Resources.md) for SG0018/SG0019 specifics,
+[Project Resources](Project-Resources.md) for SG0018/SG0019/SG0041 specifics,
 [Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031, and
 [Parent and child resource kits](Hierarchies.md) for SG0032–SG0040.
 
@@ -69,9 +70,13 @@ SG0017, SG0018, SG0019, SG0024 and SG0028 are **execution-only** rules. They rep
 runtime (an unset builder property, a project that is never registered, or a base class that cannot build
 a project) but they do **not** prevent source generation. They are reported as warnings so generation
 always proceeds — for example, a resource kit whose `BuildResource` does not yet register its declared
-project via `AddProject<T>()` is still generated (and the host kit is still emitted) so the user can
+project via `AddProject<T>()` or `AddDotnetProject(...)` is still generated (and the host kit is still emitted) so the user can
 complete the override instead of losing the whole output. Only Error-severity rules block generation.
 SG0024 keeps the first primary group, and SG0028's URL is skipped at runtime.
+
+SG0041 is a declaration advisory rather than an execution-only rule: the resource still builds and
+runs, but the `ProjectPath` it declares is not used by its resource type, so the path cannot protect
+against a wiring mistake.
 
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 

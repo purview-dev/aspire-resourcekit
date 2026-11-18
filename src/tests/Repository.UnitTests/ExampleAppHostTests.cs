@@ -3,43 +3,29 @@ using System.Xml.Linq;
 namespace Purview.Aspire.ResourceKit.Repository;
 
 /// <summary>
-/// Holds the example AppHosts to the one build contract the shared pipelines cannot check for
-/// themselves: that <c>dotnet build</c> on this repository needs no machine-global Aspire CLI.
+/// Holds the two example families to their build contracts. The Pre17 pair uses the legacy
+/// <c>Aspire.AppHost.Sdk</c> and deliberately stays buildable without the Aspire CLI. The Aspire 17
+/// pair uses <c>Microsoft.NET.Sdk</c> plus <c>Aspire.Hosting.AppHost</c>, which makes the CLI bundle a
+/// hard requirement (ASPIRE013), so the shared pipelines must install the pinned CLI before building.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Opting an AppHost into the Aspire CLI bundle (<c>AspireUseCliBundle=true</c>) makes a <em>build</em>
-/// require a resolvable bundle. Where none exists, <c>Aspire.Hosting.AppHost.targets</c> runs
-/// <c>dnx aspire.cli@&lt;version&gt; -- setup</c> mid-build - a network install inside MSBuild - and
-/// reports only ASPIRE009 when it fails, which is how the release pipeline broke. Both pipelines invoke
-/// <c>dotnet build</c> themselves and cannot install the CLI first, so the opt-in staying out of the
-/// project files is the fix rather than an environment step.
-/// </para>
-/// <para>
-/// A repository test rather than an assertion inside the AppHost, which would be asserting a property it
-/// had just set. The cost of the choice - ASPIRE010 - is suppressed in the project for the same reason it
-/// is made there, so this suite guards the decision, not the suppression.
-/// </para>
-/// </remarks>
 public sealed class ExampleAppHostTests
 {
 	static readonly string RepositoryRoot = RepositoryPaths.Root;
 
 	[Test]
-	[Arguments("src/src/Example.AppHost/Example.AppHost.csproj")]
-	[Arguments("src/src/Example.ManualAppHost/Example.ManualAppHost.csproj")]
-	public async Task AppHost_DoesNotOptIntoTheAspireCLIBundle(
+	[Arguments("src/src/Example.Pre17.AppHost/Example.Pre17.AppHost.csproj")]
+	[Arguments("src/src/Example.Pre17.ManualAppHost/Example.Pre17.ManualAppHost.csproj")]
+	public async Task Pre17AppHost_DoesNotOptIntoTheAspireCLIBundle(
 		string relativeProjectPath,
 		CancellationToken cancellationToken
 	)
 	{
 		// Arrange
 		cancellationToken.ThrowIfCancellationRequested();
-		var projectPath = Path.Combine(RepositoryRoot, relativeProjectPath.Replace('/', Path.DirectorySeparatorChar));
+		var project = LoadProject(relativeProjectPath);
 
 		// Act
-		var optIns = XDocument
-			.Load(projectPath)
+		var optIns = project
 			.Descendants()
 			.Where(element => element.Name.LocalName == "AspireUseCliBundle")
 			.Select(element => element.Value.Trim())
@@ -51,10 +37,107 @@ public sealed class ExampleAppHostTests
 			.That(optIns)
 			.IsEmpty()
 			.Because(
-				$"'{relativeProjectPath}' opts into the Aspire CLI bundle, which makes 'dotnet build' need a "
-					+ "machine-global Aspire CLI: with no bundle, MSBuild runs 'dnx ... aspire setup' mid-build "
-					+ "and fails with ASPIRE009 when that setup fails, which is what a clean Linux runner does. "
-					+ "Pass -p:AspireUseCliBundle=true for a one-off build instead of pinning it in the project."
+				$"'{relativeProjectPath}' is the pre-17, CLI-free example. It must keep "
+					+ "AspireUseCliBundle=false so dotnet build does not need a machine-global Aspire CLI."
+			);
+	}
+
+	[Test]
+	[Arguments("src/src/Example.AppHost17/Example.AppHost17.csproj")]
+	[Arguments("src/src/Example.ManualAppHost17/Example.ManualAppHost17.csproj")]
+	public async Task Aspire17AppHost_UsesMicrosoftNetSdkAndTheAppHostPackages(
+		string relativeProjectPath,
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		var project = LoadProject(relativeProjectPath);
+
+		// Act
+		var sdk = (string?)project.Root?.Attribute("Sdk");
+		var packageIds = PackageIds(project);
+		var disablesBundle = project
+			.Descendants()
+			.Where(element => element.Name.LocalName == "AspireUseCliBundle")
+			.Any(element => string.Equals(element.Value.Trim(), "false", StringComparison.OrdinalIgnoreCase));
+
+		// Assert
+		await Assert
+			.That(sdk)
+			.IsEqualTo("Microsoft.NET.Sdk")
+			.Because("Aspire 17 AppHosts use Microsoft.NET.Sdk, not the obsolete Aspire.AppHost.Sdk.");
+		await Assert.That(packageIds).Contains("Aspire.Hosting.AppHost");
+		await Assert.That(packageIds).Contains("Aspire.Hosting.Dotnet");
+		await Assert
+			.That(disablesBundle)
+			.IsFalse()
+			.Because(
+				$"'{relativeProjectPath}' is an Aspire 17 C# AppHost. ASPIRE013 cannot be suppressed, and "
+					+ "setting AspireUseCliBundle=false would make it unbuildable."
+			);
+	}
+
+	[Test]
+	public async Task AspireCLIVersion_MatchesTheAspire17PackageVersion(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		var cliVersionPath = Path.Combine(RepositoryRoot, ".config", "aspire-version");
+		var packagesPath = Path.Combine(RepositoryRoot, "Directory.Packages.props");
+
+		// Act
+		var cliVersion = (await File.ReadAllTextAsync(cliVersionPath, cancellationToken)).Trim();
+		var packages = XDocument.Load(packagesPath);
+		var aspire17Version = packages
+			.Descendants()
+			.FirstOrDefault(element => element.Name.LocalName == "Aspire17Version")
+			?.Value.Trim();
+
+		// Assert
+		await Assert
+			.That(cliVersion)
+			.IsEqualTo(aspire17Version)
+			.Because(
+				"the CLI installs from .config/aspire-version, and the 17 AppHosts resolve "
+					+ "Aspire.Hosting.AppHost at Directory.Packages.props' Aspire17Version. A mismatch builds "
+					+ "against a bundle the AppHost did not select."
+			);
+	}
+
+	[Test]
+	public async Task Workflows_InstallThePinnedAspireCLIBeforeBuilding(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		string[] workflows = [".github/workflows/pr.yml", ".github/workflows/release.yml"];
+		var contents = workflows
+			.Select(relative =>
+				(
+					Path: relative,
+					Text: File.ReadAllText(
+						Path.Combine(RepositoryRoot, relative.Replace('/', Path.DirectorySeparatorChar))
+					)
+				)
+			)
+			.ToArray();
+
+		// Act
+		var missing = contents
+			.Where(workflow =>
+				!workflow.Text.Contains("Aspire.Cli", StringComparison.Ordinal)
+				|| !workflow.Text.Contains(".config/aspire-version", StringComparison.Ordinal)
+			)
+			.Select(workflow => workflow.Path)
+			.ToArray();
+
+		// Assert
+		await Assert
+			.That(missing)
+			.IsEmpty()
+			.Because(
+				"every pipeline that builds the Aspire 17 examples must install Aspire.Cli from "
+					+ ".config/aspire-version first: ASPIRE013 cannot be suppressed."
 			);
 	}
 
@@ -74,4 +157,17 @@ public sealed class ExampleAppHostTests
 			.IsTrue()
 			.Because($"the marker walk resolved '{RepositoryRoot}', which does not look like this repository");
 	}
+
+	static XDocument LoadProject(string relativeProjectPath) =>
+		XDocument.Load(Path.Combine(RepositoryRoot, relativeProjectPath.Replace('/', Path.DirectorySeparatorChar)));
+
+	static string[] PackageIds(XDocument project) =>
+		[
+			.. project
+				.Descendants()
+				.Where(element => element.Name.LocalName == "PackageReference")
+				.Select(element => (string?)element.Attribute("Include"))
+				.Where(static id => id is not null)
+				.Select(static id => id!),
+		];
 }

@@ -8,8 +8,10 @@ This folder contains the .NET solution for `Purview.Aspire.ResourceKit`, includi
 
 - `src/ResourceKit` — runtime APIs consumed by AppHost projects.
 - `src/SourceGeneration` — Roslyn incremental generator (attributes + generated host/resource wiring).
-- `src/Example.AppHost` — sample AppHost using generated ResourceKit composition.
-- `src/Example.ManualAppHost` — sample AppHost showing manual composition patterns.
+- `src/Example.Pre17.AppHost` — Aspire 13.6 sample AppHost using generated ResourceKit composition.
+- `src/Example.Pre17.ManualAppHost` — Aspire 13.6 sample AppHost showing manual composition patterns.
+- `src/Example.AppHost17` — Aspire 17 sample AppHost using generated composition and Project V2 (`AddDotnetProject`).
+- `src/Example.ManualAppHost17` — Aspire 17 sample AppHost showing manual composition and Project V2.
 - `src/Example.Service` — sample service used by examples/tests.
 - `src/Example.ServiceDefaults` — shared service defaults for examples.
 

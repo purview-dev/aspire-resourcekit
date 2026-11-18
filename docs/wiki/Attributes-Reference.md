@@ -55,11 +55,28 @@ Options:
 | `PropertyName` | `string?` | Derived from class name | Generated host or parent property name. Must be a valid C# identifier (SG0008). |
 | `Mode` | `ResourceKitMode` | `All` | Execution mode in which this resource participates. |
 | `Parent` | `Type?` | `null` | The resource kit that owns this kit. Use `Parent = typeof(TParentKit)`. |
+| `ProjectPath` | `string?` | `null` | The project path for Aspire 17 Project V2 (`AddDotnetProject`). Only used with `DotnetProjectResource` (SG0041). |
 | `AspireResourceType` | generic type argument | `null` | The Aspire `IResource` type (generic style only). |
 
 `Parent` gives the child a typed `Parent` property, a parent-aware constructor, a parent-before-child build
 order, and inherited enablement. It is composition ownership, not a general dependency. See
 [Parent and child resource kits](Hierarchies.md).
+
+`ProjectPath` selects Aspire 17 Project V2. Declare `DotnetProjectResource` as the type argument and
+add the same path with `AddDotnetProject`; SG0018 validates the path and SG0019 validates an explicit
+base.
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
+}
+```
+
+The legacy `[ResourceDefinition<Projects.X>]` + `AddProject<T>` form is still supported, including on
+Aspire 17 where it reports `CS0618`. See [Project resources](Project-Resources.md).
 
 `Mode` accepts a named property or a constructor argument, and configuration can override it:
 
@@ -98,7 +115,9 @@ The type argument may be:
 
 - an Aspire resource type implementing `IResource` (used as-is), or
 - an `IProjectMetadata` type (the type accepted by `AddProject<TProject>()`), which is mapped to
-  `ProjectResource` for the generated base class.
+  `ProjectResource` for the generated base class;
+- `DotnetProjectResource` (Aspire 17 Project V2), used as-is, with `ProjectPath` declaring the project
+  path that `AddDotnetProject` must add.
 
 Anything else is rejected (SG0016).
 

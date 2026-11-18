@@ -9,15 +9,30 @@ consumer-facing dependency is still declared at the .NET 10 servicing band.
 | Piece | Version | Why |
 | --- | --- | --- |
 | .NET SDK | `11.0.100` (GA) | C# 15, .NET 11 runtime/tooling; `rollForward: latestFeature` keeps a feature band, not a major |
-| `Purview.BuildSdk` | `2.0.1` | Curated TFM sets, C# 15 defaults, the `net11.0+` memory-safety rules, and the bootstrapped `Directory.Build.rsp` |
+| `Purview.BuildSdk` | `2.2.1` | Curated TFM sets, C# 15 defaults, the `net11.0+` memory-safety rules, the bootstrapped `Directory.Build.rsp`, and Aspire 17 AppHost detection |
 | `Aspire.AppHost.Sdk` | `13.6.5` | Includes the `Aspire.Hosting` security fix that `13.6.4` lacked |
-| `Purview.SourceGeneratorFramework` | `2.0.0` | Generator/runtime split; analyzer stays on `netstandard2.0` |
+| `Purview.SourceGeneratorFramework` | `2.1.0` | Generator/runtime split; analyzer stays on `netstandard2.0` |
 | `TUnit` | `1.83.0` | Has `net10.0` and `net11.0` assets, so each test leg runs a first-class build |
 | `Microsoft.SourceLink.GitHub` | `11.0.100` | Build-time only; matches the SDK band |
 
 `Purview.BuildSdk` 2.x resolves the build from its `Current` set, `net10.0;net11.0`. The runtime
 package therefore ships `lib/net10.0` and `lib/net11.0`. The two Roslyn components remain
 `netstandard2.0`, because they load in the compiler/IDE host rather than in a consumer process.
+
+## Aspire 17 support
+
+The published package declares the `Aspire.Hosting` **13.6.5** floor. Aspire 17's Project V2
+(`DotnetProjectResource` / `AddDotnetProject`) is additive: the generator resolves the type by metadata
+name, so a 13.6 consumer that never references `Aspire.Hosting.Dotnet` is unaffected, and a 17 consumer
+resolves its own `Aspire.Hosting`. `Directory.Packages.props` keeps `AspireVersion` at 13.6.5 for the
+library and sets `Aspire17Version` at 17.0.0 for the generator tests and the Project V2
+`verify-consumers` build. `just verify-consumers` builds both a 13.6 and a 17 consumer from the packed
+package.
+
+The repository keeps both example families. `Example.Pre17.AppHost` / `Example.Pre17.ManualAppHost` use
+`Aspire.AppHost.Sdk` 13.6.5 and stay buildable without the Aspire CLI;
+`Example.AppHost17` / `Example.ManualAppHost17` use `Microsoft.NET.Sdk` + `Aspire.Hosting.AppHost` 17 and
+require the pinned CLI from `.config/aspire-version` (ASPIRE013). Both pipelines install it.
 
 ## What is enabled
 
@@ -30,7 +45,7 @@ package therefore ships `lib/net10.0` and `lib/net11.0`. The two Roslyn componen
 | Analysis | `AnalysisLevel=latest`, `AnalysisMode=All`, `EnforceCodeStyleInBuild` | Both legs, via the SDK |
 | Supply chain | `NuGetAudit=true`, `NuGetAuditMode=all` | Both legs, via the SDK |
 | Testing | Per-TFM test legs | `dotnet test` runs the same suite on `net10.0` and `net11.0` |
-| Testing | `--timeout`, `--maximum-failed-tests`, `--results-directory-layout per-module` | `Justfile` test recipes; a hung fixture or a cascading failure stops the run, and each module/TFM keeps its own report directory |
+| Testing | `--timeout`, `--maximum-failed-tests`, `--results-directory-layout per-module` | The root `Justfile`'s `test` recipe; a hung fixture or a cascading failure stops the run, and each module/TFM keeps its own report directory |
 | Packaging | Package validation against the published `1.1.0` baseline | `src/Directory.Build.props`; a removed or changed public API fails `pack` |
 | Packaging | Two runtime assets, one analyzer asset | `lib/net10.0` + `lib/net11.0`; the generator under `analyzers/dotnet/cs` serves both |
 | Debug | Portable PDBs, SourceLink, embedded untracked sources, `.snupkg` | Supplied by `Purview.BuildSdk`; unchanged by this upgrade |

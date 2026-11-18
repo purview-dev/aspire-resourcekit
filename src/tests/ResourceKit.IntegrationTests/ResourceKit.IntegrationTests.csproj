@@ -5,7 +5,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\Example.AppHost\Example.AppHost.csproj" />
-		<ProjectReference Include="..\..\src\Example.ManualAppHost\Example.ManualAppHost.csproj" />
+		<ProjectReference Include="..\..\src\Example.Pre17.AppHost\Example.Pre17.AppHost.csproj" />
+		<ProjectReference Include="..\..\src\Example.Pre17.ManualAppHost\Example.Pre17.ManualAppHost.csproj" />
 	</ItemGroup>
 </Project>
