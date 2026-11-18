@@ -149,6 +149,8 @@ namespace Testing
 
 		await Assert.That(type.GetProperty("Name")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 		await Assert.That(type.GetProperty("PropertyName")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
+		await Assert.That(type.GetProperty("ProjectPath")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
+		await Assert.That(type.GetProperty("ResourcePath")!.PropertyType.FullName).IsEqualTo(typeof(string).FullName);
 
 		var genericType = assembly.GetType(
 			TypeLibrary.Purview.Aspire.ResourceKit.GenericResourceDefinitionAttribute.MetadataFullName

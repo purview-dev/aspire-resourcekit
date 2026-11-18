@@ -87,6 +87,11 @@ static partial class TypeLibraryGenerator
 	[TypeRef("Aspire.Hosting.Dotnet")]
 	static readonly TypeIdentity DotnetProjectResource = default;
 
+	// The JavaScript app base type, resolved by metadata name. A consumer that does not reference
+	// Aspire.Hosting.JavaScript simply never resolves it, so ResourcePath stays dotnet-only there.
+	[TypeRef("Aspire.Hosting.JavaScript")]
+	static readonly TypeIdentity JavaScriptAppResource = default;
+
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity IResourceWithEndpoints = default;
 

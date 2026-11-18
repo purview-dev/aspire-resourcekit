@@ -30,7 +30,7 @@ exiting the constructor" warning does not apply.
 | SG0015 | Error | Generic `ResourceDefinition<TResource>` cannot declare explicit base type |
 | SG0016 | Error | No Aspire resource type could be inferred/found |
 | SG0017 | Warning | An `IResourceBuilder<T>` property is never assigned in `BuildResource` or `ConfigureResource` |
-| SG0018 | Warning | A project resource kit does not add the declared project via `AddProject<T>()` or `AddDotnetProject(...)` |
+| SG0018 | Warning | A resource kit does not add its declared project or app path via the matching `Add` method |
 | SG0019 | Warning | A project resource kit's explicit base does not use `ProjectResource` or `DotnetProjectResource` |
 | SG0020 | Error | An `OptionsHelper.Assign` action sets more than one property path |
 | SG0021 | Error | An `[InGroup<TGroup>]` type argument, or a group's `Parent`, is not a `[ResourceGroup]` class |
@@ -54,9 +54,11 @@ exiting the constructor" warning does not apply.
 | SG0039 | Warning | A child uses an explicit primary group different from its parent's; visual placement follows the child's group |
 | SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
 | SG0041 | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored |
+| SG0042 | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used |
+| SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
-[Project Resources](Project-Resources.md) for SG0018/SG0019/SG0041 specifics,
+[Project Resources](Project-Resources.md) for SG0018/SG0019/SG0041–SG0043 specifics,
 [Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031, and
 [Parent and child resource kits](Hierarchies.md) for SG0032–SG0040.
 
@@ -66,7 +68,7 @@ graphs are validated at runtime before any Aspire resource is created.
 
 ## Execution-only vs generation-blocking rules
 
-SG0017, SG0018, SG0019, SG0024 and SG0028 are **execution-only** rules. They report problems that break the resource at
+SG0017, SG0018, SG0019, SG0024, SG0028, SG0042 and SG0043 are **execution-only** rules. They report problems that break the resource at
 runtime (an unset builder property, a project that is never registered, or a base class that cannot build
 a project) but they do **not** prevent source generation. They are reported as warnings so generation
 always proceeds — for example, a resource kit whose `BuildResource` does not yet register its declared
@@ -76,28 +78,37 @@ SG0024 keeps the first primary group, and SG0028's URL is skipped at runtime.
 
 SG0041 is a declaration advisory rather than an execution-only rule: the resource still builds and
 runs, but the `ProjectPath` it declares is not used by its resource type, so the path cannot protect
-against a wiring mistake.
+against a wiring mistake. SG0042 and SG0043 cover the same ground for `ResourcePath` and are tracked as
+execution-only, so generation proceeds: SG0042 means `ResourcePath` is the validated value and the
+conflicting `ProjectPath` is stale, and SG0043 means the declared `ResourcePath` is ignored entirely.
 
-## Build-time project path errors (`RKP`)
+## Build-time path errors (`RKP`)
 
 These are MSBuild errors from the `ResourceKitProject` items, not `SG` analyzer diagnostics. They fire
 before compilation, when the typed `AppHostProjects` class is generated:
 
 | ID | What it means |
 | - | - |
-| RKP0001 | A `ResourceKitProject` path does not exist relative to the AppHost project directory |
+| RKP0001 | A `ResourceKitProject` or `ResourceKitPath` path does not exist relative to the AppHost project directory |
 | RKP0002 | The declared or derived nested class name is not a valid C# identifier |
 | RKP0003 | The resource name contains a character Aspire or the generated literal cannot represent |
+| RKP0004 | Two items generate the same nested class name under `AppHostProjects` |
+| RKP0005 | `Kind="File"` resolves to a directory, or `Kind="Directory"` resolves to a file |
+| RKP0006 | `Kind` is set to a value other than `File` or `Directory` |
+| RKP0007 | `ResourceKitProject`/`ResourceKitPath` items are declared in a project that is not a C# AppHost |
 
 ```xml
 <!-- Fails with RKP0001 if the relative depth is wrong. -->
 <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
 
+<!-- Any other path works too; Kind proves it is a file. -->
+<ResourceKitPath Include="..\..\deploy\Dockerfile" Name="dockerfile" Kind="File" />
+
 <!-- Allowed to be absent (submodule, generated folder). -->
-<ResourceKitProject Include="..\..\generated" Name="generated" Optional="true" />
+<ResourceKitPath Include="..\..\generated" Name="generated" Optional="true" />
 ```
 
-See [Project resources](Project-Resources.md#typed-project-paths-apphostprojects).
+See [Project resources](Project-Resources.md#typed-paths-apphostprojects).
 
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 

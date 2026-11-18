@@ -26,6 +26,13 @@
 		A Roslyn generator cannot do this job - it cannot see MSBuild items, and its own output is not
 		visible to itself.
 
+		Two item types feed the same class:
+			ResourceKitProject  a .NET project or a JavaScript app directory.
+			ResourceKitPath     any other file or directory (Dockerfile, certificate, config).
+
+		Every item is checked for existence before CoreCompile, so a wrong '../..' depth fails the build
+		instead of producing a plausible-looking constant.
+
 		Paths are emitted exactly as declared (relative, with '/' separators), because AddDotnetProject,
 		AddViteApp and AddNpmApp resolve relative to the AppHost project directory. Emitting absolute
 		paths would make the generated source depend on the machine.
@@ -34,6 +41,7 @@
 			Name       the logical Aspire resource name; defaults to the leaf file/directory name.
 			ClassName  the generated nested type name; defaults to PascalCase of Name.
 			Optional   true skips the existence check for a path that is allowed to be absent.
+			Kind       File or Directory, when the item must resolve to that kind of path.
 	-->
 	<PropertyGroup>
 		<ResourceKitAppHostProjectsClassName Condition="'$(ResourceKitAppHostProjectsClassName)' == ''"
@@ -54,8 +62,21 @@
 		ResourceKitAppHostProjectsValidatePaths=false to skip every check.
 	-->
 	<Target
+		Name="_ResourceKitValidateAppHostProjectsLanguage"
+		Condition="('@(ResourceKitProject)' != '' or '@(ResourceKitPath)' != '') and '$(Language)' != 'C#'"
+	>
+		<!-- AppHostProjects is C# source added to <Compile>. A VB/F# AppHost would get a .cs file it
+		     cannot compile, so fail with a clear message instead. TypeScript and Go AppHosts have no
+		     MSBuild project and never reach this target. -->
+		<Error
+			Code="RKP0007"
+			Text="ResourceKitProject/ResourceKitPath generate a C# AppHostProjects class and are only supported in a C# AppHost; this project's Language is '$(Language)'."
+		/>
+	</Target>
+
+	<Target
 		Name="_ResourceKitValidateAppHostProjects"
-		Condition="'@(ResourceKitProject)' != '' and '$(ResourceKitAppHostProjectsValidatePaths)' == 'true'"
+		Condition="('@(ResourceKitProject)' != '' or '@(ResourceKitPath)' != '') and '$(ResourceKitAppHostProjectsValidatePaths)' == 'true'"
 	>
 		<!-- Validate the same '/'-normalised form that is written to AppHostProjects, so a Windows-style
 		     '..\..\app' declaration is checked and emitted consistently on a non-Windows build. -->
@@ -63,19 +84,37 @@
 			<_ResourceKitProjectToValidate Include="@(ResourceKitProject)">
 				<CheckPath>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitProject.Identity)', '\\', '/'))</CheckPath>
 			</_ResourceKitProjectToValidate>
+			<_ResourceKitProjectToValidate Include="@(ResourceKitPath)">
+				<CheckPath>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitPath.Identity)', '\\', '/'))</CheckPath>
+			</_ResourceKitProjectToValidate>
 		</ItemGroup>
 		<Error
 			Code="RKP0001"
 			Condition="'%(_ResourceKitProjectToValidate.Optional)' != 'true' and !Exists('%(_ResourceKitProjectToValidate.CheckPath)')"
-			Text="ResourceKitProject '%(_ResourceKitProjectToValidate.CheckPath)' does not exist relative to '$(MSBuildProjectDirectory)'. Fix the relative path, or set Optional=&quot;true&quot; on the item when it is allowed to be absent."
+			Text="ResourceKitProject/ResourceKitPath '%(_ResourceKitProjectToValidate.Identity)' does not exist relative to '$(MSBuildProjectDirectory)'. Fix the relative path, or set Optional=&quot;true&quot; on the item when it is allowed to be absent."
+		/>
+		<Error
+			Code="RKP0005"
+			Condition="Exists('%(_ResourceKitProjectToValidate.CheckPath)') and '%(_ResourceKitProjectToValidate.Kind)' == 'File' and !$([System.IO.File]::Exists($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '%(_ResourceKitProjectToValidate.CheckPath)'))))"
+			Text="'%(_ResourceKitProjectToValidate.Identity)' is declared with Kind=&quot;File&quot; but resolves to a directory."
+		/>
+		<Error
+			Code="RKP0005"
+			Condition="Exists('%(_ResourceKitProjectToValidate.CheckPath)') and '%(_ResourceKitProjectToValidate.Kind)' == 'Directory' and !$([System.IO.Directory]::Exists($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '%(_ResourceKitProjectToValidate.CheckPath)'))))"
+			Text="'%(_ResourceKitProjectToValidate.Identity)' is declared with Kind=&quot;Directory&quot; but resolves to a file."
+		/>
+		<Error
+			Code="RKP0006"
+			Condition="'%(_ResourceKitProjectToValidate.Kind)' != '' and '%(_ResourceKitProjectToValidate.Kind)' != 'File' and '%(_ResourceKitProjectToValidate.Kind)' != 'Directory'"
+			Text="'%(_ResourceKitProjectToValidate.Identity)' declares Kind=&quot;%(_ResourceKitProjectToValidate.Kind)&quot;; Kind must be File or Directory."
 		/>
 	</Target>
 
 	<Target
 		Name="_ResourceKitGenerateAppHostProjects"
 		BeforeTargets="CoreCompile"
-		DependsOnTargets="_ResourceKitValidateAppHostProjects"
-		Condition="'@(ResourceKitProject)' != ''"
+		DependsOnTargets="_ResourceKitValidateAppHostProjectsLanguage;_ResourceKitValidateAppHostProjects"
+		Condition="'@(ResourceKitProject)' != '' or '@(ResourceKitPath)' != ''"
 	>
 		<!--
 			Computed inside the target: a buildTransitive .targets file is imported before
@@ -94,6 +133,11 @@
 				<Trimmed>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitProject.Identity)', '[\\/]+$', ''))</Trimmed>
 				<DeclaredName>%(ResourceKitProject.Name)</DeclaredName>
 				<DeclaredClassName>%(ResourceKitProject.ClassName)</DeclaredClassName>
+			</_ResourceKitAppHostProject>
+			<_ResourceKitAppHostProject Include="@(ResourceKitPath)">
+				<Trimmed>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitPath.Identity)', '[\\/]+$', ''))</Trimmed>
+				<DeclaredName>%(ResourceKitPath.Name)</DeclaredName>
+				<DeclaredClassName>%(ResourceKitPath.ClassName)</DeclaredClassName>
 			</_ResourceKitAppHostProject>
 		</ItemGroup>
 
@@ -164,6 +208,12 @@
 				<ClassName Condition="'%(DeclaredClassName)' == ''">%(IdentifierClassName)</ClassName>
 			</_ResourceKitAppHostProject>
 		</ItemGroup>
+
+		<Error
+			Code="RKP0004"
+			Condition="'@(_ResourceKitAppHostProject->'%(ClassName)')' != '@(_ResourceKitAppHostProject->'%(ClassName)'->Distinct())'"
+			Text="Two ResourceKitProject/ResourceKitPath items generate the same AppHostProjects class name. Set ClassName=&quot;...&quot; on one of them."
+		/>
 
 		<Error
 			Code="RKP0002"

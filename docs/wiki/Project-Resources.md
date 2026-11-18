@@ -36,6 +36,8 @@ implements `IResourceWithEndpoints` and `IResourceWithEnvironment`, so URLs, ref
 
 `ProjectPath` is a named argument on both `[ResourceDefinition]` and
 `[ResourceDefinition<TResource>]`. It is a build-time declaration, not a bindable option.
+`ResourcePath` is the general form and also covers JavaScript app resources; see
+[JavaScript app paths](#javascript-app-paths-resourcepath).
 
 ### The declared path must be added (SG0018)
 
@@ -58,7 +60,12 @@ but it has no path to compare.
 
 `ProjectPath` is ignored by any resource that is not a `DotnetProjectResource`, including the legacy
 `Projects.*` form. SG0041 reports the contradiction so a path that is never used cannot look
-validated.
+validated. Use `ResourcePath` for an Aspire JavaScript app; it reports SG0043 on any other resource.
+
+### Both paths must agree (SG0042)
+
+`ResourcePath` wins when both are set. If they declare different paths, SG0042 reports the conflict
+so a stale `ProjectPath` cannot look like the validated value.
 
 ### Explicit base must use DotnetProjectResource (SG0019)
 
@@ -141,14 +148,44 @@ partial class ApiResourceKit : ResourceKitBase<ProjectResource>
 If the explicit base resolves to a different resource type, SG0019 is reported (execution-only
 warning) because that base cannot build the declared project.
 
-## Typed project paths (`AppHostProjects`)
+## JavaScript app paths (`ResourcePath`)
 
-Declare each path once, in the AppHost project, and the package's build target emits a typed class:
+`Aspire.Hosting.JavaScript` adds Vite, Next.js, Node, Bun and Deno apps by directory. `ResourcePath`
+declares that directory on the kit and SG0018 validates the matching `Add*App` call, using the same
+separator normalisation and computed-path allowance as `AddDotnetProject`:
+
+```csharp
+using Aspire.Hosting.JavaScript;
+
+[ResourceDefinition<ViteAppResource>("web", ResourcePath = "../../../web/packages/vite-app")]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddViteApp(Name, "../../../web/packages/vite-app", "dev");
+}
+```
+
+- Supported methods: `AddViteApp`, `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp`,
+  `AddJavaScriptApp`. The path is read from the `appDirectory` parameter (or `path` /
+  `workingDirectory` when named).
+- The resource type is recognised through `JavaScriptAppResource`, resolved by metadata name: a
+  consumer that does not reference `Aspire.Hosting.JavaScript` is unaffected, and a `ResourcePath` on
+  any other resource reports SG0043.
+- `AddProject<T>` (the legacy .NET form) has no path argument, so a `ResourcePath` there reports
+  SG0043 rather than pretending to validate it.
+
+## Typed paths (`AppHostProjects`)
+
+Declare each path once, in the AppHost project, and the package's build target emits a typed class.
+`ResourceKitProject` declares a .NET project or app directory; `ResourceKitPath` declares any other
+file or directory:
 
 ```xml
 <ItemGroup>
   <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
   <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+  <ResourceKitPath Include="..\..\deploy\Dockerfile" Name="dockerfile" Kind="File" />
+  <ResourceKitPath Include="..\..\certs" Name="certs" Kind="Directory" Optional="true" />
 </ItemGroup>
 ```
 
@@ -178,7 +215,7 @@ partial class ApiResourceKit
         builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
 }
 
-[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name)]
+[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
 partial class WebResourceKit
 {
     protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
@@ -186,13 +223,16 @@ partial class WebResourceKit
 }
 ```
 
-`Path` is a `const`, so SG0018 still validates it against `AddDotnetProject`; a literal
-`ProjectPath = "../Api/Api.csproj"` and a generated constant behave identically.
+`Path` is a `const`, so SG0018 still validates it against `AddDotnetProject` or the matching JavaScript
+`Add*App` call; a literal `ResourcePath` and a generated constant behave identically.
 
 - The item's `Name` is the logical Aspire resource name and defaults to the leaf file/directory name.
   Only letters, digits, `.`, `_` and `-` are allowed (`RKP0003`).
 - `ClassName` overrides the generated nested type name, which otherwise defaults to PascalCase of `Name`
-  (`dotnet-project` → `DotnetProject`). It must be a valid C# identifier (`RKP0002`).
+  (`dotnet-project` → `DotnetProject`). It must be a valid C# identifier (`RKP0002`), and two items
+  may not resolve to the same one (`RKP0004`).
+- `Kind="File"` or `Kind="Directory"` asserts the path resolves to that kind (`RKP0005`); any other
+  value is `RKP0006`.
 - A relative path is emitted exactly as declared, with `/` separators, because Aspire resolves it from
   the AppHost project directory. It is not made absolute: generated source must not depend on the
   machine.
@@ -206,10 +246,19 @@ partial class WebResourceKit
 
 > [!NOTE]
 > `AppHostProjects` is emitted by an MSBuild target in `buildTransitive`, not by the Roslyn generator.
-> A source generator cannot see `ResourceKitProject` items, and its own output is not visible to the
-> analyzer that reports SG0018. Generating the constants before `CoreCompile` keeps them ordinary
-> compilation input. Project-reference consumers inside a repository that does not use the NuGet
-> package must import `Sdk/buildTransitive/Purview.Aspire.ResourceKit.targets` explicitly.
+> A source generator cannot see `ResourceKitProject`/`ResourceKitPath` items, and its own output is not
+> visible to the analyzer that reports SG0018. Generating the constants before `CoreCompile` keeps them
+> ordinary compilation input. Do not use assembly attributes as the declaration surface: MSBuild cannot
+> validate them, a generator cannot check the filesystem deterministically, and a generator's output is
+> not a compile-time constant for another attribute. Project-reference consumers inside a repository
+> that does not use the NuGet package must import
+> `Sdk/buildTransitive/Purview.Aspire.ResourceKit.targets` explicitly.
+>
+> This is a **C# AppHost** feature. F# and VB MSBuild AppHosts report `RKP0007`. TypeScript
+> (`apphost.mts`) and Go (`apphost.go`) AppHosts have no MSBuild project; their SDK modules are generated
+> by `aspire restore` from `aspire.config.json`, so typed paths there would belong in that generation
+> pipeline rather than this package. A non-C# MSBuild project gets `RKP0007` rather than a `.cs` file it
+> cannot compile.
 
 ## Generic vs non-generic styles
 
@@ -219,7 +268,8 @@ partial class WebResourceKit
   declared project resource type (SG0019).
 
 See [Attributes Reference](Attributes-Reference.md) for the base-type rules shared by all resources,
-and [Diagnostics](Diagnostics.md) for the `RKP` build errors reported by `ResourceKitProject` items.
+and [Diagnostics](Diagnostics.md) for the `RKP` build errors reported by `ResourceKitProject` and
+`ResourceKitPath` items.
 
 ## See also
 

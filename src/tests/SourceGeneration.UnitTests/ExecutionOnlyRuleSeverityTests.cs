@@ -4,7 +4,7 @@ using Purview.Aspire.ResourceKit.SourceGeneration.Helpers;
 namespace Purview.Aspire.ResourceKit.SourceGeneration;
 
 /// <summary>
-/// Locks in the contract that execution-only rules (SG0017/SG0018/SG0019) never block generation.
+/// Locks in the contract that execution-only rules (SG0017/SG0018/SG0019/SG0042/SG0043) never block generation.
 /// These report problems that prevent runtime execution, not generation, so they must stay non-Error
 /// severity (which keeps <c>ShouldProcess</c>/<c>IsFatal</c> from halting generation) and remain
 /// analyzer-owned so the analyzer reports them once.

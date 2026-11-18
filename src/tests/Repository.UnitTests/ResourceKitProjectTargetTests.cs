@@ -105,27 +105,137 @@ public sealed class ResourceKitProjectTargetTests
 		await Assert.That(result.Output.Contains("RKP0003", StringComparison.Ordinal)).IsTrue();
 	}
 
+	[Test]
+	public async Task AppHostProjects_GivenResourceKitPath_GeneratesTypedPath(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		using var fixture = CreateFixture(includeResourceKitPath: true);
+
+		// Act
+		var result = await RunMsBuildAsync(fixture.AppHostProject, cancellationToken);
+
+		// Assert
+		await Assert.That(result.ExitCode).IsEqualTo(0).Because(result.Output);
+		var generated = await File.ReadAllTextAsync(
+			Path.Combine(fixture.AppHostProjectDirectory, ReadGeneratedFile(fixture.AppHostProjectDirectory)),
+			cancellationToken
+		);
+
+		await Assert
+			.That(generated.Contains("internal static class DeployFile", StringComparison.Ordinal))
+			.IsTrue()
+			.Because("ResourceKitPath is not limited to projects and app directories");
+		await Assert.That(generated.Contains("Path = \"../deploy/Dockerfile\";", StringComparison.Ordinal)).IsTrue();
+	}
+
+	[Test]
+	public async Task AppHostProjects_GivenKindMismatch_FailsWithRkp0005(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		using var fixture = CreateFixture(kindMismatch: true);
+
+		// Act
+		var result = await RunMsBuildAsync(fixture.AppHostProject, cancellationToken);
+
+		// Assert
+		await Assert.That(result.ExitCode).IsNotEqualTo(0);
+		await Assert.That(result.Output.Contains("RKP0005", StringComparison.Ordinal)).IsTrue();
+	}
+
+	[Test]
+	public async Task AppHostProjects_GivenInvalidKind_FailsWithRkp0006(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		using var fixture = CreateFixture(invalidKind: true);
+
+		// Act
+		var result = await RunMsBuildAsync(fixture.AppHostProject, cancellationToken);
+
+		// Assert
+		await Assert.That(result.ExitCode).IsNotEqualTo(0);
+		await Assert.That(result.Output.Contains("RKP0006", StringComparison.Ordinal)).IsTrue();
+	}
+
+	[Test]
+	public async Task AppHostProjects_GivenDuplicateClassNames_FailsWithRkp0004(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		using var fixture = CreateFixture(duplicateNames: true);
+
+		// Act
+		var result = await RunMsBuildAsync(fixture.AppHostProject, cancellationToken);
+
+		// Assert
+		await Assert.That(result.ExitCode).IsNotEqualTo(0);
+		await Assert.That(result.Output.Contains("RKP0004", StringComparison.Ordinal)).IsTrue();
+	}
+
+	[Test]
+	public async Task AppHostProjects_GivenNonCSharpProject_FailsWithRkp0007(CancellationToken cancellationToken)
+	{
+		// Arrange
+		cancellationToken.ThrowIfCancellationRequested();
+		using var fixture = CreateFixture();
+
+		// Act — a VB/F# AppHost would otherwise receive a .cs file it cannot compile.
+		var result = await RunMsBuildAsync(fixture.AppHostProject, cancellationToken, language: "VB");
+
+		// Assert
+		await Assert.That(result.ExitCode).IsNotEqualTo(0);
+		await Assert.That(result.Output.Contains("RKP0007", StringComparison.Ordinal)).IsTrue();
+	}
+
 	static Fixture CreateFixture(
 		bool includeMissingPath = false,
 		bool optionalMissingPath = false,
-		bool invalidResourceName = false
+		bool invalidResourceName = false,
+		bool includeResourceKitPath = false,
+		bool kindMismatch = false,
+		bool invalidKind = false,
+		bool duplicateNames = false
 	)
 	{
 		var root = Path.Combine(Path.GetTempPath(), "resourcekit-projects", Guid.NewGuid().ToString("N"));
 		var appHostDirectory = Path.Combine(root, "apphost");
 		var serviceDirectory = Path.Combine(root, "dotnet-project");
 		var viteDirectory = Path.Combine(root, "web", "packages", "vite-app");
+		var deployDirectory = Path.Combine(root, "deploy");
 		Directory.CreateDirectory(appHostDirectory);
 		Directory.CreateDirectory(serviceDirectory);
 		Directory.CreateDirectory(viteDirectory);
+		Directory.CreateDirectory(deployDirectory);
 		File.WriteAllText(Path.Combine(serviceDirectory, "Service.csproj"), "<Project />");
 		File.WriteAllText(Path.Combine(viteDirectory, "package.json"), "{ \"name\": \"vite-app\" }");
+		File.WriteAllText(Path.Combine(deployDirectory, "Dockerfile"), "FROM scratch");
+		File.WriteAllText(Path.Combine(serviceDirectory, "notes.txt"), "notes");
 
 		List<string> items =
 		[
 			"<ResourceKitProject Include=\"..\\dotnet-project\\Service.csproj\" Name=\"api\" ClassName=\"Api\" />",
 			"<ResourceKitProject Include=\"..\\web\\packages\\vite-app\" />",
 		];
+		if (includeResourceKitPath)
+		{
+			items.Add(
+				"<ResourceKitPath Include=\"..\\deploy\\Dockerfile\" Name=\"deploy\" ClassName=\"DeployFile\" Kind=\"File\" />"
+			);
+		}
+		if (kindMismatch)
+		{
+			items.Add("<ResourceKitPath Include=\"..\\web\\packages\\vite-app\" Name=\"wrong\" Kind=\"File\" />");
+		}
+		if (invalidKind)
+		{
+			items.Add("<ResourceKitPath Include=\"..\\web\\packages\\vite-app\" Name=\"wrong\" Kind=\"Bogus\" />");
+		}
+		if (duplicateNames)
+		{
+			items.Add("<ResourceKitPath Include=\"..\\dotnet-project\\notes.txt\" Name=\"api\" ClassName=\"Api\" />");
+		}
 		if (includeMissingPath)
 		{
 			items.Add(
@@ -165,7 +275,8 @@ public sealed class ResourceKitProjectTargetTests
 
 	static async Task<(int ExitCode, string Output)> RunMsBuildAsync(
 		string projectPath,
-		CancellationToken cancellationToken
+		CancellationToken cancellationToken,
+		string? language = null
 	)
 	{
 		using Process process = new()
@@ -182,6 +293,10 @@ public sealed class ResourceKitProjectTargetTests
 		process.StartInfo.ArgumentList.Add("-t:_ResourceKitGenerateAppHostProjects");
 		process.StartInfo.ArgumentList.Add("-nologo");
 		process.StartInfo.ArgumentList.Add("-v:q");
+		if (language is not null)
+		{
+			process.StartInfo.ArgumentList.Add($"-p:Language={language}");
+		}
 
 		process.Start();
 		var standardOutput = process.StandardOutput.ReadToEndAsync(cancellationToken);

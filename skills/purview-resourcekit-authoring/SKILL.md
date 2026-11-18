@@ -232,6 +232,7 @@ service is added by path, and Vite/npm directories, which never had a typed refe
 <ItemGroup>
   <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
   <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+  <ResourceKitPath Include="..\..\deploy\Dockerfile" Name="dockerfile" Kind="File" />
 </ItemGroup>
 ```
 
@@ -249,11 +250,29 @@ partial class ApiResourceKit
   `ResourceKitAppHostProjectsVisibility` changes it.
 - `Name` defaults to the leaf file/directory name; `ClassName` overrides the nested type name. A
   missing path is `RKP0001` (set `Optional="true"` when it may be absent), an invalid class name is
-  `RKP0002`, and an invalid resource name is `RKP0003`.
+  `RKP0002`, an invalid resource name is `RKP0003`, a duplicate nested class name is `RKP0004`, a
+  `Kind="File"`/`"Directory"` mismatch is `RKP0005`, and an unsupported `Kind` is `RKP0006`.
+- `ResourceKitProject` is for a .NET project or app directory; `ResourceKitPath` is for any other file
+  or directory. Both generate `AppHostProjects` and are validated before compilation.
 - The class is emitted by an MSBuild target, not the source generator, so it also works with
   `DisablePurviewAspireResourceKitSourceGenerator=true`. A project-reference consumer must import
   `Sdk/buildTransitive/Purview.Aspire.ResourceKit.targets` explicitly; a package consumer gets it
   automatically.
+- This is C#-only: F#/VB AppHosts fail with `RKP0007`, and TypeScript (`apphost.mts`) / Go
+  (`apphost.go`) AppHosts have no MSBuild project and use the Aspire CLI's generated SDK modules
+  instead.
+
+For a JavaScript app, keep `AppHostProjects.Web.Path` and declare it with `ResourcePath` so SG0018
+validates the `AddViteApp`/`AddNextJsApp`/`AddNodeApp` call too:
+
+```csharp
+[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
+}
+```
 
 ### Aspire 17 Project V2 (recommended on 17)
 
@@ -271,7 +290,9 @@ partial class ApiResourceKit
 `ProjectPath` is validated against the literal passed to `AddDotnetProject` after normalising `\` and
 `/`. A computed path is accepted because it cannot be compared at compile time. Use
 `ProjectPath` only with `DotnetProjectResource`; otherwise `SG0041` reports that the declaration is
-ignored.
+ignored. `ResourcePath` is the general form for the same project and for JavaScript app resources; when
+both are set `ResourcePath` wins and a mismatch is `SG0042`, while a `ResourcePath` on any resource that
+is not added by path is `SG0043`.
 
 ### Aspire 13.6 legacy form (still works on 17, with `CS0618`)
 

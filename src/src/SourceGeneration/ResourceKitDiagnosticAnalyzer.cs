@@ -33,6 +33,8 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			DiagnosticLibrary.ProjectDefinitionMismatch,
 			DiagnosticLibrary.ProjectResourceKitBaseMismatch,
 			DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource,
+			DiagnosticLibrary.ProjectPathAndResourcePathConflict,
+			DiagnosticLibrary.ResourcePathRequiresPathResource,
 			DiagnosticLibrary.GroupTypeNotResourceGroup,
 			DiagnosticLibrary.ResourceGroupCycle,
 			DiagnosticLibrary.DuplicateResourceGroupName,

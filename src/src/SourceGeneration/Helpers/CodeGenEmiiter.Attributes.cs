@@ -281,11 +281,30 @@ partial class CodeGenEmiiter
 					.XmlSummary(
 						"Gets or sets the path to a .NET project added with AddDotnetProject (Aspire 17+).",
 						"Used with <c>[ResourceDefinition&lt;DotnetProjectResource&gt;]</c>. The generator validates that",
-						"<c>BuildResource</c> adds the same path through <c>AddDotnetProject</c>; SG0018 reports a mismatch."
+						"<c>BuildResource</c> adds the same path through <c>AddDotnetProject</c>; SG0018 reports a mismatch.",
+						"Use <c>ResourcePath</c> for a JavaScript app resource; it takes precedence when both are set."
 					)
 					.Property(
 						new(
 							"ProjectPath",
+							TypeLibrary.System.String.MakeNullable(attributeBody),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							IsInitOnly = true,
+						}
+					);
+
+				attributeBody
+					.XmlSummary(
+						"Gets or sets the path to a resource added by path: a .NET project added with",
+						"<c>AddDotnetProject</c> (Aspire 17+), or an Aspire JavaScript app added with <c>AddViteApp</c>,",
+						"<c>AddNextJsApp</c>, <c>AddNodeApp</c>, <c>AddBunApp</c>, <c>AddDenoApp</c> or <c>AddJavaScriptApp</c>.",
+						"The generator validates that <c>BuildResource</c> adds the same path; SG0018 reports a mismatch."
+					)
+					.Property(
+						new(
+							"ResourcePath",
 							TypeLibrary.System.String.MakeNullable(attributeBody),
 							TypeDeclarationAccessibility.Public
 						)

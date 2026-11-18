@@ -41,6 +41,8 @@ static class ResourceKitRules
 		DiagnosticLibrary.ProjectDefinitionMismatch.Id,
 		DiagnosticLibrary.ProjectResourceKitBaseMismatch.Id,
 		DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource.Id,
+		DiagnosticLibrary.ProjectPathAndResourcePathConflict.Id,
+		DiagnosticLibrary.ResourcePathRequiresPathResource.Id,
 		DiagnosticLibrary.GroupTypeNotResourceGroup.Id,
 		DiagnosticLibrary.ResourceGroupCycle.Id,
 		DiagnosticLibrary.DuplicateResourceGroupName.Id,
@@ -90,6 +92,8 @@ static class ResourceKitRules
 		DiagnosticLibrary.ResourcePropertyNeverSet.Id,
 		DiagnosticLibrary.ProjectDefinitionMismatch.Id,
 		DiagnosticLibrary.ProjectResourceKitBaseMismatch.Id,
+		DiagnosticLibrary.ProjectPathAndResourcePathConflict.Id,
+		DiagnosticLibrary.ResourcePathRequiresPathResource.Id,
 		DiagnosticLibrary.MultiplePrimaryGroups.Id,
 		DiagnosticLibrary.RelativeUrlWithoutEndpoints.Id
 	);
@@ -97,6 +101,23 @@ static class ResourceKitRules
 	public static bool IsAnalyzerOwned(DiagnosticDescriptor descriptor) => AnalyzerOwnedRuleIds.Contains(descriptor.Id);
 
 	public static bool IsExecutionOnly(DiagnosticDescriptor descriptor) => ExecutionOnlyRuleIds.Contains(descriptor.Id);
+
+	/// <summary>The Aspire 17 Project V2 method that adds a .NET project by path.</summary>
+	static readonly string[] DotnetProjectAddMethods = ["AddDotnetProject"];
+
+	/// <summary>
+	/// The Aspire.Hosting.JavaScript methods that add an app by directory. Every overload takes the
+	/// resource name first and the app directory second.
+	/// </summary>
+	static readonly string[] JavaScriptAppAddMethods =
+	[
+		"AddViteApp",
+		"AddNextJsApp",
+		"AddNodeApp",
+		"AddBunApp",
+		"AddDenoApp",
+		"AddJavaScriptApp",
+	];
 
 	public static ImmutableArray<RuleEvaluation> EvaluateHostKit(
 		INamedTypeSymbol symbol,
@@ -193,6 +214,7 @@ static class ResourceKitRules
 			symbol
 		);
 		var declaredProjectPath = matchedAttribute.Instance.ProjectPath;
+		var declaredResourcePath = matchedAttribute.Instance.ResourcePath;
 
 		if (allAttributes.Length > 1)
 		{
@@ -261,11 +283,12 @@ static class ResourceKitRules
 		}
 
 		EvaluateParent(symbol, diagnostics);
-		EvaluateProjectDeclaration(
+		EvaluatePathDeclaration(
 			symbol,
 			matchedAttribute,
 			declaredProject,
 			declaredProjectPath,
+			declaredResourcePath,
 			resolvedResourceType,
 			hasExplicitBaseType,
 			compilation,
@@ -287,15 +310,18 @@ static class ResourceKitRules
 	}
 
 	/// <summary>
-	/// Evaluates the project-resource declaration, for both the legacy <c>Projects.*</c> form
-	/// (<c>AddProject&lt;T&gt;</c>) and Aspire 17 Project V2 (<c>DotnetProjectResource</c> +
-	/// <c>AddDotnetProject</c>).
+	/// Evaluates the path declaration for a resource kit: the legacy <c>Projects.*</c> form
+	/// (<c>AddProject&lt;T&gt;</c>), Aspire 17 Project V2 (<c>DotnetProjectResource</c> +
+	/// <c>AddDotnetProject</c>), and JavaScript app resources added by path
+	/// (<c>AddViteApp</c>, <c>AddNextJsApp</c>, <c>AddNodeApp</c>, <c>AddBunApp</c>, <c>AddDenoApp</c>,
+	/// <c>AddJavaScriptApp</c>).
 	/// </summary>
-	static void EvaluateProjectDeclaration(
+	static void EvaluatePathDeclaration(
 		INamedTypeSymbol symbol,
 		(ResourceDefinitionAttributeData Instance, AttributeData Attribute) matchedAttribute,
 		INamedTypeSymbol? declaredProject,
 		string? declaredProjectPath,
+		string? declaredResourcePath,
 		TypeIdentity resolvedResourceType,
 		bool hasExplicitBaseType,
 		Compilation compilation,
@@ -303,13 +329,34 @@ static class ResourceKitRules
 		CancellationToken cancellationToken
 	)
 	{
-		var isDotnetProjectResource = resolvedResourceType == TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource;
+		var hasProjectPath = !string.IsNullOrWhiteSpace(declaredProjectPath);
+		var hasResourcePath = !string.IsNullOrWhiteSpace(declaredResourcePath);
+
+		if (hasProjectPath && hasResourcePath && !PathsMatch(declaredProjectPath!, declaredResourcePath!))
+		{
+			diagnostics.Add(
+				new(
+					DiagnosticLibrary.ProjectPathAndResourcePathConflict,
+					IsBlocking: false,
+					GetLocation(matchedAttribute.Attribute, cancellationToken) ?? GetLocation(symbol),
+					[symbol.Name, declaredProjectPath!, declaredResourcePath!]
+				)
+			);
+		}
 
 		if (declaredProject is not null)
 		{
-			// The legacy Projects.* form. ProjectPath is a V2 signal and is ignored here, so report the
-			// contradiction rather than let the author believe the path is validated.
-			if (!string.IsNullOrWhiteSpace(declaredProjectPath))
+			// The legacy Projects.* form has no path. Whichever path argument was supplied is ignored, so
+			// report the contradiction rather than let the author believe it is validated.
+			if (hasResourcePath)
+				ReportResourcePathRequiresPathResource(
+					symbol,
+					matchedAttribute.Attribute,
+					TypeLibrary.Aspire.Hosting.ApplicationModel.ProjectResource,
+					diagnostics,
+					cancellationToken
+				);
+			else if (hasProjectPath)
 				ReportProjectPathRequiresDotnetProjectResource(
 					symbol,
 					matchedAttribute.Attribute,
@@ -331,7 +378,7 @@ static class ResourceKitRules
 						DiagnosticLibrary.ProjectDefinitionMismatch,
 						IsBlocking: false,
 						addProjectLocation ?? GetLocation(symbol),
-						[symbol.Name, declaredProject.Name]
+						[symbol.Name, declaredProject.Name, "AddProject<T>()"]
 					)
 				);
 			}
@@ -345,15 +392,18 @@ static class ResourceKitRules
 			return;
 		}
 
+		var isDotnetProjectResource = resolvedResourceType == TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource;
 		if (isDotnetProjectResource)
 		{
-			var (addsDeclaredProject, addProjectLocation) = BuildResourceAddsDotnetProject(
+			var declaredPath = hasResourcePath ? declaredResourcePath : declaredProjectPath;
+			var (addsDeclaredPath, addProjectLocation) = BuildResourceAddsPath(
 				symbol,
-				declaredProjectPath,
+				declaredPath,
+				DotnetProjectAddMethods,
 				compilation,
 				cancellationToken
 			);
-			if (!addsDeclaredProject)
+			if (!addsDeclaredPath)
 			{
 				diagnostics.Add(
 					new(
@@ -362,7 +412,8 @@ static class ResourceKitRules
 						addProjectLocation ?? GetLocation(symbol),
 						[
 							symbol.Name,
-							declaredProjectPath ?? TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource.Name,
+							declaredPath ?? TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource.Name,
+							"AddDotnetProject(...)",
 						]
 					)
 				);
@@ -377,7 +428,57 @@ static class ResourceKitRules
 			return;
 		}
 
-		if (!string.IsNullOrWhiteSpace(declaredProjectPath))
+		if (IsJavaScriptAppResource(matchedAttribute, symbol))
+		{
+			// ProjectPath stays a DotnetProjectResource-only signal: on a JavaScript app it is ignored, so
+			// it must not be silently validated as if it were ResourcePath.
+			if (hasProjectPath && !hasResourcePath)
+				ReportProjectPathRequiresDotnetProjectResource(
+					symbol,
+					matchedAttribute.Attribute,
+					resolvedResourceType,
+					diagnostics,
+					cancellationToken
+				);
+
+			if (hasResourcePath)
+			{
+				var (addsDeclaredPath, addProjectLocation) = BuildResourceAddsPath(
+					symbol,
+					declaredResourcePath,
+					JavaScriptAppAddMethods,
+					compilation,
+					cancellationToken
+				);
+				if (!addsDeclaredPath)
+				{
+					diagnostics.Add(
+						new(
+							DiagnosticLibrary.ProjectDefinitionMismatch,
+							IsBlocking: false,
+							addProjectLocation ?? GetLocation(symbol),
+							[
+								symbol.Name,
+								declaredResourcePath!,
+								string.Join(", ", JavaScriptAppAddMethods.Select(static method => method + "(...)")),
+							]
+						)
+					);
+				}
+			}
+
+			return;
+		}
+
+		if (hasResourcePath)
+			ReportResourcePathRequiresPathResource(
+				symbol,
+				matchedAttribute.Attribute,
+				resolvedResourceType,
+				diagnostics,
+				cancellationToken
+			);
+		else if (hasProjectPath)
 			ReportProjectPathRequiresDotnetProjectResource(
 				symbol,
 				matchedAttribute.Attribute,
@@ -403,6 +504,34 @@ static class ResourceKitRules
 				[symbol.Name, declaredResourceType.MetadataFullName]
 			)
 		);
+	}
+
+	static void ReportResourcePathRequiresPathResource(
+		INamedTypeSymbol symbol,
+		AttributeData attribute,
+		TypeIdentity declaredResourceType,
+		ImmutableArray<RuleEvaluation>.Builder diagnostics,
+		CancellationToken cancellationToken
+	)
+	{
+		diagnostics.Add(
+			new(
+				DiagnosticLibrary.ResourcePathRequiresPathResource,
+				IsBlocking: false,
+				GetLocation(attribute, cancellationToken) ?? GetLocation(symbol),
+				[symbol.Name, declaredResourceType.MetadataFullName]
+			)
+		);
+	}
+
+	static bool IsJavaScriptAppResource(
+		(ResourceDefinitionAttributeData Instance, AttributeData Attribute) matchedAttribute,
+		INamedTypeSymbol kitSymbol
+	)
+	{
+		var resourceType = ResolveResourceTypeSymbol(matchedAttribute, kitSymbol);
+		return resourceType is not null
+			&& TypeHelpers.Is(resourceType, TypeLibrary.Aspire.Hosting.JavaScript.JavaScriptAppResource);
 	}
 
 	public static ImmutableArray<RuleEvaluation> EvaluateResourceGroup(
@@ -1351,20 +1480,21 @@ static class ResourceKitRules
 	}
 
 	/// <summary>
-	/// Determines whether <c>BuildResource</c> adds the Aspire 17 Project V2 resource via
-	/// <c>AddDotnetProject(...)</c>. When <paramref name="declaredProjectPath"/> is supplied, the call's
-	/// literal path must match it after normalising separators; a computed path is accepted because it
-	/// cannot be compared at compile time.
+	/// Determines whether <c>BuildResource</c> adds the declared path through one of the supported
+	/// methods. When <paramref name="declaredPath"/> is supplied, the call's literal path must match it
+	/// after normalising separators; a computed path is accepted because it cannot be compared at
+	/// compile time.
 	/// </summary>
-	static (bool AddsDeclaredProject, Location? AddDotnetProjectLocation) BuildResourceAddsDotnetProject(
+	static (bool AddsDeclaredPath, Location? AddCallLocation) BuildResourceAddsPath(
 		INamedTypeSymbol type,
-		string? declaredProjectPath,
+		string? declaredPath,
+		IReadOnlyCollection<string> methodNames,
 		Compilation compilation,
 		CancellationToken cancellationToken
 	)
 	{
 		Location? addLocation = null;
-		var normalizedDeclared = NormalizeProjectPath(declaredProjectPath);
+		var normalizedDeclared = NormalizeProjectPath(declaredPath);
 
 		foreach (var method in type.GetMembers("BuildResource").OfType<IMethodSymbol>())
 		{
@@ -1376,23 +1506,19 @@ static class ResourceKitRules
 				{
 					if (
 						invocation.Expression
-							is not MemberAccessExpressionSyntax
-							{
-								Name: IdentifierNameSyntax { Identifier.ValueText: "AddDotnetProject" },
-							}
+							is not MemberAccessExpressionSyntax { Name: IdentifierNameSyntax methodName }
+						|| !methodNames.Contains(methodName.Identifier.ValueText, StringComparer.Ordinal)
 						|| invocation.ArgumentList.Arguments.Count == 0
 					)
 						continue;
 
 					addLocation ??= invocation.GetLocation();
 
-					// No declared path: any AddDotnetProject call satisfies the declaration.
+					// No declared path: any supported call satisfies the declaration.
 					if (normalizedDeclared is null)
 						return (true, null);
 
-					var pathArgument = invocation.ArgumentList.Arguments.FirstOrDefault(static argument =>
-						argument.NameColon?.Name.Identifier.ValueText == "path"
-					) ?? invocation.ArgumentList.Arguments.ElementAtOrDefault(1);
+					var pathArgument = FindPathArgument(invocation);
 					if (pathArgument is null)
 						continue;
 
@@ -1413,11 +1539,24 @@ static class ResourceKitRules
 		return (false, addLocation);
 	}
 
+	/// <summary>
+	/// Locates the path argument on a supported call: a named <c>path</c>, <c>appDirectory</c> or
+	/// <c>workingDirectory</c> parameter, else the second positional argument (after the resource name).
+	/// </summary>
+	static ArgumentSyntax? FindPathArgument(InvocationExpressionSyntax invocation) =>
+		invocation.ArgumentList.Arguments.FirstOrDefault(static argument =>
+			argument.NameColon?.Name.Identifier.ValueText is "path" or "appDirectory" or "workingDirectory"
+		) ?? invocation.ArgumentList.Arguments.ElementAtOrDefault(1);
+
+	static bool PathsMatch(string left, string right) =>
+		string.Equals(NormalizeProjectPath(left), NormalizeProjectPath(right), StringComparison.Ordinal);
+
 	static string? NormalizeProjectPath(string? path)
 	{
 		if (path is null || string.IsNullOrWhiteSpace(path))
 			return null;
 
+		// The path is used in a URI, so normalise to forward slashes and trim whitespace.
 		return path.Replace('\\', '/').Trim();
 	}
 

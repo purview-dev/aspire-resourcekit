@@ -87,7 +87,9 @@ partial class ApiResourceKit
 - Keep the resource `Name` and every `WithReference`/`WithEnvironment` call; `DotnetProjectResource`
   supports them.
 - `ProjectPath` is validated against the literal passed to `AddDotnetProject` after normalising `\`
-  and `/` (SG0018). A computed path is accepted but cannot be validated.
+  and `/` (SG0018). A computed path is accepted but cannot be validated. `ResourcePath` is the general
+  form for the same project and for an `AddViteApp`/`AddNextJsApp`/`AddNodeApp` app (SG0018); a
+  conflicting pair is SG0042 and a non-path resource is SG0043.
 - On Aspire 13.6, keep the legacy `Projects.*` form; the package still declares the 13.6 floor.
 
 #### 2.1) Extract a child resource created from another resource

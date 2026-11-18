@@ -1,9 +1,11 @@
 ---
 name: purview-resourcekit-diagnostics
 description: >-
-  Use when a Purview.Aspire.ResourceKit build reports an SG00xx diagnostic - what triggered it, how to
-  fix it, which rules cover parent/child hierarchies, group placement and redundant ResourceBuilder access, which rules block source generation and which are execution-only warnings, and why CS8618 is
-  suppressed on IResourceBuilder properties.
+  Use when a Purview.Aspire.ResourceKit build reports an SG00xx or RKP00xx diagnostic - what triggered
+  it, how to fix it, which rules cover parent/child hierarchies, group placement and redundant
+  ResourceBuilder access, which rules block source generation and which are execution-only warnings,
+  which MSBuild errors come from ResourceKitProject/ResourceKitPath items, and why CS8618 is suppressed
+  on IResourceBuilder properties.
 metadata:
   product: Purview.Aspire.ResourceKit
   repository: purview-dev/aspire-resourcekit
@@ -65,16 +67,20 @@ assigned.
 | `SG0039` | Warning | A child's explicit primary group differs from its parent's; visual placement follows the child's group. |
 | `SG0040` | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant. |
 | `SG0041` | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored. |
+| `SG0042` | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used, so one must be fixed or removed. |
+| `SG0043` | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored. |
 
 ## Execution-only versus generation-blocking
 
-`SG0017`, `SG0018`, `SG0019`, `SG0024` and `SG0028` are **execution-only**. They report things that break the resource at
+`SG0017`, `SG0018`, `SG0019`, `SG0024`, `SG0028`, `SG0042` and `SG0043` are **execution-only**. They report things that break the resource at
 runtime — an unset builder property, a project that is never registered, a base that cannot build a
 project — but they deliberately do **not** stop generation, and are warnings for that reason.
 
 `SG0041` is a different kind of warning: the resource still builds and runs, but its `ProjectPath` is
-ignored because the resource is not a `DotnetProjectResource`. It is a declaration advisory, not an
-execution-only rule.
+ignored because the resource is not a `DotnetProjectResource`. `SG0042`/`SG0043` cover the same ground
+for `ResourcePath` and are tracked as execution-only, so a half-finished kit still generates: `SG0042`
+means `ResourcePath` is validated and the conflicting `ProjectPath` is stale, and `SG0043` means the
+declared `ResourcePath` is ignored entirely.
 
 The point is practical: a resource kit whose `BuildResource` does not yet register its declared
 project is still generated, and the host kit still emitted, so you can finish the override instead of
@@ -186,6 +192,25 @@ OptionsHelper.Assign<ShopHostKitOptions>(
 ```
 
 Visual Studio offers a **"Split into separate assignments"** code fix.
+
+## MSBuild project path errors (`RKP`)
+
+`ResourceKitProject` and `ResourceKitPath` items are validated by the build before compilation, so
+these are MSBuild errors, not `SG` analyzer diagnostics:
+
+| ID | What it means |
+| - | - |
+| `RKP0001` | The declared path does not exist relative to the AppHost project directory. Fix the relative depth, or set `Optional="true"` when it may be absent. |
+| `RKP0002` | The derived or explicit `ClassName` is not a valid C# identifier. |
+| `RKP0003` | The resource `Name` contains a character Aspire or the generated literal cannot represent. |
+| `RKP0004` | Two items generate the same nested class name under `AppHostProjects`; set `ClassName` on one. |
+| `RKP0005` | `Kind="File"` resolves to a directory, or `Kind="Directory"` resolves to a file. |
+| `RKP0006` | `Kind` is set to something other than `File` or `Directory`. |
+| `RKP0007` | The project is not a C# AppHost; the generated class is C# source. |
+
+Use `ResourceKitProject` for a .NET project or app directory and `ResourceKitPath` for any other file or
+directory. The generated `AppHostProjects` constants keep their `const`-ness, so `SG0018` still
+validates a path passed to `ResourceDefinition.ProjectPath`/`ResourcePath`.
 
 ## Related skills
 

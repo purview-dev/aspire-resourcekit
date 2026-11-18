@@ -167,12 +167,12 @@ static class DiagnosticLibrary
 
 	public static readonly DiagnosticDescriptor ProjectDefinitionMismatch = new(
 		id: "SG0018",
-		title: "Project resource definition mismatch",
-		messageFormat: "The '{0}' resource kit declares project '{1}' but BuildResource must add the same project via AddProject<T>() or AddDotnetProject(...)",
+		title: "Declared resource path is not added",
+		messageFormat: "The '{0}' resource kit declares '{1}' but BuildResource must add it via {2}",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		description: "Execution-only concern: the declared project is not registered, so the resource fails at runtime; generation is not blocked."
+		description: "Execution-only concern: the declared project or app directory is not registered, so the resource fails at runtime; generation is not blocked."
 	);
 
 	public static readonly DiagnosticDescriptor ProjectResourceKitBaseMismatch = new(
@@ -192,7 +192,27 @@ static class DiagnosticLibrary
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true,
-		description: "ProjectPath is the Aspire 17 Project V2 declaration. A ProjectResource (AddProject<T>) or any other resource type does not use it, so the path is ignored."
+		description: "ProjectPath is the Aspire 17 Project V2 declaration. A ProjectResource (AddProject<T>) or any other resource type does not use it, so the path is ignored. Use ResourcePath for a JavaScript app resource."
+	);
+
+	public static readonly DiagnosticDescriptor ProjectPathAndResourcePathConflict = new(
+		id: "SG0042",
+		title: "ProjectPath and ResourcePath declare different paths",
+		messageFormat: "'{0}' sets ProjectPath '{1}' and ResourcePath '{2}'; ResourcePath is used, so the two must match or one must be removed",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "Execution-only concern: only ResourcePath is validated, so a stale ProjectPath would misrepresent the declared path."
+	);
+
+	public static readonly DiagnosticDescriptor ResourcePathRequiresPathResource = new(
+		id: "SG0043",
+		title: "ResourcePath requires a path-based resource",
+		messageFormat: "'{0}' sets ResourcePath, which is only used with [ResourceDefinition<DotnetProjectResource>] or an Aspire JavaScript app resource; the declared resource is '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true,
+		description: "ResourcePath is validated against AddDotnetProject and the Add* JavaScript app methods. Any other resource type does not use it, so the path is ignored."
 	);
 
 	public static readonly DiagnosticDescriptor ResourceKitCannotParentItself = new(

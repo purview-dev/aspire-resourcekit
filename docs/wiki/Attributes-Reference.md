@@ -56,6 +56,7 @@ Options:
 | `Mode` | `ResourceKitMode` | `All` | Execution mode in which this resource participates. |
 | `Parent` | `Type?` | `null` | The resource kit that owns this kit. Use `Parent = typeof(TParentKit)`. |
 | `ProjectPath` | `string?` | `null` | The project path for Aspire 17 Project V2 (`AddDotnetProject`). Only used with `DotnetProjectResource` (SG0041). |
+| `ResourcePath` | `string?` | `null` | The path for a resource added by path: `AddDotnetProject` or an Aspire JavaScript app (`AddViteApp`, `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp`, `AddJavaScriptApp`). Other resource types report SG0043. |
 | `AspireResourceType` | generic type argument | `null` | The Aspire `IResource` type (generic style only). |
 
 `Parent` gives the child a typed `Parent` property, a parent-aware constructor, a parent-before-child build
@@ -74,6 +75,22 @@ partial class ApiResourceKit
         => builder.AddDotnetProject(Name, "../Api/Api.csproj");
 }
 ```
+
+`ResourcePath` is the general form and works for the same .NET project plus Aspire JavaScript app
+resources. When both are set, `ResourcePath` is validated and the two must agree (SG0042):
+
+```csharp
+[ResourceDefinition<ViteAppResource>("web", ResourcePath = "../../../web/packages/vite-app")]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddViteApp(Name, "../../../web/packages/vite-app", "dev");
+}
+```
+
+SG0018 reports a `ResourcePath` that `BuildResource` does not add with the matching path, whichever
+path-based method the resource type supports. A `ResourcePath` on any other resource type reports
+SG0043; a `ProjectPath` on anything but `DotnetProjectResource` keeps reporting SG0041.
 
 The legacy `[ResourceDefinition<Projects.X>]` + `AddProject<T>` form is still supported, including on
 Aspire 17 where it reports `CS0618`. See [Project resources](Project-Resources.md).

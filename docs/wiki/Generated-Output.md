@@ -14,8 +14,8 @@ boilerplate that wires your resource kits together. The generated code is marked
 - an AppHost extension method to build/configure/register the host kit.
 
 An MSBuild target in the package also emits `AppHostProjects`, the typed paths for
-`ResourceKitProject` items; that file is not produced by the Roslyn generator. See
-[Project resources](Project-Resources.md#typed-project-paths-apphostprojects).
+`ResourceKitProject` and `ResourceKitPath` items; that file is not produced by the Roslyn generator. See
+[Project resources](Project-Resources.md#typed-paths-apphostprojects).
 
 ## Host kit members
 
