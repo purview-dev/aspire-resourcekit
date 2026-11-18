@@ -141,6 +141,76 @@ partial class ApiResourceKit : ResourceKitBase<ProjectResource>
 If the explicit base resolves to a different resource type, SG0019 is reported (execution-only
 warning) because that base cannot build the declared project.
 
+## Typed project paths (`AppHostProjects`)
+
+Declare each path once, in the AppHost project, and the package's build target emits a typed class:
+
+```xml
+<ItemGroup>
+  <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+  <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+</ItemGroup>
+```
+
+```csharp
+// Generated into the AppHost's root namespace.
+internal static class AppHostProjects
+{
+    internal static class Api
+    {
+        public const string Name = "api";
+        public const string Path = "../../dotnet-project";
+    }
+
+    internal static class Web
+    {
+        public const string Name = "web";
+        public const string Path = "../../../web/packages/vite-app";
+    }
+}
+```
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
+}
+
+[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name)]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
+}
+```
+
+`Path` is a `const`, so SG0018 still validates it against `AddDotnetProject`; a literal
+`ProjectPath = "../Api/Api.csproj"` and a generated constant behave identically.
+
+- The item's `Name` is the logical Aspire resource name and defaults to the leaf file/directory name.
+  Only letters, digits, `.`, `_` and `-` are allowed (`RKP0003`).
+- `ClassName` overrides the generated nested type name, which otherwise defaults to PascalCase of `Name`
+  (`dotnet-project` → `DotnetProject`). It must be a valid C# identifier (`RKP0002`).
+- A relative path is emitted exactly as declared, with `/` separators, because Aspire resolves it from
+  the AppHost project directory. It is not made absolute: generated source must not depend on the
+  machine.
+- A declared path that does not exist fails the build (`RKP0001`). Set `Optional="true"` on the item
+  for a submodule or generated folder that may be absent, or
+  `ResourceKitAppHostProjectsValidatePaths=false` to skip every check.
+- The class defaults to `internal` in the AppHost's root namespace. Set
+  `ResourceKitAppHostProjectsNamespace` to change the namespace (for example `Projects`),
+  `ResourceKitAppHostProjectsClassName` to rename the class, and
+  `ResourceKitAppHostProjectsVisibility` to make it `public`.
+
+> [!NOTE]
+> `AppHostProjects` is emitted by an MSBuild target in `buildTransitive`, not by the Roslyn generator.
+> A source generator cannot see `ResourceKitProject` items, and its own output is not visible to the
+> analyzer that reports SG0018. Generating the constants before `CoreCompile` keeps them ordinary
+> compilation input. Project-reference consumers inside a repository that does not use the NuGet
+> package must import `Sdk/buildTransitive/Purview.Aspire.ResourceKit.targets` explicitly.
+
 ## Generic vs non-generic styles
 
 - **Generic style** (`[ResourceDefinition<TResource>(...)]`) is recommended for project resources:
@@ -148,7 +218,8 @@ warning) because that base cannot build the declared project.
 - **Non-generic style** (`[ResourceDefinition(...)]` + explicit base) requires the base to use the
   declared project resource type (SG0019).
 
-See [Attributes Reference](Attributes-Reference.md) for the base-type rules shared by all resources.
+See [Attributes Reference](Attributes-Reference.md) for the base-type rules shared by all resources,
+and [Diagnostics](Diagnostics.md) for the `RKP` build errors reported by `ResourceKitProject` items.
 
 ## See also
 

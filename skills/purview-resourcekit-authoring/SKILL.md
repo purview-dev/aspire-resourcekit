@@ -224,6 +224,37 @@ builder.AddAspireResourceKit(
 
 ## Project resources
 
+Declare each project or app directory once and let the package's build target emit typed paths. This
+covers Project V2 `.csproj` paths, which Aspire's `Projects.*` metadata does not contain when the
+service is added by path, and Vite/npm directories, which never had a typed reference:
+
+```xml
+<ItemGroup>
+  <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+  <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+</ItemGroup>
+```
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
+}
+```
+
+- `Path` is a `const`, relative to the AppHost project directory, so SG0018 still validates it; the
+  class is in the AppHost's root namespace and is `internal` unless
+  `ResourceKitAppHostProjectsVisibility` changes it.
+- `Name` defaults to the leaf file/directory name; `ClassName` overrides the nested type name. A
+  missing path is `RKP0001` (set `Optional="true"` when it may be absent), an invalid class name is
+  `RKP0002`, and an invalid resource name is `RKP0003`.
+- The class is emitted by an MSBuild target, not the source generator, so it also works with
+  `DisablePurviewAspireResourceKitSourceGenerator=true`. A project-reference consumer must import
+  `Sdk/buildTransitive/Purview.Aspire.ResourceKit.targets` explicitly; a package consumer gets it
+  automatically.
+
 ### Aspire 17 Project V2 (recommended on 17)
 
 ```csharp

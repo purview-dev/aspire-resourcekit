@@ -1,0 +1,255 @@
+<Project>
+	<!--
+		Typed AppHost project paths.
+
+		Declare the projects an AppHost composes by path, once, and this target emits a typed class:
+
+			<ItemGroup>
+				<ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+				<ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+			</ItemGroup>
+
+		→
+
+			internal static class AppHostProjects
+			{
+				internal static class Api
+				{
+					public const string Name = "api";
+					public const string Path = "../../dotnet-project";
+				}
+			}
+
+		The class is generated before CoreCompile, so it is part of the compilation every source
+		generator and analyzer sees. That matters for SG0018: a `ProjectPath = AppHostProjects.Api.Path`
+		attribute argument is a constant, so the declared path stays comparable with AddDotnetProject.
+		A Roslyn generator cannot do this job - it cannot see MSBuild items, and its own output is not
+		visible to itself.
+
+		Paths are emitted exactly as declared (relative, with '/' separators), because AddDotnetProject,
+		AddViteApp and AddNpmApp resolve relative to the AppHost project directory. Emitting absolute
+		paths would make the generated source depend on the machine.
+
+		Item metadata:
+			Name       the logical Aspire resource name; defaults to the leaf file/directory name.
+			ClassName  the generated nested type name; defaults to PascalCase of Name.
+			Optional   true skips the existence check for a path that is allowed to be absent.
+	-->
+	<PropertyGroup>
+		<ResourceKitAppHostProjectsClassName Condition="'$(ResourceKitAppHostProjectsClassName)' == ''"
+			>AppHostProjects</ResourceKitAppHostProjectsClassName>
+		<!-- Defaults to the AppHost's root namespace, which every nested AppModels namespace can reach. -->
+		<ResourceKitAppHostProjectsNamespace Condition="'$(ResourceKitAppHostProjectsNamespace)' == ''"
+			>$(RootNamespace)</ResourceKitAppHostProjectsNamespace>
+		<ResourceKitAppHostProjectsVisibility Condition="'$(ResourceKitAppHostProjectsVisibility)' == ''"
+			>internal</ResourceKitAppHostProjectsVisibility>
+		<ResourceKitAppHostProjectsValidatePaths Condition="'$(ResourceKitAppHostProjectsValidatePaths)' == ''"
+			>true</ResourceKitAppHostProjectsValidatePaths>
+	</PropertyGroup>
+
+	<!--
+		A wrong '../..' depth is exactly the mistake the typed class exists to prevent, so it fails the
+		build rather than generating a plausible-looking constant. Set Optional="true" on an item that is
+		allowed to be absent (a submodule, a generated folder), or
+		ResourceKitAppHostProjectsValidatePaths=false to skip every check.
+	-->
+	<Target
+		Name="_ResourceKitValidateAppHostProjects"
+		Condition="'@(ResourceKitProject)' != '' and '$(ResourceKitAppHostProjectsValidatePaths)' == 'true'"
+	>
+		<!-- Validate the same '/'-normalised form that is written to AppHostProjects, so a Windows-style
+		     '..\..\app' declaration is checked and emitted consistently on a non-Windows build. -->
+		<ItemGroup>
+			<_ResourceKitProjectToValidate Include="@(ResourceKitProject)">
+				<CheckPath>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitProject.Identity)', '\\', '/'))</CheckPath>
+			</_ResourceKitProjectToValidate>
+		</ItemGroup>
+		<Error
+			Code="RKP0001"
+			Condition="'%(_ResourceKitProjectToValidate.Optional)' != 'true' and !Exists('%(_ResourceKitProjectToValidate.CheckPath)')"
+			Text="ResourceKitProject '%(_ResourceKitProjectToValidate.CheckPath)' does not exist relative to '$(MSBuildProjectDirectory)'. Fix the relative path, or set Optional=&quot;true&quot; on the item when it is allowed to be absent."
+		/>
+	</Target>
+
+	<Target
+		Name="_ResourceKitGenerateAppHostProjects"
+		BeforeTargets="CoreCompile"
+		DependsOnTargets="_ResourceKitValidateAppHostProjects"
+		Condition="'@(ResourceKitProject)' != ''"
+	>
+		<!--
+			Computed inside the target: a buildTransitive .targets file is imported before
+			Microsoft.Common.CurrentVersion.targets defines IntermediateOutputPath, so evaluating these at
+			import time would leave the generated file at the project root.
+		-->
+		<PropertyGroup>
+			<_ResourceKitAppHostProjectsDirectory>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'ResourceKit'))</_ResourceKitAppHostProjectsDirectory>
+			<_ResourceKitAppHostProjectsFile>$([System.IO.Path]::Combine('$(_ResourceKitAppHostProjectsDirectory)', '$(ResourceKitAppHostProjectsClassName).g.cs'))</_ResourceKitAppHostProjectsFile>
+		</PropertyGroup>
+
+		<MakeDir Directories="$(_ResourceKitAppHostProjectsDirectory)" />
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject Include="@(ResourceKitProject)">
+				<Trimmed>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceKitProject.Identity)', '[\\/]+$', ''))</Trimmed>
+				<DeclaredName>%(ResourceKitProject.Name)</DeclaredName>
+				<DeclaredClassName>%(ResourceKitProject.ClassName)</DeclaredClassName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<!-- The constant keeps the declared relative form; only the separator is normalised. -->
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<PathValue>$([System.Text.RegularExpressions.Regex]::Replace('%(Trimmed)', '\\', '/'))</PathValue>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<!-- A directory keeps its whole leaf name (Example.Service); a project file drops its extension. -->
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<IsFile>$([System.IO.File]::Exists($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '%(PathValue)'))))</IsFile>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<Leaf Condition="'%(IsFile)' == 'True'"
+					>$([System.IO.Path]::GetFileNameWithoutExtension('%(PathValue)'))</Leaf>
+				<Leaf Condition="'%(IsFile)' != 'True'">$([System.IO.Path]::GetFileName('%(PathValue)'))</Leaf>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<!-- Name metadata wins; otherwise the leaf directory/file name is the logical resource name. -->
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<ResourceName Condition="'%(DeclaredName)' != ''">%(DeclaredName)</ResourceName>
+				<ResourceName Condition="'%(DeclaredName)' == ''">%(Leaf)</ResourceName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<!-- dotnet-project / vite_app / my.api → "dotnet-project" → "Dotnet Project" → "DotnetProject". -->
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<PascalSegments>$([System.Text.RegularExpressions.Regex]::Replace('%(ResourceName)', '[-_. ]+', ' '))</PascalSegments>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<TitleClassName>$([System.Globalization.CultureInfo]::GetCultureInfo('').TextInfo.ToTitleCase('%(PascalSegments)').Replace(' ', ''))</TitleClassName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<!-- Remove anything that is not an identifier character, then legalise a leading digit. -->
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<SanitizedName>$([System.Text.RegularExpressions.Regex]::Replace('%(TitleClassName)', '[^A-Za-z0-9_]', ''))</SanitizedName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<IdentifierClassName
+					Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(SanitizedName)', '^[0-9]'))"
+					>_%(SanitizedName)</IdentifierClassName>
+				<IdentifierClassName
+					Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('%(SanitizedName)', '^[0-9]'))"
+					>%(SanitizedName)</IdentifierClassName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<ClassName Condition="'%(DeclaredClassName)' != ''">%(DeclaredClassName)</ClassName>
+				<ClassName Condition="'%(DeclaredClassName)' == ''">%(IdentifierClassName)</ClassName>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<Error
+			Code="RKP0002"
+			Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ResourceKitAppHostProject.ClassName)', '^[A-Za-z_][A-Za-z0-9_]*$'))"
+			Text="ResourceKitProject '%(_ResourceKitAppHostProject.Identity)' needs a valid C# class name, but the derived or declared value is '%(_ResourceKitAppHostProject.ClassName)'. Set ClassName=&quot;...&quot; on the item."
+		/>
+
+		<!-- Resource names flow into Aspire and into generated string literals, so reject the characters
+		     that would break either a resource name or the generated source. -->
+		<Error
+			Code="RKP0003"
+			Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ResourceKitAppHostProject.ResourceName)', '[^A-Za-z0-9._-]'))"
+			Text="ResourceKitProject '%(_ResourceKitAppHostProject.Identity)' has the resource name '%(_ResourceKitAppHostProject.ResourceName)'. A resource name may contain only letters, digits, '.', '_' and '-'."
+		/>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProject>
+				<Source>
+					<![CDATA[
+	/// <summary>Typed path to the '%(ResourceName)' project or app directory.</summary>
+	[global::System.CodeDom.Compiler.GeneratedCode("Purview.Aspire.ResourceKit", null)]
+	[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Generated code.")]
+	$(ResourceKitAppHostProjectsVisibility) static class %(ClassName)
+	{
+		/// <summary>The logical Aspire resource name for '%(ResourceName)'.</summary>
+		public const string Name = "%(ResourceName)";
+
+		/// <summary>The project path, relative to the AppHost project directory.</summary>
+		public const string Path = "%(PathValue)";
+	}]]>
+				</Source>
+			</_ResourceKitAppHostProject>
+		</ItemGroup>
+
+		<ItemGroup>
+			<_ResourceKitAppHostProjectsHeader Include="header">
+				<Source>
+					<![CDATA[// <auto-generated/>
+// Generated by Purview.Aspire.ResourceKit from the ResourceKitProject items in this project.
+// Changes are overwritten on the next build.
+
+#nullable enable]]>
+				</Source>
+			</_ResourceKitAppHostProjectsHeader>
+			<_ResourceKitAppHostProjectsNamespaceDirective
+				Include="namespace"
+				Condition="'$(ResourceKitAppHostProjectsNamespace)' != ''"
+			>
+				<Source>
+					<![CDATA[
+namespace $(ResourceKitAppHostProjectsNamespace);]]>
+				</Source>
+			</_ResourceKitAppHostProjectsNamespaceDirective>
+			<_ResourceKitAppHostProjectsClass Include="class">
+				<Source>
+					<![CDATA[
+/// <summary>
+/// Typed paths to the projects and app directories this AppHost composes.
+/// </summary>
+[global::System.CodeDom.Compiler.GeneratedCode("Purview.Aspire.ResourceKit", null)]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage(Justification = "Generated code.")]
+$(ResourceKitAppHostProjectsVisibility) static class $(ResourceKitAppHostProjectsClassName)
+{]]>
+				</Source>
+			</_ResourceKitAppHostProjectsClass>
+			<_ResourceKitAppHostProjectsFooter Include="footer">
+				<Source>
+					<![CDATA[
+}]]>
+				</Source>
+			</_ResourceKitAppHostProjectsFooter>
+		</ItemGroup>
+
+		<WriteLinesToFile
+			File="$(_ResourceKitAppHostProjectsFile)"
+			Lines="@(_ResourceKitAppHostProjectsHeader->'%(Source)');@(_ResourceKitAppHostProjectsNamespaceDirective->'%(Source)');@(_ResourceKitAppHostProjectsClass->'%(Source)');@(_ResourceKitAppHostProject->'%(Source)');@(_ResourceKitAppHostProjectsFooter->'%(Source)')"
+			Overwrite="true"
+			WriteOnlyWhenDifferent="true"
+		/>
+
+		<ItemGroup>
+			<FileWrites Include="$(_ResourceKitAppHostProjectsFile)" />
+			<Compile
+				Include="$(_ResourceKitAppHostProjectsFile)"
+				Condition="Exists('$(_ResourceKitAppHostProjectsFile)')"
+			/>
+		</ItemGroup>
+	</Target>
+</Project>

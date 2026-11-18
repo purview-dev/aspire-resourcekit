@@ -13,6 +13,10 @@ boilerplate that wires your resource kits together. The generated code is marked
 - each resource kit's `sealed partial` skeleton with a constructor and `Options` property,
 - an AppHost extension method to build/configure/register the host kit.
 
+An MSBuild target in the package also emits `AppHostProjects`, the typed paths for
+`ResourceKitProject` items; that file is not produced by the Roslyn generator. See
+[Project resources](Project-Resources.md#typed-project-paths-apphostprojects).
+
 ## Host kit members
 
 For every `[ResourceDefinition]`, the host kit gets a lazily initialized property. Accessing a

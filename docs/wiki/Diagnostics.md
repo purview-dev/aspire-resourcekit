@@ -78,6 +78,27 @@ SG0041 is a declaration advisory rather than an execution-only rule: the resourc
 runs, but the `ProjectPath` it declares is not used by its resource type, so the path cannot protect
 against a wiring mistake.
 
+## Build-time project path errors (`RKP`)
+
+These are MSBuild errors from the `ResourceKitProject` items, not `SG` analyzer diagnostics. They fire
+before compilation, when the typed `AppHostProjects` class is generated:
+
+| ID | What it means |
+| - | - |
+| RKP0001 | A `ResourceKitProject` path does not exist relative to the AppHost project directory |
+| RKP0002 | The declared or derived nested class name is not a valid C# identifier |
+| RKP0003 | The resource name contains a character Aspire or the generated literal cannot represent |
+
+```xml
+<!-- Fails with RKP0001 if the relative depth is wrong. -->
+<ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+
+<!-- Allowed to be absent (submodule, generated folder). -->
+<ResourceKitProject Include="..\..\generated" Name="generated" Optional="true" />
+```
+
+See [Project resources](Project-Resources.md#typed-project-paths-apphostprojects).
+
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 
 Each `OptionsHelper.Assign<TOptions>(...)` action must set exactly one property path. A block-bodied lambda

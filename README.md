@@ -27,7 +27,8 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 ## Why teams use it
 
 - **Cleaner AppHost code** with resource logic split into dedicated classes.
-- **Strong typing + IntelliSense** instead of stringly-typed setup.
+- **Strong typing + IntelliSense** instead of stringly-typed setup, including typed project and app
+  paths (`AppHostProjects`) for .NET, Vite and npm resources.
 - **Generated wiring** for host/resource options and registration.
 - **Parent/child resource hierarchies** for VNETs and subnets, SQL servers and databases, Service Bus
   namespaces and topics/queues/subscriptions, or storage accounts and containers (issue #57).
@@ -109,7 +110,9 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - host + per-resource options (when enabled), including nested child options,
 - typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
 - named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
-- an AppHost extension method to build/configure/register your host kit.
+- an AppHost extension method to build/configure/register your host kit,
+- typed project and app paths (`AppHostProjects`) from `ResourceKitProject` items, emitted by an
+  MSBuild target rather than the generator.
 
 ## Documentation
 

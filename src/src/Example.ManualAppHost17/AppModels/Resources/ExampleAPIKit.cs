@@ -12,7 +12,7 @@ sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
 		];
 
 	protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj");
+		builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
 
 	protected override void ConfigureResource()
 	{

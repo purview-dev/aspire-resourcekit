@@ -128,6 +128,48 @@ sealed partial class DataGroup;
 [EndpointUrl("https", DisplayText = "API")]
 partial class APIResourceKit { /* ... */ }
 ```
+
+## Typed project and app paths
+
+Aspire's `Projects.*` metadata only covers projects referenced with `<ProjectReference>`, and a
+Project V2 AppHost adds its services by path instead. Non-.NET apps (`AddViteApp`, `AddNpmApp`) never
+had a typed reference at all. Declare them once and let the package generate `AppHostProjects`:
+
+```xml
+<ItemGroup>
+  <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+  <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+</ItemGroup>
+```
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
+}
+
+[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name)]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
+}
+```
+
+- `Path` is emitted relative and with `/` separators, because Aspire resolves it from the AppHost
+  project directory.
+- `Name` defaults to the leaf file/directory name; `ClassName` overrides the nested type name
+  (PascalCase by default).
+- A missing path fails the build with `RKP0001`; set `Optional="true"` for a path that may be absent.
+- The class is generated into `$(RootNamespace)` as `internal` by default. Override
+  `ResourceKitAppHostProjectsNamespace`, `ResourceKitAppHostProjectsClassName` or
+  `ResourceKitAppHostProjectsVisibility` when needed.
+
+The class comes from a `buildTransitive` MSBuild target, not the source generator, so it is available
+even when `DisablePurviewAspireResourceKitSourceGenerator` is set.
+
 ## Minimal package usage
 
 ```csharp
@@ -315,6 +357,13 @@ variables.
 | SG0038 | Error | Generated `Parent` member collides with a user-authored member |
 | SG0039 | Warning | Child primary group differs from its parent's; visual placement follows the child's group |
 | SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
+| RKP0001 | Error | A `ResourceKitProject` path does not exist relative to the AppHost project directory |
+| RKP0002 | Error | A `ResourceKitProject` class name is not a valid C# identifier |
+| RKP0003 | Error | A `ResourceKitProject` resource name contains an unsupported character |
+
+`RKP` errors are MSBuild errors raised when `AppHostProjects` is generated; they are not `SG` analyzer
+diagnostics and fire before compilation.
+
 SG0017–SG0019, SG0024 and SG0028 are execution-only warnings: they indicate the resource will fail at runtime but never
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.

@@ -28,6 +28,13 @@
 		<PurviewPolicyExemptNoWarn>$(PurviewPolicyExemptNoWarn);CA1034;CA1062;</PurviewPolicyExemptNoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<!--
+			Consumers get this from the package's buildTransitive assets; a ProjectReference does not import
+			them, so the examples import the same file explicitly and exercise it on every build.
+		-->
+		<ResourceKitProject Include="..\Example.Service\Example.Service.csproj" Name="api" ClassName="Api" />
+	</ItemGroup>
+	<ItemGroup>
 		<!-- The service is added by path with AddDotnetProject, so no ProjectReference is needed. -->
 		<ProjectReference
 			Include="..\Example.ServiceDefaults\Example.ServiceDefaults.csproj"
@@ -51,4 +58,5 @@
 		<PackageReference Include="Aspire.Hosting.Azure.Redis" Version="$(Aspire17Version)" />
 		<PackageReference Include="Aspire.Hosting.Azure.Storage" Version="$(Aspire17Version)" />
 	</ItemGroup>
+	<Import Project="..\ResourceKit\Sdk\buildTransitive\Purview.Aspire.ResourceKit.targets" />
 </Project>
