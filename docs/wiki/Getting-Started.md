@@ -61,9 +61,11 @@ partial class ApiResourceKit
 > explicit base, when used, resolves to `ProjectResource` (SG0019).
 >
 > On **Aspire 17**, use Project V2 instead:
-> `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]` and
-> `builder.AddDotnetProject(Name, "../Api/Api.csproj")`. SG0018 validates the declared path, SG0019 the
-> explicit base, and SG0041 reports a `ProjectPath` on a non-V2 resource. The legacy form still works on
+> `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]`. With no
+> override, `BuildResource` is generated as `AddDotnetProject(Name, "../Api/Api.csproj")`. SG0018
+> validates the path in a hand-written override, SG0044 reports one that only repeats the generated
+> call, SG0019 validates an explicit base, and SG0041 reports a `ProjectPath` on a non-V2 resource. The
+> legacy form still works on
 > 17, where `AddProject<T>` reports `CS0618`. See [Project Resources](concepts/Project-Resources.md).
 
 ### Choose an attribute style

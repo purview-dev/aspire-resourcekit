@@ -5,34 +5,72 @@ catch wiring mistakes:
 
 | Aspire | Registration | Declaration |
 | --- | --- | --- |
-| 17+ (Project V2) | `AddDotnetProject(name, path)` | `[ResourceDefinition<DotnetProjectResource>(ProjectPath = "...")]` |
+| 17+ (Project V2) | `AddDotnetProject(name, path)`, generated from `ProjectPath` | `[ResourceDefinition<DotnetProjectResource>(ProjectPath = "...")]` |
 | 13.6 (legacy) | `AddProject<TProject>()` | `[ResourceDefinition<Projects.MyService>]` |
 
-The legacy form still works on Aspire 17, where `AddProject<T>` reports `CS0618`; the V2 form is the
-one to use for a new Aspire 17 AppHost. The package declares the 13.6 floor, so a 13.6 consumer never
-has to reference `Aspire.Hosting.Dotnet`.
+The V2 form is the one to use for an Aspire 17 AppHost. The package declares the 13.6 floor, so a 13.6
+consumer never has to reference `Aspire.Hosting.Dotnet`.
+
+> [!WARNING]
+> **Moving to Aspire 17 drops every `Projects.*` type unless you carry the reference over.**
+> `Aspire.AppHost.Sdk` set `IsAspireProjectResource=true` on every `<ProjectReference>`, and
+> `Aspire.Hosting.AppHost` generates `Projects.<Name>` only from references that carry it. An Aspire 17
+> AppHost uses `Microsoft.NET.Sdk`, which adds no such default. A plain `<ProjectReference>` then stops
+> producing its type, and it turns into an ordinary assembly reference. Before changing the SDK, list
+> every `<ProjectReference>` not marked `IsAspireProjectResource="false"`. Convert each one to a
+> `<ResourceKitProject>` item and a `ProjectPath` (see [Typed paths](#typed-paths-apphostprojects)), or
+> keep it with `IsAspireProjectResource="true"`, `ReferenceOutputAssembly="false"` and
+> `SkipGetTargetFrameworkProperties="true"` when the registration still needs the `Projects.*` type
+> (for example `AddAzureFunctionsProject<T>`). With that metadata the legacy form still works, though
+> `AddProject<T>` reports `CS0618`.
 
 ## Aspire 17 Project V2
 
-Declare the project path on the attribute and add the same path with `AddDotnetProject`:
+Declare the project path on the attribute. That is the only place it needs to be stated:
 
 ```csharp
-using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Dotnet;
 using Purview.Aspire.ResourceKit;
 
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Example.Service/Example.Service.csproj")]
+partial class ApiResourceKit;
+```
+
+The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>` and, because the kit writes no
+`BuildResource`, the registration as well:
+
+```csharp
+protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+    global::Aspire.Hosting.DotnetProjectHostingExtensions.AddDotnetProject(builder, Name, "../Example.Service/Example.Service.csproj");
+```
+
+`DotnetProjectResource` implements `IResourceWithEndpoints` and `IResourceWithEnvironment`, so URLs,
+references and `WithEnvironment` work as they do for any other resource. Put that configuration in
+`ConfigureResource`, which leaves the generated `BuildResource` in place.
+
+### Writing `BuildResource` yourself
+
+Write the override when registration needs more than the name and path, such as the `configure`
+callback of `AddDotnetProject` or a fluent call on the result. ResourceKit then generates nothing, and
+SG0018 checks that your override adds the declared path:
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Example.Service/Example.Service.csproj")]
 partial class ApiResourceKit
 {
     protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj");
+        => builder.AddDotnetProject(Name, "../Example.Service/Example.Service.csproj").WithHttpEndpoint();
 }
 ```
 
-The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>`. `DotnetProjectResource`
-implements `IResourceWithEndpoints` and `IResourceWithEnvironment`, so URLs, references and
-`WithEnvironment` work as they do for any other resource.
+An override that only repeats the generated call, `builder.AddDotnetProject(Name, path)`, reports
+**SG0044** (info). Its code fix deletes the override. If the attribute doesn't declare the path yet,
+the fix first moves the path argument into `ProjectPath`, so the attribute becomes the one place the
+path is stated. A literal moves as written. A constant such as `AppHostProjects.Api.Path` moves as a
+reference to that constant.
+
+The override is never generated when a base class already implements `BuildResource`, or for the
+legacy `Projects.*` form, which has no path.
 
 `ProjectPath` is a named argument on both `[ResourceDefinition]` and
 `[ResourceDefinition<TResource>]`. It is a build-time declaration, not a bindable option.
@@ -41,9 +79,10 @@ implements `IResourceWithEndpoints` and `IResourceWithEnvironment`, so URLs, ref
 
 ### The declared path must be added (SG0018)
 
-`BuildResource` must call `AddDotnetProject` with the declared path. The comparison normalises `\`
-and `/`, so either separator is accepted; a computed (non-literal) path is accepted because it cannot
-be compared at compile time.
+A hand-written `BuildResource` must call `AddDotnetProject` with the declared path. A generated one
+always does, so SG0018 only applies when you write the override. The comparison normalises `\` and
+`/`, so either separator is accepted. A computed (non-constant) path is accepted because it can't be
+compared at compile time.
 
 ```csharp
 // OK
@@ -157,13 +196,25 @@ separator normalisation and computed-path allowance as `AddDotnetProject`:
 ```csharp
 using Aspire.Hosting.JavaScript;
 
+// Generates BuildResource as AddViteApp(builder, Name, "../../../web/packages/vite-app").
 [ResourceDefinition<ViteAppResource>("web", ResourcePath = "../../../web/packages/vite-app")]
-partial class WebResourceKit
+partial class WebResourceKit;
+
+// AddNodeApp also needs a script path, so the override is written by hand and SG0018 validates it.
+[ResourceDefinition<NodeAppResource>("worker", ResourcePath = "../../../web/packages/worker")]
+partial class WorkerResourceKit
 {
-    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
-        builder.AddViteApp(Name, "../../../web/packages/vite-app", "dev");
+    protected override IResourceBuilder<NodeAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddNodeApp(Name, "../../../web/packages/worker", "server.js");
 }
 ```
+
+- `BuildResource` is generated for `ViteAppResource` (`AddViteApp`) and `NextJsAppResource`
+  (`AddNextJsApp`), leaving the run script at its `"dev"` default. Pass a different script, and the
+  override is yours to write. SG0044 reports an override that only repeats the generated call,
+  including one that passes `"dev"` explicitly.
+- Node, Bun and Deno apps, and a kit declared against the `JavaScriptAppResource` base type, always
+  need a hand-written override.
 
 - Supported methods: `AddViteApp`, `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp`,
   `AddJavaScriptApp`. The path is read from the `appDirectory` parameter (or `path` /
@@ -208,23 +259,17 @@ internal static class AppHostProjects
 ```
 
 ```csharp
+// Both registrations are generated from the declared path.
 [ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-        builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
-}
+partial class ApiResourceKit;
 
 [ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
-partial class WebResourceKit
-{
-    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
-        builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
-}
+partial class WebResourceKit;
 ```
 
-`Path` is a `const`, so SG0018 still validates it against `AddDotnetProject` or the matching JavaScript
-`Add*App` call; a literal `ResourcePath` and a generated constant behave identically.
+The path is declared once, in the csproj, and referenced once, on the attribute. `Path` is a `const`, so
+the generator reads its value for the generated `BuildResource`. When you write the override yourself,
+SG0018 validates the constant just as it validates a literal.
 
 - The item's `Name` is the logical Aspire resource name and defaults to the leaf file/directory name.
   Only letters, digits, `.`, `_` and `-` are allowed (`RKP0003`).

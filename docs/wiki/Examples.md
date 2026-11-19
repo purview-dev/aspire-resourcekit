@@ -9,8 +9,9 @@ both Aspire lines.
 | Pre-17 (13.6) | `src/src/Example.Pre17.AppHost` | `src/src/Example.Pre17.ManualAppHost` |
 
 The **generated** projects use attributes and no hand-written wiring. The **manual** projects implement
-`HostKitBase` / `ResourceKitBase` by hand and disable the source generator. The Aspire 17 pair adds the
-API with `AddDotnetProject` and declares `ProjectPath` on the resource kit; the Pre-17 pair uses
+`HostKitBase` / `ResourceKitBase` by hand and disable the source generator. In the Aspire 17 pair the
+API is a `DotnetProjectResource`: the generated host declares `ProjectPath` and lets ResourceKit generate
+the `AddDotnetProject` call, and the manual host writes that call itself. The Pre-17 pair uses
 `AddProject<Projects.Example_Service>`.
 
 The Aspire 17 examples require the Aspire CLI bundle at build time (ASPIRE013); the Pre-17 pair does

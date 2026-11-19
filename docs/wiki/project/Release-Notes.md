@@ -5,6 +5,16 @@ upgrade from the `1.0.0-prerelease.*` line. The full, machine-readable history l
 [`CHANGELOG.md`](https://github.com/purview-dev/aspire-resourcekit/blob/main/CHANGELOG.md) and on
 the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/releases).
 
+## 2.2.0 (unreleased)
+
+- **`BuildResource` is generated from a declared path.** A `DotnetProjectResource`, `ViteAppResource`
+  or `NextJsAppResource` kit that declares `ProjectPath`/`ResourcePath` and writes no override gets
+  `AddDotnetProject`, `AddViteApp` or `AddNextJsApp` generated, so the path is stated once, on the
+  attribute. A hand-written override still wins, and SG0018 still validates it. See
+  [Project Resources](../concepts/Project-Resources.md).
+- **SG0044** (Info) and its code fix remove an override that only repeats the generated call, moving the
+  path into the attribute first when it isn't declared there.
+
 ## 2.1.0
 
 - **Aspire 17 Project V2** — `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]`
@@ -15,8 +25,14 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
 - **Aspire 13.6 still supported.** The package keeps the `Aspire.Hosting` 13.6.5 floor and resolves
   `DotnetProjectResource` by metadata name, so a 13.6 consumer is unaffected. `verify-consumers` builds
   both a 13.6 and a 17 consumer from the packed package.
+- **Path-based resources.** `ResourcePath` declares the path for `AddDotnetProject` and the Aspire
+  JavaScript `Add*App` methods, validated by SG0018. SG0042 reports a `ProjectPath` that disagrees with
+  it and SG0043 a resource type that is not added by path.
+- **Typed paths.** `<ResourceKitProject>` and `<ResourceKitPath>` items generate `AppHostProjects`
+  constants (`Name`, `Path`) to use on the attribute; RKP0001–RKP0003 report a missing path or an
+  invalid name.
 
-## Next (unreleased)
+## 2.0.0
 
 - **Breaking: .NET 10 is the minimum.** The `net8.0` and `net9.0` targets are gone; a consuming AppHost
   must be on `net10.0` or `net11.0`, and the package ships `lib/net10.0` (the floor) and

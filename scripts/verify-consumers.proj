@@ -20,6 +20,14 @@
 		<UnzipDir>$(VerifyRoot)/package</UnzipDir>
 		<ConsumerDir>$(VerifyRoot)/consumer</ConsumerDir>
 		<ConsumerV2Dir>$(VerifyRoot)/consumer-v2</ConsumerV2Dir>
+		<!--
+			The packed version usually already sits in the machine-wide NuGet cache from an earlier run, and
+			NuGet restores a cached version without consulting the feed, so the consumers would build
+			against a stale package. A packages folder inside VerifyRoot, which every run deletes,
+			guarantees this run's package is the one used. It is passed as RestorePackagesPath because that
+			outranks both NUGET_PACKAGES and nuget.config's globalPackagesFolder.
+		-->
+		<ConsumerPackagesDir>$(VerifyRoot)/nuget-packages</ConsumerPackagesDir>
 
 		<PackageId>Purview.Aspire.ResourceKit</PackageId>
 		<MergedGenerator>analyzers/dotnet/cs/Purview.Aspire.ResourceKit.SourceGeneration.dll</MergedGenerator>
@@ -28,9 +36,67 @@
 
 	<Target
 		Name="VerifyConsumers"
-		DependsOnTargets="PackPackage;AssertPackageShape;BuildConsumer;BuildV2Consumer"
+		DependsOnTargets="PackPackage;AssertPackageShape;BuildConsumer;BuildV2Consumer;AssertConsumersUsedThisPackage"
 	>
 		<Message Importance="high" Text="verify-consumers: passed." />
+	</Target>
+
+	<!--
+		A green consumer build proves nothing unless it compiled against the package this run packed. The
+		version is normally unchanged between runs, and NuGet satisfies a version it has already cached
+		without reading the feed, so a consumer can silently build against an older package - which is
+		how a generator change once passed here without ever being exercised. Assert the outcome rather
+		than trusting the RestorePackagesPath setting: each consumer must have restored into this run's
+		packages folder, and the generator it loaded must be byte-identical to the one in the .nupkg.
+	-->
+	<Target Name="AssertConsumersUsedThisPackage" DependsOnTargets="BuildConsumer;BuildV2Consumer">
+		<XmlPeek
+			XmlInputPath="$(ConsumerDir)/obj/Consumer.csproj.nuget.g.props"
+			Namespaces="&lt;Namespace Prefix='msb' Uri='http://schemas.microsoft.com/developer/msbuild/2003' /&gt;"
+			Query="//msb:NuGetPackageRoot/text()"
+		>
+			<Output TaskParameter="Result" PropertyName="_ConsumerPackageRoot" />
+		</XmlPeek>
+		<XmlPeek
+			XmlInputPath="$(ConsumerV2Dir)/obj/ConsumerV2.csproj.nuget.g.props"
+			Namespaces="&lt;Namespace Prefix='msb' Uri='http://schemas.microsoft.com/developer/msbuild/2003' /&gt;"
+			Query="//msb:NuGetPackageRoot/text()"
+		>
+			<Output TaskParameter="Result" PropertyName="_ConsumerV2PackageRoot" />
+		</XmlPeek>
+
+		<PropertyGroup>
+			<_ExpectedPackageRoot>$([System.IO.Path]::GetFullPath('$(ConsumerPackagesDir)').TrimEnd('\').TrimEnd('/'))</_ExpectedPackageRoot>
+			<_ConsumerPackageRootFull Condition="'$(_ConsumerPackageRoot)' != ''">$([System.IO.Path]::GetFullPath('$(_ConsumerPackageRoot)').TrimEnd('\').TrimEnd('/'))</_ConsumerPackageRootFull>
+			<_ConsumerV2PackageRootFull Condition="'$(_ConsumerV2PackageRoot)' != ''">$([System.IO.Path]::GetFullPath('$(_ConsumerV2PackageRoot)').TrimEnd('\').TrimEnd('/'))</_ConsumerV2PackageRootFull>
+			<_RestoredGenerator>$(ConsumerPackagesDir)/$(PackageId.ToLowerInvariant())/$(PackedVersion)/$(MergedGenerator)</_RestoredGenerator>
+		</PropertyGroup>
+
+		<Error
+			Condition="!$([System.String]::Equals('$(_ConsumerPackageRootFull)', '$(_ExpectedPackageRoot)', System.StringComparison.OrdinalIgnoreCase))"
+			Text="The consumer restored from '$(_ConsumerPackageRoot)', not this run's packages folder '$(ConsumerPackagesDir)', so it may have built against a previously cached $(PackageId) $(PackedVersion). Pass -p:RestorePackagesPath=&quot;$(ConsumerPackagesDir)&quot; to its build."
+		/>
+		<Error
+			Condition="!$([System.String]::Equals('$(_ConsumerV2PackageRootFull)', '$(_ExpectedPackageRoot)', System.StringComparison.OrdinalIgnoreCase))"
+			Text="The Project V2 consumer restored from '$(_ConsumerV2PackageRoot)', not this run's packages folder '$(ConsumerPackagesDir)', so it may have built against a previously cached $(PackageId) $(PackedVersion). Pass -p:RestorePackagesPath=&quot;$(ConsumerPackagesDir)&quot; to its build."
+		/>
+		<Error
+			Condition="!Exists('$(_RestoredGenerator)')"
+			Text="No restored generator at $(_RestoredGenerator); the consumers did not restore $(PackageId) $(PackedVersion) from this run's feed."
+		/>
+
+		<GetFileHash Files="$(UnzipDir)/$(MergedGenerator)">
+			<Output TaskParameter="Hash" PropertyName="_PackedGeneratorHash" />
+		</GetFileHash>
+		<GetFileHash Files="$(_RestoredGenerator)">
+			<Output TaskParameter="Hash" PropertyName="_RestoredGeneratorHash" />
+		</GetFileHash>
+		<Error
+			Condition="'$(_PackedGeneratorHash)' != '$(_RestoredGeneratorHash)'"
+			Text="The generator the consumers restored ($(_RestoredGenerator)) differs from the one packed by this run; the consumer builds verified a different package."
+		/>
+
+		<Message Importance="high" Text="consumers built against this run's package (generator $(_PackedGeneratorHash))." />
 	</Target>
 
 	<!-- 1. Pack into a private feed. -->
@@ -189,7 +255,7 @@
 			gets re-parsed as a path by the shell, which NuGet then reports as a missing local source.
 		-->
 		<Exec
-			Command="dotnet build &quot;$(ConsumerDir)/Consumer.csproj&quot; -c Release -v minimal"
+			Command="dotnet build &quot;$(ConsumerDir)/Consumer.csproj&quot; -c Release -v minimal -p:RestorePackagesPath=&quot;$(ConsumerPackagesDir)&quot;"
 			WorkingDirectory="$(ConsumerDir)"
 		/>
 
@@ -260,7 +326,7 @@
 		/>
 
 		<Exec
-			Command="dotnet build &quot;$(ConsumerV2Dir)/ConsumerV2.csproj&quot; -c Release -v minimal"
+			Command="dotnet build &quot;$(ConsumerV2Dir)/ConsumerV2.csproj&quot; -c Release -v minimal -p:RestorePackagesPath=&quot;$(ConsumerPackagesDir)&quot;"
 			WorkingDirectory="$(ConsumerV2Dir)"
 		/>
 
@@ -275,8 +341,9 @@
 			Condition="'@(_V2ConsumerGenerated)' == ''"
 			Text="The Project V2 consumer produced no generated files: the packaged analyzer did not run against Aspire 17."
 		/>
-		<!-- ApiKit itself is proved by the green build: Kits.V2.cs declares no base type and overrides
-		     BuildResource, so it compiles only if the generator emitted the DotnetProjectResource kit. -->
+		<!-- ApiKit itself is proved by the green build: Kits.V2.cs declares no base type and no
+		     BuildResource, so it compiles only if the generator emitted the DotnetProjectResource kit and
+		     its AddDotnetProject(Name, ProjectPath) override. -->
 		<Error
 			Condition="'@(_V2ConsumerHostKit)' == ''"
 			Text="No generated file mentions ConsumerHostKit; the package did not emit the V2 host kit."

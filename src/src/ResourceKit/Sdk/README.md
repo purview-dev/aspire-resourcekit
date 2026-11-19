@@ -48,9 +48,13 @@ Options:
 - `Parent` — `typeof(TParentKit)` when this kit is owned by another resource kit.
 - `ProjectPath` — the path added with `AddDotnetProject` (Aspire 17+, `DotnetProjectResource` only).
 - `ResourcePath` — the path added by a path-based method: `AddDotnetProject`, `AddViteApp`,
-  `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp` or `AddJavaScriptApp`. SG0018 validates the
-  matching call; SG0042 reports a conflicting `ProjectPath`, and SG0043 reports a resource type that
-  is not added by path.
+  `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp` or `AddJavaScriptApp`. SG0042 reports a
+  conflicting `ProjectPath`, and SG0043 reports a resource type that is not added by path.
+
+With a declared path and no `BuildResource` override, a `DotnetProjectResource`, `ViteAppResource` or
+`NextJsAppResource` kit gets `BuildResource` generated, so the path is stated once. When you write the
+override yourself, SG0018 checks that it adds the declared path, and SG0044 reports one that only
+repeats the generated call.
 
 ### `ResourceDefinition` vs `ResourceDefinition<TResource>`
 
@@ -149,19 +153,12 @@ had a typed reference at all. Declare them once and let the package generate `Ap
 ```
 
 ```csharp
+// Both BuildResource overrides are generated from the declared path.
 [ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-        builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
-}
+partial class ApiResourceKit;
 
 [ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
-partial class WebResourceKit
-{
-    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
-        builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
-}
+partial class WebResourceKit;
 ```
 
 - `Path` is emitted relative and with `/` separators, because Aspire resolves it from the AppHost
@@ -371,6 +368,7 @@ variables.
 | SG0041 | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource` |
 | SG0042 | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used |
 | SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path |
+| SG0044 | Info | `BuildResource` only repeats the registration ResourceKit generates; the code fix removes it |
 | RKP0001 | Error | A `ResourceKitProject`/`ResourceKitPath` path does not exist relative to the AppHost project directory |
 | RKP0002 | Error | A `ResourceKitProject`/`ResourceKitPath` class name is not a valid C# identifier |
 | RKP0003 | Error | A `ResourceKitProject`/`ResourceKitPath` resource name contains an unsupported character |

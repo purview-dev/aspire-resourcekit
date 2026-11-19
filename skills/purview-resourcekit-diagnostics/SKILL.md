@@ -2,8 +2,8 @@
 name: purview-resourcekit-diagnostics
 description: >-
   Use when a Purview.Aspire.ResourceKit build reports an SG00xx or RKP00xx diagnostic - what triggered
-  it, how to fix it, which rules cover parent/child hierarchies, group placement and redundant
-  ResourceBuilder access, which rules block source generation and which are execution-only warnings,
+  it, how to fix it, which rules cover parent/child hierarchies, group placement, redundant
+  ResourceBuilder access and redundant BuildResource overrides, which rules block source generation and which are execution-only warnings,
   which MSBuild errors come from ResourceKitProject/ResourceKitPath items, and why CS8618 is suppressed
   on IResourceBuilder properties.
 metadata:
@@ -69,6 +69,10 @@ assigned.
 | `SG0041` | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored. |
 | `SG0042` | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used, so one must be fixed or removed. |
 | `SG0043` | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored. |
+| `SG0044` | Info | A `BuildResource` override only calls `AddDotnetProject`/`AddViteApp`/`AddNextJsApp` with `Name` and the path, which ResourceKit generates. The code fix removes it, first moving the path into `ProjectPath`/`ResourcePath` when the attribute has none. |
+
+`SG0018` applies only to a hand-written `BuildResource`. A `DotnetProjectResource`, `ViteAppResource` or
+`NextJsAppResource` kit that declares its path and writes no override gets the registration generated.
 
 ## Execution-only versus generation-blocking
 
@@ -174,6 +178,34 @@ Use `Parent.AddDatabase(...)`. The "Use the resource kit directly" code fix remo
 the fix when the kit is the receiver of the next call, not when the builder is passed as an argument and the
 expected parameter type could differ.
 
+### `SG0041`–`SG0044` — declared paths
+
+- `SG0041`: `ProjectPath` only means something on a `DotnetProjectResource`. Use `ResourcePath` for a
+  JavaScript app, or remove it.
+- `SG0042`: `ProjectPath` and `ResourcePath` disagree and `ResourcePath` is used. Keep one.
+- `SG0043`: the resource type is not added by path, so `ResourcePath` is ignored. Remove it.
+- `SG0044`: the override only calls `AddDotnetProject`, `AddViteApp` or `AddNextJsApp` with `Name` and
+  the path, which ResourceKit generates when the kit writes no `BuildResource`:
+
+```csharp
+// SG0044
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
+}
+
+// Correct
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+partial class ApiResourceKit;
+```
+
+The **"Remove the redundant BuildResource override"** code fix does that. When the attribute declares no
+path, the fix is **"Declare the path as `ProjectPath` (or `ResourcePath`) and remove BuildResource"**,
+and a constant such as `AppHostProjects.Api.Path` moves as a reference, not as its value. An override
+that passes anything else, such as a non-default Vite script or a fluent call, is not reported.
+
 ### `SG0020` — one property path per `Assign` action
 
 ```csharp
@@ -209,8 +241,8 @@ these are MSBuild errors, not `SG` analyzer diagnostics:
 | `RKP0007` | The project is not a C# AppHost; the generated class is C# source. |
 
 Use `ResourceKitProject` for a .NET project or app directory and `ResourceKitPath` for any other file or
-directory. The generated `AppHostProjects` constants keep their `const`-ness, so `SG0018` still
-validates a path passed to `ResourceDefinition.ProjectPath`/`ResourcePath`.
+directory. The generated `AppHostProjects` constants keep their `const`-ness, so the generator can read one from
+`ProjectPath`/`ResourcePath`, and `SG0018` can compare it with a hand-written override.
 
 ## Related skills
 

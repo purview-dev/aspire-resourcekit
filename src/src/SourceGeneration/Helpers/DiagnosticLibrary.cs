@@ -215,6 +215,16 @@ static class DiagnosticLibrary
 		description: "ResourcePath is validated against AddDotnetProject and the Add* JavaScript app methods. Any other resource type does not use it, so the path is ignored."
 	);
 
+	public static readonly DiagnosticDescriptor RedundantBuildResource = new(
+		id: "SG0044",
+		title: "BuildResource only adds the declared path",
+		messageFormat: "The BuildResource override on '{0}' only calls {1} with the kit's Name and path; {2}",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true,
+		description: "ResourceKit generates BuildResource for a DotnetProjectResource, ViteAppResource or NextJsAppResource kit that declares its path on [ResourceDefinition]. An override that only repeats that registration states the path twice; the code fix removes the override, first moving the path into ProjectPath or ResourcePath when the attribute does not declare it."
+	);
+
 	public static readonly DiagnosticDescriptor ResourceKitCannotParentItself = new(
 		id: "SG0032",
 		title: "Resource kit cannot be its own parent",

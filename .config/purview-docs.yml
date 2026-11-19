@@ -37,6 +37,7 @@ docs:
     - index.md
 targetFrameworks:
   - net10.0
+  - net11.0
 packages:
   - id: Purview.Aspire.ResourceKit
     description: Runtime and source generator for resource kits.
@@ -51,13 +52,9 @@ useCases:
       [HostKit]
       partial class ShopHostKit;
 
-      [ResourceDefinition<Projects.Example_Service>("api")]
-      partial class ApiResourceKit
-      {
-          protected override IResourceBuilder<ProjectResource> BuildResource(
-              IDistributedApplicationBuilder builder)
-              => builder.AddProject<Projects.Example_Service>(Name);
-      }
+      // BuildResource is generated as AddDotnetProject(builder, Name, ProjectPath).
+      [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+      partial class ApiResourceKit;
     language: csharp
     outcome: >-
       Resource definitions become strongly typed, source-generated classes with generated host

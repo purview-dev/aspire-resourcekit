@@ -5,6 +5,26 @@ All notable changes to `Purview.Aspire.ResourceKit` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Generated `BuildResource` for path-based kits.** A `DotnetProjectResource`, `ViteAppResource` or
+  `NextJsAppResource` kit that declares `ProjectPath`/`ResourcePath` and writes no `BuildResource` gets
+  the `AddDotnetProject`/`AddViteApp`/`AddNextJsApp` registration generated from the declared path. It
+  is not generated when the kit writes the override or an explicit base class implements it.
+- **SG0044** (Info) reports a `BuildResource` override that only repeats the generated call; its code
+  fix removes the override, first moving the path into `ProjectPath`/`ResourcePath` when the attribute
+  does not declare it.
+
+### Fixed
+
+- **Aspire 17 migration guidance no longer loses `Projects.*` projects.** `Aspire.AppHost.Sdk` marked
+  every `<ProjectReference>` `IsAspireProjectResource=true`; `Microsoft.NET.Sdk` does not, so a plain
+  reference stops generating its `Projects.*` type and the project's path is lost. The migration skill
+  and the project-resources page now inventory every reference before the SDK changes, and convert each
+  one to a `<ResourceKitProject>` or keep it with the metadata restored.
+
 ## [2.1.0] - 2026-11-18
 
 ### Added

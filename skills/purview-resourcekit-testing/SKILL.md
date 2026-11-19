@@ -24,7 +24,8 @@ under `src/tests`:
 | Project | Covers |
 | --- | --- |
 | `ResourceKit.UnitTests` | runtime behaviour of the kit base types, hierarchies, graph validation, run modes, real Aspire models and `OptionsHelper` |
-| `ResourceKit.IntegrationTests` | starts the example AppHosts and asserts against real resources |
+| `ResourceKit.IntegrationTests` | starts the Aspire 13.6 example AppHosts (`Example.Pre17.*`) and asserts against real resources |
+| `Example17.IntegrationTests` | starts the Aspire 17 example AppHosts (`Example.AppHost17`, `Example.ManualAppHost17`) |
 | `SourceGeneration.UnitTests` / `SourceGeneration.IntegrationTests` | generator output, diagnostics, suppression, code fixes, caching |
 | `Repository.UnitTests` | the repository itself: authored skills, the architecture policy and its `Purview.BuildSdk` opt-ins |
 
@@ -48,8 +49,8 @@ public sealed class ExampleAppHostFixture<TAppHost> : AspireFixture<TAppHost>
 ```csharp
 using Projects;
 
-[ClassDataSource<ExampleAppHostFixture<Example_AppHost>>(Shared = SharedType.PerTestSession)]
-public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example_AppHost> fixture)
+[ClassDataSource<ExampleAppHostFixture<Example_Pre17_AppHost>>(Shared = SharedType.PerTestSession)]
+public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example_Pre17_AppHost> fixture)
 {
     [Test]
     public async Task AppHost_WhenServicesStarted_APIIsHealthy(CancellationToken cancellationToken)
@@ -71,8 +72,8 @@ public sealed class ExampleAppHostIntegrationTests(ExampleAppHostFixture<Example
 write the suite.
 
 For a hierarchy, assert the parent and child Aspire resources directly instead of only the generated
-property shape: build the real `DistributedApplication` model, check the child resource is created through
-`Parent.ResourceBuilder`, and check that a disabled parent removes the whole subtree. `ResourceKit.UnitTests`
+property shape: build the real `DistributedApplication` model, check the child resource is created from
+`Parent` (the parent kit is itself the `IResourceBuilder`), and check that a disabled parent removes the whole subtree. `ResourceKit.UnitTests`
 does this for PostgreSQL, VNET/subnets, storage and Service Bus without provisioning infrastructure. The
 child's options path is nested (`HostKit:Parent:Child:IsEnabled`).
 
@@ -158,8 +159,10 @@ to test lifecycle semantics without starting anything.
 The fast local loop — unit tests only; the integration tests need Docker/Testcontainers:
 
 ```bash
-just test "/*/*/*/*[Category=Unit]"
+just test-unit
 ```
+
+`test-unit` is `just test "/*/*/*/*[Category=Unit]"`; pass any other tree-node filter to `just test`.
 
 Everything, locally, including the AppHost integration tests:
 

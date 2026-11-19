@@ -28,10 +28,7 @@
 		<PurviewPolicyExemptNoWarn>$(PurviewPolicyExemptNoWarn);CA1034;CA1062;</PurviewPolicyExemptNoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<!--
-			Consumers get this from the package's buildTransitive assets; a ProjectReference does not import
-			them, so the examples import the same file explicitly and exercise it on every build.
-		-->
+		<!-- Emits AppHostProjects.Api.Path, which ExampleAPIKit declares as its ProjectPath. -->
 		<ResourceKitProject Include="..\Example.Service\Example.Service.csproj" Name="api" ClassName="Api" />
 	</ItemGroup>
 	<ItemGroup>
@@ -58,5 +55,9 @@
 		<PackageReference Include="Aspire.Hosting.Azure.Redis" Version="$(Aspire17Version)" />
 		<PackageReference Include="Aspire.Hosting.Azure.Storage" Version="$(Aspire17Version)" />
 	</ItemGroup>
+	<!--
+		Consumers get this from the package's buildTransitive assets; a ProjectReference does not import
+		them, so the examples import the same file explicitly and exercise it on every build.
+	-->
 	<Import Project="..\ResourceKit\Sdk\buildTransitive\Purview.Aspire.ResourceKit.targets" />
 </Project>
