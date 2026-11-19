@@ -15,7 +15,7 @@ boilerplate that wires your resource kits together. The generated code is marked
 
 An MSBuild target in the package also emits `AppHostProjects`, the typed paths for
 `ResourceKitProject` and `ResourceKitPath` items; that file is not produced by the Roslyn generator. See
-[Project resources](Project-Resources.md#typed-paths-apphostprojects).
+[Project resources](../concepts/Project-Resources.md#typed-paths-apphostprojects).
 
 ## Host kit members
 
@@ -53,7 +53,7 @@ Postgres.Database = new(this, Postgres, Options.Postgres.Database);
 AddResource(Postgres.Database);
 ```
 
-Root kits are unchanged. See [Parent and child resource kits](Hierarchies.md).
+Root kits are unchanged. See [Parent and child resource kits](../concepts/Hierarchies.md).
 
 ## Generated host Build/Configure
 
@@ -107,7 +107,7 @@ internal sealed partial class ExampleAPIKit : global::Purview.Aspire.ResourceKit
 Your `partial class` supplies `BuildResource(...)` and optionally `ConfigureResource()` and
 `IsResourceEnabled(builder)`. `Mode` is generated (sourced from the options, or from the attribute when
 options are disabled), so publish-only and local-development-only resources are configuration rather
-than code. See [Enablement](Enablement.md).
+than code. See [Enablement](../concepts/Enablement.md).
 
 ## Generated options
 
@@ -198,5 +198,5 @@ The extension method name defaults to `Add<HostKitName>()` (for example `AddAspi
 ## See also
 
 - [Attributes Reference](Attributes-Reference.md)
-- [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md)
-- [Configuration and Options](Configuration-and-Options.md)
+- [Lifecycle: Build vs Configure](../concepts/Lifecycle-Build-Configure.md)
+- [Configuration and Options](../Configuration-and-Options.md)

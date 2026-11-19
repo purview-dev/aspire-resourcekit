@@ -4,15 +4,15 @@ This guide walks through a minimal host + resource setup using source generation
 an Aspire AppHost project and a service project ready to compose.
 
 > [!TIP]
-> For a quick jump across lifecycle concepts, see [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md)
-> and [Enablement](Enablement.md).
+> For a quick jump across lifecycle concepts, see [Lifecycle: Build vs Configure](concepts/Lifecycle-Build-Configure.md)
+> and [Enablement](concepts/Enablement.md).
 
 ## Install the package
 
 > [!IMPORTANT]
 > `Purview.Aspire.ResourceKit` targets **.NET 10** and **.NET 11**, so the AppHost project must be on
 > `net10.0` or `net11.0`. Anything older is unsupported.
-> See [Versioning and compatibility](Versioning.md#supported-target-frameworks).
+> See [Versioning and compatibility](project/Versioning.md#supported-target-frameworks).
 
 Install the `Purview.Aspire.ResourceKit` package in your AppHost project.
 
@@ -23,7 +23,7 @@ dotnet add package Purview.Aspire.ResourceKit
 > [!TIP]
 > ResourceKit publishes [Agent Skills](https://agentskills.io/) so a coding agent knows these
 > patterns. They are not shipped in the package - install them explicitly with
-> `npx skills add purview-dev/aspire-resourcekit`. See [Agent Skills](Agent-Skills.md).
+> `npx skills add purview-dev/aspire-resourcekit`. See [Agent Skills](project/Agent-Skills.md).
 
 ## Define a host kit
 
@@ -64,7 +64,7 @@ partial class ApiResourceKit
 > `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]` and
 > `builder.AddDotnetProject(Name, "../Api/Api.csproj")`. SG0018 validates the declared path, SG0019 the
 > explicit base, and SG0041 reports a `ProjectPath` on a non-V2 resource. The legacy form still works on
-> 17, where `AddProject<T>` reports `CS0618`. See [Project Resources](Project-Resources.md).
+> 17, where `AddProject<T>` reports `CS0618`. See [Project Resources](concepts/Project-Resources.md).
 
 ### Choose an attribute style
 
@@ -87,7 +87,7 @@ partial class ApiResourceKit : ResourceKitBase<ProjectResource>
 }
 ```
 
-Avoid mixing both styles on the same class. See [Attributes Reference](Attributes-Reference.md) for
+Avoid mixing both styles on the same class. See [Attributes Reference](reference/Attributes-Reference.md) for
 the full rules.
 
 ## Register generated wiring in AppHost
@@ -132,8 +132,8 @@ Think of it as:
 - **Build phase**: create each resource.
 - **Configure phase**: connect the created resources.
 
-See [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md) and
-[Enablement](Enablement.md) before adding cross-resource dependencies.
+See [Lifecycle: Build vs Configure](concepts/Lifecycle-Build-Configure.md) and
+[Enablement](concepts/Enablement.md) before adding cross-resource dependencies.
 
 ## Expand incrementally
 
@@ -146,4 +146,4 @@ A common progression:
   separate kits with `Parent = typeof(TParentKit)`.
 
 For configuration details, continue with [Configuration and Options](Configuration-and-Options.md).
-For hierarchies, see [Parent and child resource kits](Hierarchies.md).
+For hierarchies, see [Parent and child resource kits](concepts/Hierarchies.md).

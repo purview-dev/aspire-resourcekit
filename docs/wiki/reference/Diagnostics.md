@@ -58,9 +58,9 @@ exiting the constructor" warning does not apply.
 | SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
-[Project Resources](Project-Resources.md) for SG0018/SG0019/SG0041–SG0043 specifics,
-[Groups and URLs](Groups-and-URLs.md) for SG0021–SG0031, and
-[Parent and child resource kits](Hierarchies.md) for SG0032–SG0040.
+[Project Resources](../concepts/Project-Resources.md) for SG0018/SG0019/SG0041–SG0043 specifics,
+[Groups and URLs](../concepts/Groups-and-URLs.md) for SG0021–SG0031, and
+[Parent and child resource kits](../concepts/Hierarchies.md) for SG0032–SG0040.
 
 A parent cycle is reported on one kit in the cycle and includes the full path, for example
 `PostgresKit -> DatabaseKit -> MigrationKit -> PostgresKit`. Invalid hierarchies block generation; manual
@@ -108,7 +108,7 @@ before compilation, when the typed `AppHostProjects` class is generated:
 <ResourceKitPath Include="..\..\generated" Name="generated" Optional="true" />
 ```
 
-See [Project resources](Project-Resources.md#typed-paths-apphostprojects).
+See [Project resources](../concepts/Project-Resources.md#typed-paths-apphostprojects).
 
 ## `OptionsHelper.Assign` action with multiple property paths (SG0020)
 

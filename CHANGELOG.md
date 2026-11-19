@@ -29,6 +29,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   them. `Example17.IntegrationTests` covers the 17 pair on net10.0.
 - SG0018 and SG0019 messages name both project APIs (`AddProject<T>` / `AddDotnetProject`) and the
   declared project resource type. Diagnostic text is not part of the public contract.
+- **Documentation organised into topic folders.** `docs/wiki` gained `concepts/`, `reference/`,
+  `testing/` and `project/`, plus a `_Sidebar.md` that declares the published reading order.
+  `Getting-Started.md` stays at the root as `docs.rootPage`, and `Examples.md` /
+  `Configuration-and-Options.md` stay there because `useCases[].docsPage` addresses them as single URL
+  segments. Every moved page's previous URL is listed in `docs/wiki/_redirects.yml`.
 
 ## [2.0.0] - 2026-11-16
 
@@ -67,7 +72,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   constructs parents before children, validates the ownership graph before creating Aspire resources,
   builds in parent-before-child order, and inherits enablement down the hierarchy. Child options nest under
   the parent (`<HostKit>:<Parent>:<Child>`). A child with no `[InGroup]` inherits its parent's primary group.
-  See [Parent and child resource kits](docs/wiki/Hierarchies.md).
+  See [Parent and child resource kits](docs/wiki/concepts/Hierarchies.md).
 - **Diagnostics SG0032–SG0038** for self-parenting, parent cycles, unavailable or non-kit parents, child
   property collisions, duplicate child property names, and generated `Parent` member collisions. Invalid
   graphs block generation; manual graphs are rejected at runtime before resource creation.
@@ -97,7 +102,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   no test in this repository previously proved); and `PackageToolchainTests` fails the build if a
   `net8.0`/`net9.0` declaration reappears or a `Microsoft.Extensions.*` reference drifts into the
   11.x band. The decision record for the feature adoption and the union/`closed` assessment is
-  [`docs/wiki/Toolchain.md`](docs/wiki/Toolchain.md).
+  [`docs/wiki/project/Toolchain.md`](docs/wiki/project/Toolchain.md).
 - **Agent skill delivery documented correctly** — `README.md` no longer claims the package installs skills
   into a consuming repository on build. That mirror was removed in `Purview.BuildSdk` 1.0.6; the skills CLI
   is the only installer.

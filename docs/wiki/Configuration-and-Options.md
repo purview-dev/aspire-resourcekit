@@ -65,7 +65,7 @@ public sealed partial class PostgresKitOptions
 ```
 
 `OptionsHelper` resolves the nested path (`ShopHostKit:Postgres:Database:IsEnabled`). Existing root paths are
-unchanged. See [Parent and child resource kits](Hierarchies.md).
+unchanged. See [Parent and child resource kits](concepts/Hierarchies.md).
 
 Generated options are emitted as nested `sealed partial` classes. You can extend both host and resource
 option types with custom properties.
@@ -135,7 +135,7 @@ Configuration is bound by the generated extension method:
 - Host options bind to `ShopHostKitOptions.SectionName` (for example `ShopHostKit`) and
   `ValidateOnStart()` is called.
 - Resource options are nested by generated resource property name.
-- Group options are nested under `Groups`, by group property name. See [Groups and URLs](Groups-and-URLs.md).
+- Group options are nested under `Groups`, by group property name. See [Groups and URLs](concepts/Groups-and-URLs.md).
 
 ## Disable a resource
 
@@ -181,7 +181,7 @@ sealed partial class KeyVaultKit;
 ```
 
 The host `Mode` gates every resource in the host kit; a resource `Mode` gates only that resource.
-See [Enablement](Enablement.md) for the evaluation order.
+See [Enablement](concepts/Enablement.md) for the evaluation order.
 
 ## `IsEnabled` vs `IsResourceEnabled(...)`
 
@@ -196,7 +196,7 @@ At runtime, `Build` evaluates the configured `Mode` first, then calls `IsResourc
 and `ConfigureResource()` for that resource. A kit disabled via `IsEnabled=false` is never re-enabled by
 the hook.
 
-See [Enablement](Enablement.md) for details.
+See [Enablement](concepts/Enablement.md) for details.
 
 ## OptionsHelper for tests and overrides
 
@@ -211,7 +211,7 @@ var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
 ).Build();
 ```
 
-See [OptionsHelper](OptionsHelper.md) for the complete API, including `PathFor`, `SectionNameFor`, and
+See [OptionsHelper](reference/OptionsHelper.md) for the complete API, including `PathFor`, `SectionNameFor`, and
 the `SG0020` single-property-path rule.
 
 For resource wiring, `IResourceBuilder.WithEnvironment(options)` now accepts a populated options object
@@ -227,7 +227,7 @@ pass a section name explicitly, `OptionsHelper` resolves it as follows:
 3. Original type name
 
 You can look up the resolved section name with
-[`OptionsHelper.SectionNameFor`](OptionsHelper.md#sectionnamefor).
+[`OptionsHelper.SectionNameFor`](reference/OptionsHelper.md#sectionnamefor).
 
 ## Tip
 

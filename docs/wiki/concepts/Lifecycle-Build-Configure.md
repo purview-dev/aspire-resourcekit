@@ -100,5 +100,5 @@ See [Enablement](Enablement.md) for the full model.
 
 ## See also
 
-- [Generated Output](Generated-Output.md)
+- [Generated Output](../reference/Generated-Output.md)
 - [Enablement](Enablement.md)

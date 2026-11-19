@@ -49,6 +49,24 @@ The skills this repository **authors** live in the root `skills/` folder — rea
 `skills/<name>/SKILL.md`. Skills a *package* ships are installed into `.agents/skills/` by the skills
 CLI (which is gitignored here, so a fresh clone has none until you run `npx skills add`).
 
+## Documentation
+
+`docs/wiki` is the source purview.dev publishes at <https://purview.dev/docs/aspire-resourcekit/>, and
+it is hierarchical: `concepts/`, `reference/`, `testing/` and `project/`, one level deep. The published
+URL mirrors the path, so `concepts/Hierarchies.md` is `/docs/aspire-resourcekit/concepts/hierarchies/`.
+
+- **Three pages stay at the root.** `Getting-Started.md` is `docs.rootPage` in
+  `.config/purview-docs.yml`; `Examples.md` and `Configuration-and-Options.md` are
+  `useCases[].docsPage` deep links, which are single URL segments.
+- **`docs/wiki/_Sidebar.md` declares the reading order** the site's navigation uses. A page missing from
+  it has no place there.
+- **`docs/wiki/_redirects.yml` records every URL a moved page used to have.** Add a line in the same
+  commit as the move; never remove one.
+- Every page opens with one `# Title`, then a paragraph naming the technology in the words a reader
+  would search with. Fences declare a language; callouts use GitHub alerts.
+
+`docs/wiki/project/Contributing.md` is the long form of this section.
+
 ## Purview DotNet Project SDK guidance
 
 When adding or modifying projects in this repository:

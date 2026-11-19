@@ -250,7 +250,7 @@ When options are generated:
 - `IsEnabled` can be used to skip a resource at runtime.
 - `Mode` can be used to restrict a resource (or the whole host) to `LocalDevelopment`, `Run`, or `Publish`.
 
-See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration/) patterns.
+See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration-and-options/) patterns.
 
 ### Extending generated typed options
 
@@ -386,7 +386,7 @@ SG0017–SG0019, SG0024, SG0028, SG0042 and SG0043 are execution-only warnings: 
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 
-For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/diagnostics/), see the diagnostics reference.
+For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/reference/diagnostics/), see the diagnostics reference.
 
 ## Documentation
 

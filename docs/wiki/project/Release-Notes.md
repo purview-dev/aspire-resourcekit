@@ -11,7 +11,7 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   with `AddDotnetProject`. The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>`; SG0018
   validates the declared path (normalising `\`/`/`), SG0019 validates an explicit base, and the new SG0041
   reports a `ProjectPath` on a resource that is not `DotnetProjectResource`. See
-  [Project Resources](Project-Resources.md).
+  [Project Resources](../concepts/Project-Resources.md).
 - **Aspire 13.6 still supported.** The package keeps the `Aspire.Hosting` 13.6.5 floor and resolves
   `DotnetProjectResource` by metadata name, so a 13.6 consumer is unaffected. `verify-consumers` builds
   both a 13.6 and a 17 consumer from the packed package.
@@ -30,7 +30,7 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   now compares against the published 1.1.0 baseline.
 - **Resource groups.** `[ResourceGroup]` and `[InGroup<TGroup>]` gather kits under named, nestable groups.
   A group can be switched off or given a mode from configuration, and in run mode it appears as a node in the dashboard
-  with its kits nested underneath. See [Groups and URLs](Groups-and-URLs.md).
+  with its kits nested underneath. See [Groups and URLs](../concepts/Groups-and-URLs.md).
 - **Named dashboard URLs.** `[ResourceUrl]` and `[EndpointUrl]` declare a kit's or group's dashboard links as
   options. A relative URL adds one link for one endpoint, instead of rewriting every endpoint URL as
   `WithUrl("/path")` does.
@@ -39,7 +39,7 @@ the [GitHub releases page](https://github.com/purview-dev/aspire-resourcekit/rel
   `Parent`, the parent a typed child property, parent-before-child build ordering, inherited enablement, and
   nested options (`<HostKit>:<Parent>:<Child>`). VNET/subnets, SQL server/database, Service Bus and storage
   account/container hierarchies are supported without a second composition framework. See
-  [Parent and child resource kits](Hierarchies.md).
+  [Parent and child resource kits](../concepts/Hierarchies.md).
 - **Diagnostics SG0032-SG0038** for self-parenting, cycles, unavailable parents, child property collisions,
   duplicate child property names, and generated `Parent` member collisions. Manual graphs are validated at
   runtime before any Aspire resource is created.
@@ -57,20 +57,20 @@ under [semantic versioning](Versioning.md).
 
 - **Attributes drive generation** — `[HostKit]` and `[ResourceDefinition]` /
   `[ResourceDefinition<TResource>]` produce the host kit, resource kit skeletons, typed options, and
-  the AppHost extension method. See [Attributes Reference](Attributes-Reference.md) and
-  [Generated Output](Generated-Output.md).
+  the AppHost extension method. See [Attributes Reference](../reference/Attributes-Reference.md) and
+  [Generated Output](../reference/Generated-Output.md).
 - **Deterministic lifecycle** — `Build`/`BuildResource(...)` constructs resources, then
   `Configure`/`ConfigureResource()` wires them together. See
-  [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md).
+  [Lifecycle: Build vs Configure](../concepts/Lifecycle-Build-Configure.md).
 - **Declarative enablement** — `IsEnabled` and `IsResourceEnabled(builder)`. See
-  [Enablement](Enablement.md).
+  [Enablement](../concepts/Enablement.md).
 - **Typed, extendable options** — generated `sealed partial` options bound from configuration. See
-  [Configuration and Options](Configuration-and-Options.md).
+  [Configuration and Options](../Configuration-and-Options.md).
 - **Test-friendly overrides** — `OptionsHelper` for args, environment variables, and flattening. See
-  [OptionsHelper](OptionsHelper.md) and [Testing with ResourceKit](Testing-with-ResourceKit.md).
+  [OptionsHelper](../reference/OptionsHelper.md) and [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md).
 - **Project resources** — first-class `AddProject<T>()` support with SG0018/SG0019 validation. See
-  [Project Resources](Project-Resources.md).
-- **Diagnostics SG0001–SG0020** with an IDE code fix for SG0020. See [Diagnostics](Diagnostics.md).
+  [Project Resources](../concepts/Project-Resources.md).
+- **Diagnostics SG0001–SG0020** with an IDE code fix for SG0020. See [Diagnostics](../reference/Diagnostics.md).
 - **Agent skills** — `1.0.0` bundled `aspire-apphost-to-resourcekit` and copied it into
   `.agents/skills/**` on build. That delivery is withdrawn: skills now install through the skills CLI,
   and the authored set has changed. See [Agent Skills](Agent-Skills.md).
@@ -84,4 +84,4 @@ under [semantic versioning](Versioning.md).
 
 - [Versioning and compatibility](Versioning.md)
 - [Release flow](Release-Flow.md)
-- [Getting Started](Getting-Started.md)
+- [Getting Started](../Getting-Started.md)

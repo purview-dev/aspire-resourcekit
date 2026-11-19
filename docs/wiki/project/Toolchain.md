@@ -105,4 +105,4 @@ Both were evaluated for the .NET 11 leg and neither is used in the shipped libra
 
 - [Versioning and compatibility](Versioning.md#supported-target-frameworks)
 - [Release flow](Release-Flow.md)
-- [Testing with ResourceKit](Testing-with-ResourceKit.md)
+- [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md)

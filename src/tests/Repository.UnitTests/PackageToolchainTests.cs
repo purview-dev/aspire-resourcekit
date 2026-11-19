@@ -135,7 +135,7 @@ public sealed class PackageToolchainTests
 					+ $"band, even though the package also ships a net11.0 asset. Every such package must "
 					+ $"resolve to {floorMajor}.x (the lowest common servicing band); otherwise a .NET 10 "
 					+ "consumer is forced to download and use packages built for a framework it does not "
-					+ "target. See docs/wiki/Toolchain.md."
+					+ "target. See docs/wiki/project/Toolchain.md."
 			);
 	}
 

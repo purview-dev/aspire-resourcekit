@@ -127,7 +127,7 @@ OptionsHelper.Assign<ExampleHostKit.ExampleHostKitOptions>(
     static o => o.Postgres.Database.IsEnabled = false).Build();
 ```
 
-See [Parent and child resource kits](Hierarchies.md) for the configuration shape.
+See [Parent and child resource kits](../concepts/Hierarchies.md) for the configuration shape.
 
 ### Testing a hierarchy
 
@@ -137,7 +137,7 @@ resource creation through `Parent.ResourceBuilder`, plus inherited enablement an
 starting the AppHost or provisioning infrastructure. The example AppHost tests inspect the generated
 hierarchy model and its nested configuration paths.
 
-See [OptionsHelper](OptionsHelper.md) for `Assign`, `AsEnvironmentVariables`, and the `SG0020`
+See [OptionsHelper](../reference/OptionsHelper.md) for `Assign`, `AsEnvironmentVariables`, and the `SG0020`
 single-property-path rule.
 
 If you already have a populated options object, use `OptionsHelper.Environment(...)` to flatten it into
@@ -145,7 +145,7 @@ configuration-style environment variables and selectively override or ignore mem
 
 ## Unit-testing the manual pattern
 
-The manual host pattern (see [Examples](Examples.md)) composes `ResourceKitBase<THostKit, TResource>`
+The manual host pattern (see [Examples](../Examples.md)) composes `ResourceKitBase<THostKit, TResource>`
 without generation, which makes the lifecycle directly unit-testable: instantiate a kit, call
 `Build(builder)`/`Configure()`, and assert on `ResourceBuilder` and option-driven behavior.
 
@@ -163,5 +163,5 @@ Integration tests (which require Docker/Testcontainers) run locally:
 just test
 ```
 
-See [Contributing](Contributing.md) and [Release Flow](Release-Flow.md) for the CI filter and local
+See [Contributing](../project/Contributing.md) and [Release Flow](../project/Release-Flow.md) for the CI filter and local
 workflow.

@@ -28,7 +28,7 @@ default:
 # Overrides the module's `test`, which does not pass them: --timeout, --maximum-failed-tests and
 # --results-directory-layout are .NET 11 SDK run-level options. A hung Aspire fixture or a cascading
 # failure stops the whole run instead of waiting for every test application, and each module/TFM gets
-# its own results directory so reports cannot overwrite one another. See docs/wiki/Toolchain.md.
+# its own results directory so reports cannot overwrite one another. See docs/wiki/project/Toolchain.md.
 [doc('Run the tests matching a tree-node filter (default: every test)')]
 [group('Build and Test')]
 test filter=test_filter *args:

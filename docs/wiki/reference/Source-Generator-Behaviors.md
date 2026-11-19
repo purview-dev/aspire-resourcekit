@@ -116,4 +116,4 @@ cached across incremental runs and only recomputed when inputs change.
 
 - [Generated Output](Generated-Output.md)
 - [Diagnostics](Diagnostics.md)
-- [Contributing](Contributing.md)
+- [Contributing](../project/Contributing.md)

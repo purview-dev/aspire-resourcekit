@@ -14,7 +14,7 @@ API with `AddDotnetProject` and declares `ProjectPath` on the resource kit; the 
 `AddProject<Projects.Example_Service>`.
 
 The Aspire 17 examples require the Aspire CLI bundle at build time (ASPIRE013); the Pre-17 pair does
-not. See [Contributing](Contributing.md#building-and-testing).
+not. See [Contributing](project/Contributing.md#building-and-testing).
 
 All four hosts build the same logical resources through `Purview.Aspire.ResourceKit.Example` constants in
 `Example.ServiceDefaults/Platform.cs`:
@@ -72,7 +72,7 @@ sealed partial class SubnetWebKit
 }
 ```
 
-See [Parent and child resource kits](Hierarchies.md).
+See [Parent and child resource kits](concepts/Hierarchies.md).
 
 Key Vault and the publish marker are publish-only. The generated AppHost declares that on the
 attribute (`ResourceKitMode.Publish`), and the manual AppHost overrides the `Mode` property:
@@ -86,7 +86,7 @@ sealed partial class KeyVaultKit;
 protected override ResourceKitMode Mode => ResourceKitMode.Publish;
 ```
 
-See [Enablement](Enablement.md) for the full mode list.
+See [Enablement](concepts/Enablement.md) for the full mode list.
 
 ## Generated pattern (`Example.Pre17.AppHost`)
 
@@ -190,7 +190,7 @@ sealed partial class ExampleAPIKit
 ```
 
 The generator emits the host kit members, options, `ResourceKitBase<TResource>` base classes, and the
-extension method. See [Generated Output](Generated-Output.md).
+extension method. See [Generated Output](reference/Generated-Output.md).
 
 ## Manual pattern (`Example.Pre17.ManualAppHost`)
 
@@ -278,6 +278,6 @@ Both patterns produce the same runtime behavior: instantiate resources, `Build` 
 ## See also
 
 - [Getting Started](Getting-Started.md)
-- [Attributes Reference](Attributes-Reference.md)
-- [Generated Output](Generated-Output.md)
-- [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md)
+- [Attributes Reference](reference/Attributes-Reference.md)
+- [Generated Output](reference/Generated-Output.md)
+- [Lifecycle: Build vs Configure](concepts/Lifecycle-Build-Configure.md)

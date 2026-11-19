@@ -15,7 +15,7 @@ This page covers the repository layout and the day-to-day commands for working o
     (`Microsoft.NET.Sdk`, `AddDotnetProject`) generated and manual patterns.
   - `Example.Service` / `Example.ServiceDefaults` — the shared service and constants both families use.
 - `src/tests/*` — unit and integration tests for the runtime and the generator.
-- `docs/wiki` — this documentation suite.
+- `docs/wiki` — this documentation suite, one topic folder per area.
 
 The NuGet package is produced from `src/src/ResourceKit/ResourceKit.csproj` and includes the runtime
 APIs plus the analyzer/code-fix assemblies.
@@ -89,15 +89,36 @@ Reports are written to `TestResults/`.
 
 ## Documentation
 
-`docs/wiki` holds the plain-Markdown topic pages and nothing else. There is deliberately no `Home.md`
-hub, no `_Sidebar.md` navigation and no site configuration in this repository: the site at
-<https://purview.dev/docs/aspire-resourcekit/> generates its own navigation from the pages that are
-here. Do not "restore" the mkdocs scaffolding — it was removed on purpose (see `CHANGELOG.md`), and a
-page's discoverability is decided by the site, not by a file in this repository.
+`docs/wiki` holds plain Markdown and nothing else — no `mkdocs.yml`, no theme or plugin list. The site
+at <https://purview.dev/docs/aspire-resourcekit/> renders these files; adding site configuration here
+would be ignored and drift, so don't "restore" the mkdocs scaffolding (see `CHANGELOG.md`).
 
-Two rules that still apply: a page added or renamed here must be linked from at least one other page
-or from `README.md`, and anything a consumer is told about the package is a claim
-`just verify-consumers` or the package's own tests should be able to falsify.
+The tree is hierarchical because a folder is a URL segment and a sidebar section:
+`concepts/Hierarchies.md` publishes at `/docs/aspire-resourcekit/concepts/hierarchies/`.
+
+| Path | Holds |
+| --- | --- |
+| `docs/wiki/*.md` | the landing page and the two pages the catalogue deep-links from a use case |
+| `docs/wiki/concepts/` | how the model works: hierarchies, lifecycle, enablement, groups, project resources |
+| `docs/wiki/reference/` | what the generator emits and what every attribute, helper and diagnostic means |
+| `docs/wiki/testing/` | testing a resource kit |
+| `docs/wiki/project/` | working on this repository: contributing, releases, versioning, toolchain, skills |
+| `docs/wiki/_Sidebar.md` | the reading order the site's navigation follows |
+| `docs/wiki/_redirects.yml` | every URL a moved page used to have |
+
+Four rules keep it publishable:
+
+- **Three pages stay at the root.** `Getting-Started.md` is `docs.rootPage` in
+  `.config/purview-docs.yml`, so it renders the project's index; `Examples.md` and
+  `Configuration-and-Options.md` are `useCases[].docsPage` deep links in that same file, and a
+  `docsPage` is a single URL segment. Moving either means moving its catalogue reference in the same
+  change.
+- **`_Sidebar.md` lists every page once**, grouped in reading order. A page missing from it has no
+  place in the navigation.
+- **A moved page adds a line to `_redirects.yml` in the same commit.** Never delete one: the old URL
+  is in a bookmark somewhere.
+- **A new page is linked from another page**, and anything a consumer is told about the package is a
+  claim `just verify-consumers` or the package's own tests should be able to falsify.
 
 ## Agent skills and workflows
 
@@ -148,7 +169,7 @@ Releases are produced by the shared pipeline when a version bump is merged to `m
 2. Move new diagnostics from `src/src/SourceGeneration/AnalyzerReleases.Unshipped.md` into
    `src/src/SourceGeneration/AnalyzerReleases.Shipped.md` under the released version, leaving the
    unshipped file empty.
-3. Add a [`CHANGELOG.md`](../../CHANGELOG.md) entry and update the [release notes](Release-Notes.md).
+3. Add a [`CHANGELOG.md`](../../../CHANGELOG.md) entry and update the [release notes](Release-Notes.md).
 4. Validate with `just lint-check` and `just pipeline-pack-validate` before merging.
 
 ## Pull requests

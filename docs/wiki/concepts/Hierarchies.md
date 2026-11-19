@@ -277,7 +277,7 @@ builds its own resource tree. See [Resource groups and dashboard URLs](Groups-an
 | SG0040 | `.ResourceBuilder` is redundant when the kit is the next call's receiver; a code fix uses the kit directly |
 
 Invalid graphs block generation; the runtime validates manual graphs before creating any Aspire resource.
-See [Diagnostics](Diagnostics.md).
+See [Diagnostics](../reference/Diagnostics.md).
 
 ## Compatibility
 

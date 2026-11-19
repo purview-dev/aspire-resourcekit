@@ -267,11 +267,11 @@ partial class WebResourceKit
 - **Non-generic style** (`[ResourceDefinition(...)]` + explicit base) requires the base to use the
   declared project resource type (SG0019).
 
-See [Attributes Reference](Attributes-Reference.md) for the base-type rules shared by all resources,
-and [Diagnostics](Diagnostics.md) for the `RKP` build errors reported by `ResourceKitProject` and
+See [Attributes Reference](../reference/Attributes-Reference.md) for the base-type rules shared by all resources,
+and [Diagnostics](../reference/Diagnostics.md) for the `RKP` build errors reported by `ResourceKitProject` and
 `ResourceKitPath` items.
 
 ## See also
 
-- [Attributes Reference](Attributes-Reference.md)
-- [Diagnostics](Diagnostics.md)
+- [Attributes Reference](../reference/Attributes-Reference.md)
+- [Diagnostics](../reference/Diagnostics.md)

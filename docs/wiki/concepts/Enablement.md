@@ -155,9 +155,9 @@ by setting the options section in configuration:
 }
 ```
 
-See [Configuration and Options](Configuration-and-Options.md) for the generated options shape.
+See [Configuration and Options](../Configuration-and-Options.md) for the generated options shape.
 
 ## See also
 
 - [Lifecycle: Build vs Configure](Lifecycle-Build-Configure.md)
-- [Configuration and Options](Configuration-and-Options.md)
+- [Configuration and Options](../Configuration-and-Options.md)

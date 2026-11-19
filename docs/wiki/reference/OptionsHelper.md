@@ -39,7 +39,7 @@ var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
 // --ShopHostKit:Postgres:Database:IsEnabled=false
 ```
 
-See [Parent and child resource kits](Hierarchies.md) for the ownership model and configuration shape.
+See [Parent and child resource kits](../concepts/Hierarchies.md) for the ownership model and configuration shape.
 
 ## AsEnvironmentVariables
 
@@ -155,7 +155,7 @@ protected override string[] Args =>
 ];
 ```
 
-See [Testing with ResourceKit](Testing-with-ResourceKit.md).
+See [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md).
 
 ## The SG0020 rule
 
@@ -184,5 +184,5 @@ you. See [Source Generator Behaviors](Source-Generator-Behaviors.md) for how the
 
 ## See also
 
-- [Configuration and Options](Configuration-and-Options.md)
-- [Testing with ResourceKit](Testing-with-ResourceKit.md)
+- [Configuration and Options](../Configuration-and-Options.md)
+- [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md)

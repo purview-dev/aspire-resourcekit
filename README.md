@@ -11,16 +11,16 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > Requires **.NET 10**. The package ships `net10.0` and `net11.0` assets — there is no `net8.0` or
 > `net9.0` asset. A .NET 10 AppHost resolves the `net10.0` asset; a .NET 11 AppHost resolves the
 > `net11.0` asset.
-> See [Versioning and compatibility](docs/wiki/Versioning.md#supported-target-frameworks).
+> See [Versioning and compatibility](docs/wiki/project/Versioning.md#supported-target-frameworks).
 >
-> For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
+> For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/project/Release-Notes.md).
 
 > [!TIP]
 > **Lifecycle quick links**
 >
-> - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
-> - Parent/child resource kits: [`docs/wiki/Hierarchies.md`](docs/wiki/Hierarchies.md)
-> - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
+> - Build vs Configure guidance: [`docs/wiki/concepts/Lifecycle-Build-Configure.md`](docs/wiki/concepts/Lifecycle-Build-Configure.md)
+> - Parent/child resource kits: [`docs/wiki/concepts/Hierarchies.md`](docs/wiki/concepts/Hierarchies.md)
+> - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/concepts/Enablement.md`](docs/wiki/concepts/Enablement.md)
 
 **Documentation:** [Aspire ResourceKit documentation](https://purview.dev/docs/aspire-resourcekit/)
 
@@ -64,7 +64,7 @@ builder.AddAspireResourceKit();
 The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
 
 `ProjectPath` is validated against `AddDotnetProject` by SG0018. The package declares the Aspire 13.6
-floor, so a 13.6 consumer is not forced onto 17. See [Project resources](docs/wiki/Project-Resources.md).
+floor, so a 13.6 consumer is not forced onto 17. See [Project resources](docs/wiki/concepts/Project-Resources.md).
 
 > [!TIP]
 > **Agent skills for your coding agent**
@@ -120,13 +120,13 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
 - [Getting started](docs/wiki/Getting-Started.md)
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
-- [Parent and child resource kits](docs/wiki/Hierarchies.md)
-- [Resource groups and dashboard URLs](docs/wiki/Groups-and-URLs.md)
-- [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
+- [Parent and child resource kits](docs/wiki/concepts/Hierarchies.md)
+- [Resource groups and dashboard URLs](docs/wiki/concepts/Groups-and-URLs.md)
+- [Diagnostics and troubleshooting](docs/wiki/reference/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)
-- [Release notes](docs/wiki/Release-Notes.md)
-- [Versioning and compatibility](docs/wiki/Versioning.md)
-- [.NET 11 toolchain and feature adoption](docs/wiki/Toolchain.md)
+- [Release notes](docs/wiki/project/Release-Notes.md)
+- [Versioning and compatibility](docs/wiki/project/Versioning.md)
+- [.NET 11 toolchain and feature adoption](docs/wiki/project/Toolchain.md)
 - [Changelog](CHANGELOG.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)

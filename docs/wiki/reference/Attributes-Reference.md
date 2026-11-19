@@ -4,7 +4,7 @@ ResourceKit's public attributes live in the `Purview.Aspire.ResourceKit` namespa
 generated into the consuming compilation by the bundled source generator, so you do not reference a
 separate attribute package. `[HostKit]` and `[ResourceDefinition]` are described here. The grouping and
 URL attributes (`[ResourceGroup]`, `[ResourceGroup<TParent>]`, `[InGroup<TGroup>]`, `[ResourceUrl]` and `[EndpointUrl]`) are
-described in [Groups and URLs](Groups-and-URLs.md).
+described in [Groups and URLs](../concepts/Groups-and-URLs.md).
 
 ## `HostKitAttribute` (`[HostKit]`)
 
@@ -36,7 +36,7 @@ sealed partial class ShopHostKit;
 sealed partial class PublishHostKit;
 ```
 
-See [Enablement](Enablement.md) for the mode list and evaluation order.
+See [Enablement](../concepts/Enablement.md) for the mode list and evaluation order.
 
 ## `ResourceDefinitionAttribute` (`[ResourceDefinition]`)
 
@@ -61,7 +61,7 @@ Options:
 
 `Parent` gives the child a typed `Parent` property, a parent-aware constructor, a parent-before-child build
 order, and inherited enablement. It is composition ownership, not a general dependency. See
-[Parent and child resource kits](Hierarchies.md).
+[Parent and child resource kits](../concepts/Hierarchies.md).
 
 `ProjectPath` selects Aspire 17 Project V2. Declare `DotnetProjectResource` as the type argument and
 add the same path with `AddDotnetProject`; SG0018 validates the path and SG0019 validates an explicit
@@ -93,7 +93,7 @@ path-based method the resource type supports. A `ResourcePath` on any other reso
 SG0043; a `ProjectPath` on anything but `DotnetProjectResource` keeps reporting SG0041.
 
 The legacy `[ResourceDefinition<Projects.X>]` + `AddProject<T>` form is still supported, including on
-Aspire 17 where it reports `CS0618`. See [Project resources](Project-Resources.md).
+Aspire 17 where it reports `CS0618`. See [Project resources](../concepts/Project-Resources.md).
 
 `Mode` accepts a named property or a constructor argument, and configuration can override it:
 
@@ -171,10 +171,10 @@ partial class APIResourceKit : ResourceKitBase<ProjectResource>
 Attributed classes must not declare constructors with parameters or executable constructor bodies
 (SG0012). The generator supplies the constructor wiring in generated partial code; the primary
 constructor of a resource kit receives the host kit and options. In the manual (non-generated) pattern
-you declare it yourself — see [Examples](Examples.md).
+you declare it yourself — see [Examples](../Examples.md).
 
 ## See also
 
 - [Generated Output](Generated-Output.md) — what the generator emits from these attributes.
-- [Groups and URLs](Groups-and-URLs.md) — `[ResourceGroup]`, `[InGroup<TGroup>]`, `[ResourceUrl]`, `[EndpointUrl]`.
+- [Groups and URLs](../concepts/Groups-and-URLs.md) — `[ResourceGroup]`, `[InGroup<TGroup>]`, `[ResourceUrl]`, `[EndpointUrl]`.
 - [Diagnostics](Diagnostics.md) — full diagnostic reference.

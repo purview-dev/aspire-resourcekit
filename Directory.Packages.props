@@ -9,7 +9,7 @@
 			The lowest common servicing band for the .NET 10 floor. A package project must not raise a
 			consumer's Microsoft.Extensions.* floor to the .NET 11 band just because the repository builds
 			with the .NET 11 SDK: 10.0.15 is the latest .NET 10 patch and the highest version every
-			supported consumer can resolve without being forced forward. See docs/wiki/Toolchain.md.
+			supported consumer can resolve without being forced forward. See docs/wiki/project/Toolchain.md.
 		-->
 		<DotNetRuntimeVersion>10.0.15</DotNetRuntimeVersion>
 		<MSExtensionVersion>10.11.0</MSExtensionVersion>

@@ -207,6 +207,6 @@ Any other Aspire builder can use `builder.WithResourceKitUrls(urls)` directly.
 
 ## See also
 
-- [Attributes Reference](Attributes-Reference.md)
+- [Attributes Reference](../reference/Attributes-Reference.md)
 - [Enablement](Enablement.md)
-- [Diagnostics](Diagnostics.md)
+- [Diagnostics](../reference/Diagnostics.md)
