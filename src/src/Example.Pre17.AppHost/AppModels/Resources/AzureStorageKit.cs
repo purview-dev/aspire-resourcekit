@@ -1,0 +1,19 @@
+using Aspire.Hosting.Azure;
+using Microsoft.Extensions.Hosting;
+using Purview.Aspire.ResourceKit.Example.Pre17.AppHost.AppModels.Groups;
+
+namespace Purview.Aspire.ResourceKit.Example.Pre17.AppHost.AppModels.Resources;
+
+[ResourceDefinition<AzureStorageResource>(Platform.ResourceKits.AzureStorage)]
+[InGroup<DataGroup>]
+sealed partial class AzureStorageKit
+{
+	protected override IResourceBuilder<AzureStorageResource> BuildResource(IDistributedApplicationBuilder builder)
+	{
+		var azureStorage = builder.AddAzureStorage(Name);
+		if (builder.Environment.IsDevelopment())
+			azureStorage.RunAsEmulator();
+
+		return azureStorage;
+	}
+}

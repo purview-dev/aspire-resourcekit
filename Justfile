@@ -1,142 +1,69 @@
+# Recipes for Purview.Aspire.ResourceKit. Run `just` for the list.
+#
+# The shared recipes come from .build/just/, copied verbatim from the purview-buildsdk-justfile skill.
+# Change them there, not here; this file holds what belongs to this repository.
+
 set quiet
 
-import "Justfile.skills.just"
+# Let a definition here override a module's default variable or no-op hook.
+set allow-duplicate-variables
+set allow-duplicate-recipes
 
-export TESTINGPLATFORM_EXITCODE_IGNORE := "8"
-export DOTNET_CLI_TELEMETRY_OPTOUT := "1"
-export DOTNET_SKIP_FIRST_TIME_EXPERIENCE := "1"
-export DO_NOT_TRACK := "1"
+import ".build/just/index.just"
 
-solution := "src/ResourceKit.slnx"
-build_configuration := "Debug"
+# The solution every recipe builds.
+solution_file := "src/ResourceKit.slnx"
 
-artifacts_folder := "./artifacts"
-default_test_filter := "/*/*/*/*"
-
-pipeline_tool := "dotnet purview-build"
-
-current_version := `bun -p "require('./package.json').version"`
+# The whole suite: both PR validation and the release run every test project, including the AppHost
+# integration tests. .config/purview-build.json owns the same filter for CI, and
+# src/tests/Repository.UnitTests/PipelineTests.cs fails if either is narrowed to the unit tier.
+test_filter := "/*/*/*/*"
 
 [private]
 default:
     just --list
 
-# Restore the repository's .NET local tools (.config/dotnet-tools.json)
-[private]
-ensure-pipeline-tool:
-    dotnet tool restore
-
-# Run the PR pipeline (restore, build, lint, tests)
-[group('Pipeline')]
-pipeline-pr *args:
-    just ensure-pipeline-tool
-    echo "Running PR pipeline..."
-    {{ pipeline_tool }} {{ args }}
-
-# Run the build pipeline (restore, build, lint)
-[group('Pipeline')]
-pipeline-build *args:
-    just ensure-pipeline-tool
-    echo "Running build pipeline..."
-    {{ pipeline_tool }} --Build:RunTests=false --Release:Mode=None {{ args }}
-
-# Run the release pipeline (restore, build, lint, tests, pack, publish, GitHub release)
-[group('Pipeline')]
-pipeline-release *args:
-    just ensure-pipeline-tool
-    echo "Running release pipeline..."
-    {{ pipeline_tool }} --Release:Mode=NuGet {{ args }}
-
-# Run the release pipeline (restore, build, lint, tests, pack, local nuget publish)
-# Note: `just` runs recipes through the shell, which strips backslashes from unquoted arguments.
-# Use the LOCAL_NUGET_FEED_PATH environment variable or forward slashes, e.g.
-# just pipeline-local-release --PublishLocalNuGet:LocalFeedPath=p:/_sync-projects/.local-nuget/
-[group('Pipeline')]
-pipeline-local-release *args:
-    just ensure-pipeline-tool
-    just lint-fix
-    echo "Running local release pipeline..."
-    {{ pipeline_tool }} --Release:Mode=LocalNuGet {{ args }}
-
-# Displays the current version from package.json
-[group('Build and Test')]
-version:
-    echo "Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
-
-# Build and test with the specified configuration, defaulting to "Debug"
-[group('Build and Test')]
-build *args:
-    echo "Building {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
-    dotnet build {{ solution }} -c {{ build_configuration }} {{ args }}
-
-# Build and test with the specified configuration, defaulting to "Debug"
-[group('Build and Test')]
-clean *args:
-    echo "Cleaning {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }}"
-    dotnet clean {{ solution }} -c {{ build_configuration }} {{ args }}
-
-# Run tests with the specified configuration, defaulting to "Debug"
+# Run the tests matching a tree-node filter (default: every test), with this repository's run guards
 #
-# --timeout, --maximum-failed-tests and --results-directory-layout are .NET 11 SDK run-level
-# options: a hung Aspire fixture or a cascading failure stops the whole run instead of waiting for
-# every test application, and each module/TFM gets its own results directory so reports cannot
-# overwrite one another. See docs/wiki/Toolchain.md.
+# Overrides the module's `test`, which does not pass them: --timeout, --maximum-failed-tests and
+# --results-directory-layout are .NET 11 SDK run-level options. A hung Aspire fixture or a cascading
+# failure stops the whole run instead of waiting for every test application, and each module/TFM gets
+# its own results directory so reports cannot overwrite one another. See docs/wiki/project/Toolchain.md.
+[doc('Run the tests matching a tree-node filter (default: every test)')]
 [group('Build and Test')]
-test filter=default_test_filter *args:
-    echo "Running tests for {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} and filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
-    dotnet test {{ solution }} -c {{ build_configuration }} --treenode-filter "{{ filter }}" --timeout 30m --maximum-failed-tests 25 --results-directory-layout per-module --nologo -- {{ args }}
+test filter=test_filter *args:
+    echo "==> Testing {{ BLUE }}{{ solution_file }}{{ NORMAL }} ({{ YELLOW }}{{ build_configuration }}{{ NORMAL }}) with filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
+    dotnet test "{{ solution_file }}" --configuration "{{ build_configuration }}" --treenode-filter "{{ filter }}" --ignore-exit-code 8 --timeout 30m --maximum-failed-tests 25 --results-directory-layout per-module --nologo -- {{ args }}
 
-# Run unit tests only
+# Run unit tests only - the fast local loop, not a CI gate
 [group('Build and Test')]
 test-unit *args:
     just test "/*/*/*/*[Category=Unit]" {{ args }}
 
-# Restore dependencies for the solution
-[group('Build and Test')]
-restore *args:
-    echo "Restoring dependencies for {{ BLUE }}{{ solution }}{{ NORMAL }}"
-    dotnet restore {{ solution }} {{ args }}
-
-# Create NuGet package for the project
-[group('Build and Test')]
-pack publish_folder=artifacts_folder *args:
-    echo "Packing {{ BLUE }}{{ solution }}{{ NORMAL }} with configuration {{ YELLOW }}{{ build_configuration }}{{ NORMAL }} to {{ GREEN }}{{ publish_folder }}{{ NORMAL }}"
-    echo "  Current version is {{ BLUE }}{{ current_version }}{{ NORMAL }}"
-    dotnet pack {{ solution }} -c {{ build_configuration }} -o {{ publish_folder }} {{ args }}
-
-# Run the pipeline through pack + validate (restore, build, lint, tests, pack, validate pack contents) without publishing/releasing
+# Run the release pipeline, publishing to a local NuGet feed
+#
+# Overrides the module's `pipeline-local-release` to format the code first, so a local release never
+# ships unformatted sources.
+[doc('Run the release pipeline, publishing to a local NuGet feed (restore, build, lint, tests, pack, validate, publish)')]
 [group('Pipeline')]
-pipeline-pack-validate *args:
-    just ensure-pipeline-tool
-    echo "Running pack + validate pipeline..."
-    {{ pipeline_tool }} --Build:RunPack=true --Build:ValidatePack=true --Release:Mode=None {{ args }}
+pipeline-local-release *args: ensure-tools
+    echo "==> Running the local release pipeline"
+    just lint-fix
+    {{ pipeline_tool }} --Release:Mode=LocalNuGet {{ args }}
 
 # Verify the package against a real consumer: pack, assert the package shape, then build a
 # throwaway consumer that installs it. Restores from nuget.org, so it is not part of the unit tier.
+[doc('Verify the package against a real consumer: pack, assert its shape, and build a consumer that installs it')]
 [group('Pipeline')]
-verify-consumers *args:
-    just ensure-pipeline-tool
-    echo "Verifying packaged consumers..."
+verify-consumers *args: ensure-tools
+    echo "==> Verifying packaged consumers"
     dotnet msbuild scripts/verify-consumers.proj {{ args }}
 
-# Open the solution in Visual Studio/ Registered application
-[group('Utilities')]
-vs:
-    open {{ solution }}
-
-# Fix code formatting issues using CSharpier
-[group('Utilities')]
-lint-fix *args:
-    dotnet csharpier format . {{ args }}
-# Check code formatting using CSharpier
-[group('Utilities')]
-lint-check *args:
-    dotnet csharpier check . {{ args }}
-
-# Clean up the repository by removing build artifacts, bin/obj folders etc, and shutting down the build server
-[group('Utilities')]
-scrub:
-    find . -type d \( -name bin -o -name obj \) -exec rm -rf {} +
-    just clean
-    just restore --force-evaluate
-    dotnet build-server shutdown
+# Validate every authored skill in skills/ with the pack-time rule set
+#
+# The same check SkillTests runs on every test run; this is the one-shot form. It targets the one
+# packable project because ValidatePurviewSkills runs once per project it is invoked on.
+[doc('Validate every authored skill in skills/ with the pack-time rule set')]
+[group('Agent Skills')]
+skills-validate *args:
+    dotnet msbuild "src/src/ResourceKit/ResourceKit.csproj" -t:ValidatePurviewSkills -v:n {{ args }}

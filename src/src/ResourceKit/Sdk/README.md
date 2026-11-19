@@ -46,6 +46,11 @@ Options:
 - `Name` — logical Aspire resource name.
 - `PropertyName` — generated host or parent property name.
 - `Parent` — `typeof(TParentKit)` when this kit is owned by another resource kit.
+- `ProjectPath` — the path added with `AddDotnetProject` (Aspire 17+, `DotnetProjectResource` only).
+- `ResourcePath` — the path added by a path-based method: `AddDotnetProject`, `AddViteApp`,
+  `AddNextJsApp`, `AddNodeApp`, `AddBunApp`, `AddDenoApp` or `AddJavaScriptApp`. SG0018 validates the
+  matching call; SG0042 reports a conflicting `ProjectPath`, and SG0043 reports a resource type that
+  is not added by path.
 
 ### `ResourceDefinition` vs `ResourceDefinition<TResource>`
 
@@ -128,6 +133,54 @@ sealed partial class DataGroup;
 [EndpointUrl("https", DisplayText = "API")]
 partial class APIResourceKit { /* ... */ }
 ```
+
+## Typed project and app paths
+
+Aspire's `Projects.*` metadata only covers projects referenced with `<ProjectReference>`, and a
+Project V2 AppHost adds its services by path instead. Non-.NET apps (`AddViteApp`, `AddNpmApp`) never
+had a typed reference at all. Declare them once and let the package generate `AppHostProjects`:
+
+```xml
+<ItemGroup>
+  <ResourceKitProject Include="..\..\dotnet-project" Name="api" />
+  <ResourceKitProject Include="..\..\..\web\packages\vite-app" Name="web" />
+  <ResourceKitPath Include="..\..\deploy\Dockerfile" Name="dockerfile" Kind="File" />
+</ItemGroup>
+```
+
+```csharp
+[ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
+partial class ApiResourceKit
+{
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
+}
+
+[ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
+partial class WebResourceKit
+{
+    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder) =>
+        builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
+}
+```
+
+- `Path` is emitted relative and with `/` separators, because Aspire resolves it from the AppHost
+  project directory.
+- `Name` defaults to the leaf file/directory name; `ClassName` overrides the nested type name
+  (PascalCase by default). Two items must not produce the same name (`RKP0004`).
+- `ResourceKitProject` is for a .NET project or JavaScript app directory; `ResourceKitPath` is for any
+  other file or directory. `Kind="File"`/`Kind="Directory"` asserts the path's kind (`RKP0005`, and
+  `RKP0006` for an invalid value).
+- A missing path fails the build with `RKP0001`; set `Optional="true"` for a path that may be absent.
+- The class is generated into `$(RootNamespace)` as `internal` by default. Override
+  `ResourceKitAppHostProjectsNamespace`, `ResourceKitAppHostProjectsClassName` or
+  `ResourceKitAppHostProjectsVisibility` when needed.
+
+The class comes from a `buildTransitive` MSBuild target, not the source generator, so it is available
+even when `DisablePurviewAspireResourceKitSourceGenerator` is set. It is a C# AppHost feature: F#/VB
+projects fail with `RKP0007`, and TypeScript (`apphost.mts`) and Go (`apphost.go`) AppHosts are served
+by the Aspire CLI's generated SDK modules instead.
+
 ## Minimal package usage
 
 ```csharp
@@ -197,7 +250,7 @@ When options are generated:
 - `IsEnabled` can be used to skip a resource at runtime.
 - `Mode` can be used to restrict a resource (or the whole host) to `LocalDevelopment`, `Run`, or `Publish`.
 
-See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration/) patterns.
+See detailed [configuration and options](https://purview.dev/docs/aspire-resourcekit/configuration-and-options/) patterns.
 
 ### Extending generated typed options
 
@@ -315,11 +368,25 @@ variables.
 | SG0038 | Error | Generated `Parent` member collides with a user-authored member |
 | SG0039 | Warning | Child primary group differs from its parent's; visual placement follows the child's group |
 | SG0040 | Info | A resource kit is already an `IResourceBuilder<TResource>`; `.ResourceBuilder` is redundant |
-SG0017–SG0019, SG0024 and SG0028 are execution-only warnings: they indicate the resource will fail at runtime but never
+| SG0041 | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource` |
+| SG0042 | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used |
+| SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path |
+| RKP0001 | Error | A `ResourceKitProject`/`ResourceKitPath` path does not exist relative to the AppHost project directory |
+| RKP0002 | Error | A `ResourceKitProject`/`ResourceKitPath` class name is not a valid C# identifier |
+| RKP0003 | Error | A `ResourceKitProject`/`ResourceKitPath` resource name contains an unsupported character |
+| RKP0004 | Error | Two items generate the same `AppHostProjects` nested class name |
+| RKP0005 | Error | `Kind="File"` resolves to a directory, or `Kind="Directory"` resolves to a file |
+| RKP0006 | Error | `Kind` is set to a value other than `File` or `Directory` |
+| RKP0007 | Error | `ResourceKitProject`/`ResourceKitPath` are declared in a project that is not a C# AppHost |
+
+`RKP` errors are MSBuild errors raised when `AppHostProjects` is generated; they are not `SG` analyzer
+diagnostics and fire before compilation.
+
+SG0017–SG0019, SG0024, SG0028, SG0042 and SG0043 are execution-only warnings: they indicate the resource will fail at runtime but never
 block generation, so a resource kit with incomplete wiring (for example a project not yet added via
 `AddProject<T>()`) is still generated and the host kit output is still emitted.
 
-For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/diagnostics/), see the diagnostics reference.
+For [troubleshooting guidance](https://purview.dev/docs/aspire-resourcekit/reference/diagnostics/), see the diagnostics reference.
 
 ## Documentation
 

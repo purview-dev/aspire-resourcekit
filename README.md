@@ -11,23 +11,24 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 > Requires **.NET 10**. The package ships `net10.0` and `net11.0` assets — there is no `net8.0` or
 > `net9.0` asset. A .NET 10 AppHost resolves the `net10.0` asset; a .NET 11 AppHost resolves the
 > `net11.0` asset.
-> See [Versioning and compatibility](docs/wiki/Versioning.md#supported-target-frameworks).
+> See [Versioning and compatibility](docs/wiki/project/Versioning.md#supported-target-frameworks).
 >
-> For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/Release-Notes.md).
+> For what changed, see the [changelog](CHANGELOG.md) and [release notes](docs/wiki/project/Release-Notes.md).
 
 > [!TIP]
 > **Lifecycle quick links**
 >
-> - Build vs Configure guidance: [`docs/wiki/Lifecycle-Build-Configure.md`](docs/wiki/Lifecycle-Build-Configure.md)
-> - Parent/child resource kits: [`docs/wiki/Hierarchies.md`](docs/wiki/Hierarchies.md)
-> - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/Enablement.md`](docs/wiki/Enablement.md)
+> - Build vs Configure guidance: [`docs/wiki/concepts/Lifecycle-Build-Configure.md`](docs/wiki/concepts/Lifecycle-Build-Configure.md)
+> - Parent/child resource kits: [`docs/wiki/concepts/Hierarchies.md`](docs/wiki/concepts/Hierarchies.md)
+> - Runtime enablement and run modes (`Mode` + `IsEnabled` + `IsResourceEnabled(...)`): [`docs/wiki/concepts/Enablement.md`](docs/wiki/concepts/Enablement.md)
 
 **Documentation:** [Aspire ResourceKit documentation](https://purview.dev/docs/aspire-resourcekit/)
 
 ## Why teams use it
 
 - **Cleaner AppHost code** with resource logic split into dedicated classes.
-- **Strong typing + IntelliSense** instead of stringly-typed setup.
+- **Strong typing + IntelliSense** instead of stringly-typed setup, including typed project, app and
+  file/directory paths (`AppHostProjects`) for .NET, Vite, npm and other referenced paths.
 - **Generated wiring** for host/resource options and registration.
 - **Parent/child resource hierarchies** for VNETs and subnets, SQL servers and databases, Service Bus
   namespaces and topics/queues/subscriptions, or storage accounts and containers (issue #57).
@@ -41,16 +42,19 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 ```csharp
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Dotnet;
 using Purview.Aspire.ResourceKit;
 
 [HostKit]
 partial class ShopHostKit;
 
-[ResourceDefinition<ProjectResource>("api")]
+// Aspire 17 Project V2. On Aspire 13.6, use [ResourceDefinition<Projects.Example_Service>] with
+// builder.AddProject<Projects.Example_Service>(Name) instead; both forms are supported.
+[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
 partial class ApiResourceKit
 {
-    protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddProject<Projects.Example_Service>(Name);
+    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
 }
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -58,6 +62,9 @@ builder.AddAspireResourceKit();
 ```
 
 The extension method name is generated from your host metadata; in this repository sample it is `AddAspireResourceKit()`.
+
+`ProjectPath` is validated against `AddDotnetProject` by SG0018. The package declares the Aspire 13.6
+floor, so a 13.6 consumer is not forced onto 17. See [Project resources](docs/wiki/concepts/Project-Resources.md).
 
 > [!TIP]
 > **Agent skills for your coding agent**
@@ -80,7 +87,7 @@ The extension method name is generated from your host metadata; in this reposito
 
 ResourceKit has two layers of lifecycle methods:
 
-- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject`, `AddRedis`, etc.).
+- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject` / `AddDotnetProject`, `AddRedis`, etc.).
 - `Configure` / `ConfigureResource()`: **attach resources to each other** (references, bindings, cross-resource wiring).
 
 Enablement is evaluated *before* resource construction:
@@ -103,7 +110,9 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - host + per-resource options (when enabled), including nested child options,
 - typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
 - named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
-- an AppHost extension method to build/configure/register your host kit.
+- an AppHost extension method to build/configure/register your host kit,
+- typed project, app and file/directory paths (`AppHostProjects`) from `ResourceKitProject` /
+  `ResourceKitPath` items, emitted by an MSBuild target rather than the generator.
 
 ## Documentation
 
@@ -111,13 +120,13 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - [Documentation](https://purview.dev/docs/aspire-resourcekit/)
 - [Getting started](docs/wiki/Getting-Started.md)
 - [Configuration and options](docs/wiki/Configuration-and-Options.md)
-- [Parent and child resource kits](docs/wiki/Hierarchies.md)
-- [Resource groups and dashboard URLs](docs/wiki/Groups-and-URLs.md)
-- [Diagnostics and troubleshooting](docs/wiki/Diagnostics.md)
+- [Parent and child resource kits](docs/wiki/concepts/Hierarchies.md)
+- [Resource groups and dashboard URLs](docs/wiki/concepts/Groups-and-URLs.md)
+- [Diagnostics and troubleshooting](docs/wiki/reference/Diagnostics.md)
 - [Examples: generated vs manual](docs/wiki/Examples.md)
-- [Release notes](docs/wiki/Release-Notes.md)
-- [Versioning and compatibility](docs/wiki/Versioning.md)
-- [.NET 11 toolchain and feature adoption](docs/wiki/Toolchain.md)
+- [Release notes](docs/wiki/project/Release-Notes.md)
+- [Versioning and compatibility](docs/wiki/project/Versioning.md)
+- [.NET 11 toolchain and feature adoption](docs/wiki/project/Toolchain.md)
 - [Changelog](CHANGELOG.md)
 - NuGet package deep dive (API and generator behavior): [`src/src/ResourceKit/Sdk/README.md`](src/src/ResourceKit/Sdk/README.md)
 - Workspace notes for contributors: [`src/README.md`](src/README.md)

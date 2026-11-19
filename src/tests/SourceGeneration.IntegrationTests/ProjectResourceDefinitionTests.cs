@@ -253,6 +253,238 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 		await Assert.That(generated).Contains("AddAspireResourceKit");
 	}
 
+	/// <summary>
+	/// Aspire 17 Project V2: the declaration is a <c>DotnetProjectResource</c> plus a <c>ProjectPath</c>,
+	/// and the build call is <c>AddDotnetProject</c>.
+	/// </summary>
+	[Test]
+	public async Task Generate_GivenDotnetProjectResourceAndMatchingAddDotnetProject_GeneratesDotnetProjectResourceBase(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Aspire.Hosting.Dotnet.DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<global::Aspire.Hosting.Dotnet.DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						builder.AddDotnetProject(Name, "../Api/Api.csproj");
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"{TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource}>"
+			);
+	}
+
+	[Test]
+	public async Task Generate_GivenAddDotnetProjectWithMismatchedPath_ReportsProjectDefinitionMismatch(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Aspire.Hosting.Dotnet.DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<global::Aspire.Hosting.Dotnet.DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						builder.AddDotnetProject(Name, "../Other/Other.csproj");
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);
+		await Assert.That(result).HasNoErrorDiagnostics();
+	}
+
+	[Test]
+	public async Task Generate_GivenAddDotnetProjectWithWindowsSeparators_MatchesTheDeclaredPath(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Aspire.Hosting.Dotnet.DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<global::Aspire.Hosting.Dotnet.DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						builder.AddDotnetProject(Name, @"..\Api\Api.csproj");
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);
+		await Assert.That(result).HasNoErrorDiagnostics();
+	}
+
+	[Test]
+	public async Task Generate_GivenDotnetProjectResourceWithExplicitNonDotnetProjectResourceBase_ReportsProjectResourceKitBaseMismatch(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Aspire.Hosting.Dotnet.DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit : ResourceKitBase<DefaultAspireResource>
+				{
+					protected override IResourceBuilder<DefaultAspireResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						throw new global::System.NotImplementedException();
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(
+			source,
+			ResourceKitSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectResourceKitBaseMismatch);
+	}
+
+	[Test]
+	public async Task Generate_GivenProjectPathOnLegacyProjectType_ReportsProjectPathRequiresDotnetProjectResource(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Projects
+			{
+				public class Example_Service : global::Aspire.Hosting.IProjectMetadata
+				{
+					public string ProjectPath => "";
+					public bool SuppressBuild => true;
+				}
+			}
+
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<Projects.Example_Service>(ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<ProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						builder.AddProject<Projects.Example_Service>(Name);
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource);
+		await Assert.That(result).HasNoErrorDiagnostics();
+	}
+
+	[Test]
+	public async Task Generate_GivenProjectPathOnNonProjectResource_ReportsProjectPathRequiresDotnetProjectResource(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Purview.Aspire.ResourceKit.DefaultAspireResource>(ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<global::Purview.Aspire.ResourceKit.DefaultAspireResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						throw new global::System.NotImplementedException();
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectPathRequiresDotnetProjectResource);
+		await Assert.That(result).HasNoErrorDiagnostics();
+	}
+
+	[Test]
+	public async Task Generate_GivenDotnetProjectResourceWithoutAddDotnetProject_StillGeneratesKit(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			namespace Testing
+			{
+				[HostKit]
+				partial class TestingHostKit;
+
+				[ResourceDefinition<global::Aspire.Hosting.Dotnet.DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
+				sealed partial class ApiKit
+				{
+					protected override IResourceBuilder<global::Aspire.Hosting.Dotnet.DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+						throw new global::System.NotImplementedException();
+				}
+			}
+			""";
+
+		// Act
+		using var result = await GenerateAsync(source, cancellationToken);
+
+		// Assert — SG0018 is execution-only, so it is reported but generation still proceeds.
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.ProjectDefinitionMismatch);
+		await Assert.That(result).HasNoErrorDiagnostics();
+
+		var generated = result.GetSource();
+		await Assert
+			.That(generated)
+			.Contains(
+				$"partial class ApiKit : {TypeLibrary.Purview.Aspire.ResourceKit.ResourceKitBase}<{TypeLibrary.Aspire.Hosting.Dotnet.DotnetProjectResource}>"
+			);
+	}
+
 	protected override ResourceKitSourceGeneratorTestOptions OnBeforeRun(
 		IEnumerable<string> sources,
 		ResourceKitSourceGeneratorTestOptions options,
@@ -262,7 +494,10 @@ public class ProjectResourceDefinitionTests : ResourceKitSourceGeneratorTestBase
 		return base.OnBeforeRun(
 			sources,
 			options
-				.WithAdditionalAssemblyTypes(typeof(DefaultAspireResource))
+				.WithAdditionalAssemblyTypes(
+					typeof(DefaultAspireResource),
+					typeof(global::Aspire.Hosting.Dotnet.DotnetProjectResource)
+				)
 				.WithAdditionalNamespaces(TestingTypeLibrary.Purview.Aspire.ResourceKit.DefaultAspireResource),
 			cancellationToken
 		);

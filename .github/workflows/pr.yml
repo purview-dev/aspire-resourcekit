@@ -16,4 +16,8 @@ jobs:
       # The full test filter is owned by .config/purview-build.json; this only states that the
       # pipeline must run tests rather than rely on a shared-workflow default.
       run-tests: true
+      # The Aspire 17 examples use Microsoft.NET.Sdk + Aspire.Hosting.AppHost, which requires the
+      # Aspire CLI bundle at build time (ASPIRE013 cannot be suppressed). The shared workflow installs
+      # Aspire.Cli from .config/aspire-version and runs `aspire setup` before the build.
+      aspire-cli: true
     secrets: inherit

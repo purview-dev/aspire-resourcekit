@@ -1,7 +1,7 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
-using Purview.Aspire.ResourceKit.Example.AppHost.AppModels;
+using Purview.Aspire.ResourceKit.Example.Pre17.AppHost.AppModels;
 
 namespace Purview.Aspire.ResourceKit;
 

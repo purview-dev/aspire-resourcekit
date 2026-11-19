@@ -22,6 +22,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: purview-dev/build/actions/dotnet-sdk@main
+
+      # The Aspire 17 examples require the Aspire CLI bundle at build time (ASPIRE013). The release
+      # action checks out again; this checkout only makes .config/aspire-version available here.
+      - name: Install Aspire CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < .config/aspire-version)"
+          dotnet tool install --global Aspire.Cli --version "$version" \
+            || dotnet tool update --global Aspire.Cli --version "$version"
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+          "$HOME/.dotnet/tools/aspire" setup
+          "$HOME/.dotnet/tools/aspire" --version
+
       # A composite action, not a reusable workflow: nuget.org validates the OIDC `job_workflow_ref`
       # claim against the registered Trusted Publishing policy, and inside a called workflow that
       # claim names the called repository. Running it here keeps the claim on this file, which is the

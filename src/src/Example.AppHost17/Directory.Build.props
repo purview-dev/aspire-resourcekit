@@ -1,0 +1,18 @@
+<Project>
+	<PropertyGroup>
+		<!--
+			The legacy AppHost SDK adds an implicit Aspire.Hosting.AppHost reference, which cannot coexist
+			with a central PackageVersion item (NU1009). These Aspire 17 examples therefore pin their own
+			Aspire packages, so central package management is off for this folder only.
+		-->
+		<ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+		<!--
+			These are executables, not packages. The SDK's SourceLink and telemetry package references
+			would need explicit versions with CPM off, and neither adds anything to a sample AppHost.
+		-->
+		<DisableSourceLink>true</DisableSourceLink>
+		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
+		<ExcludeMSTelemetryExtension>true</ExcludeMSTelemetryExtension>
+	</PropertyGroup>
+	<Import Project="..\..\Directory.Build.props" />
+</Project>

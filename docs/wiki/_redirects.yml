@@ -1,0 +1,30 @@
+# Documentation URLs that moved, as `previous: current`.
+#
+# The site reads this file at each documentation channel's ref and writes a redirect page for every
+# pair whose destination exists and whose source is no longer a page (ADR 0013). A line is never
+# removed once released: the old URL is in bookmarks, search results and other repositories.
+#
+# Slugs are paths from the docs root, lower-cased. `docs/wiki/_Sidebar.md` lists the pages in their
+# new reading order.
+redirects:
+  # 2.1.0 reorganised a flat docs/wiki into topic folders.
+  hierarchies: concepts/hierarchies
+  lifecycle-build-configure: concepts/lifecycle-build-configure
+  enablement: concepts/enablement
+  groups-and-urls: concepts/groups-and-urls
+  project-resources: concepts/project-resources
+  attributes-reference: reference/attributes-reference
+  diagnostics: reference/diagnostics
+  optionshelper: reference/optionshelper
+  generated-output: reference/generated-output
+  source-generator-behaviors: reference/source-generator-behaviors
+  testing-with-resourcekit: testing/testing-with-resourcekit
+  contributing: project/contributing
+  release-flow: project/release-flow
+  release-notes: project/release-notes
+  toolchain: project/toolchain
+  versioning: project/versioning
+  agent-skills: project/agent-skills
+  # The package README linked `/docs/aspire-resourcekit/configuration/` before the page was named
+  # `configuration-and-options`; keep that address pointing at the page it meant.
+  configuration: configuration-and-options

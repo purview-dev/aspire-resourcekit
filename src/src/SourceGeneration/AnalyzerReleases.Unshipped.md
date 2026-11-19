@@ -22,3 +22,6 @@ SG0037 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Duplicate child pr
 SG0038 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Generated Parent member collides with a user-authored member
 SG0039 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | Child resource kit uses a different primary group than its parent
 SG0040 | Purview.Aspire.ResourceKit.SourceGenerator | Info | Resource kit is already a resource builder
+SG0041 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ProjectPath requires a DotnetProjectResource
+SG0042 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ProjectPath and ResourcePath conflict
+SG0043 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ResourcePath requires a path-based resource

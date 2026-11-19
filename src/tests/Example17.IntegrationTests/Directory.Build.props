@@ -1,0 +1,9 @@
+<Project>
+	<PropertyGroup>
+		<!-- Read by Purview.BuildSdk's Sdk.props, before the project body. This test app pins its own
+		     packages (CPM off), so the SDK must not add versionless test-data/mocking references. -->
+		<TestDataFramework>None</TestDataFramework>
+		<SubstituteFramework>None</SubstituteFramework>
+	</PropertyGroup>
+	<Import Project="..\..\Directory.Build.props" />
+</Project>

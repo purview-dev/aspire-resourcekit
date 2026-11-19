@@ -17,12 +17,15 @@
 		<Project Path="src/SourceGeneration/SourceGeneration.csproj" />
 	</Folder>
 	<Folder Name="/src/examples/">
-		<Project Path="src/Example.AppHost/Example.AppHost.csproj" />
-		<Project Path="src/Example.ManualAppHost/Example.ManualAppHost.csproj" />
+		<Project Path="src/Example.Pre17.AppHost/Example.Pre17.AppHost.csproj" />
+		<Project Path="src/Example.Pre17.ManualAppHost/Example.Pre17.ManualAppHost.csproj" />
+		<Project Path="src/Example.AppHost17/Example.AppHost17.csproj" />
+		<Project Path="src/Example.ManualAppHost17/Example.ManualAppHost17.csproj" />
 		<Project Path="src/Example.Service/Example.Service.csproj" />
 		<Project Path="src/Example.ServiceDefaults/Example.ServiceDefaults.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
+		<Project Path="tests/Example17.IntegrationTests/Example17.IntegrationTests.csproj" />
 		<Project Path="tests/ResourceKit.IntegrationTests/ResourceKit.IntegrationTests.csproj" />
 		<Project Path="tests/ResourceKit.UnitTests/ResourceKit.UnitTests.csproj" />
 		<Project Path="tests/SharedTestingInfra/SharedTestingInfra.csproj" />

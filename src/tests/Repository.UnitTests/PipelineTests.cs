@@ -80,6 +80,7 @@ public sealed class PipelineTests
 						line.Contains("[Category=Unit]", StringComparison.Ordinal)
 						|| line.StartsWith("test-filter:", StringComparison.Ordinal)
 						|| line.StartsWith("run-tests: false", StringComparison.OrdinalIgnoreCase)
+						|| line.StartsWith("Build__RunTests: false", StringComparison.OrdinalIgnoreCase)
 					)
 					.Select(line => $"{Path.GetRelativePath(RepositoryRoot, workflow.Path)}: {line}")
 			)
@@ -88,6 +89,7 @@ public sealed class PipelineTests
 			.Where(workflow =>
 				!workflow.Lines.Any(static line =>
 					string.Equals(line.Trim(), "run-tests: true", StringComparison.Ordinal)
+					|| string.Equals(line.Trim(), "Build__RunTests: true", StringComparison.Ordinal)
 				)
 			)
 			.Select(workflow => Path.GetRelativePath(RepositoryRoot, workflow.Path))

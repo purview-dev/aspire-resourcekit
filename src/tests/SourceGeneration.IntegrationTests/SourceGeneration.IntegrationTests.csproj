@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
+		<!-- Project V2 moved Aspire.Hosting to 17 in this test compilation; the library itself keeps the 13.6 floor. -->
+		<PackageReference Include="Aspire.Hosting" VersionOverride="$(Aspire17Version)" />
+		<PackageReference Include="Aspire.Hosting.Dotnet" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
 		<PackageReference Include="Microsoft.Extensions.Options" />

@@ -1,0 +1,188 @@
+# OptionsHelper
+
+`OptionsHelper` builds configuration arguments or environment variables for options objects by using
+strongly typed assignment expressions or by flattening a populated options object. It is useful for
+integration-test fixtures, scenario toggles, and CLI overrides.
+
+## Assign
+
+`Assign<TOptions>(...)` starts building entries from assignment expressions.
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.API.IsEnabled = false,
+    c => c.API.Name = "api-test"
+).Build();
+```
+
+Resulting args are in this form:
+
+- `--ShopHostKit:API:IsEnabled=false`
+- `--ShopHostKit:API:Name=api-test`
+
+Each assignment action must set exactly one property path. To set multiple properties, pass one
+assignment per property (as above). The compiler reports `SG0020` if an action assigns more than one
+property path, and offers a code fix that splits it into separate assignments.
+
+You can also pass an explicit root section name:
+
+```csharp
+OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>("MySection", c => c.API.IsEnabled = false);
+```
+
+Child ResourceKit options are nested under their parent, so the same selector works at any depth:
+
+```csharp
+var args = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.Postgres.Database.IsEnabled = false
+).Build();
+// --ShopHostKit:Postgres:Database:IsEnabled=false
+```
+
+See [Parent and child resource kits](../concepts/Hierarchies.md) for the ownership model and configuration shape.
+
+## AsEnvironmentVariables
+
+Call `AsEnvironmentVariables()` before `Build()` to produce environment variables instead:
+
+```csharp
+var envVars = OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+    c => c.API.IsEnabled = false,
+    c => c.API.Name = "api-test"
+).AsEnvironmentVariables().Build();
+```
+
+This returns a dictionary such as
+`{"ShopHostKit__API__IsEnabled": "false", "ShopHostKit__API__Name": "api-test"}`.
+
+## Environment
+
+Call `Environment(...)` to flatten a populated options object into ASP.NET Core binder-style
+environment variables:
+
+```csharp
+var envVars = OptionsHelper.Environment(new ShopOptions
+{
+    Api = new ApiOptions
+    {
+        Name = "api-test",
+        Enabled = true,
+    },
+    ReplicaNames = ["a", "b"],
+    Labels =
+    {
+        ["region"] = "west",
+    },
+})
+.Override(static o => o.Api.Name = "api-prod")
+.Ignore(static o => o.Labels)
+.Build();
+```
+
+The output uses binder-style keys such as:
+
+- `Shop__Api__Name`
+- `Shop__Api__Enabled`
+- `Shop__ReplicaNames__0`
+- `Shop__ReplicaNames__1`
+- `Shop__Labels__region`
+
+Use `Override(...)` to replace selected values before emission, and `Ignore(...)` to drop selected
+properties from the flattened output.
+
+The dictionary returned by `Build()` can be passed straight to a resource:
+
+```csharp
+ResourceBuilder.WithEnvironment(OptionsHelper.Environment(Options).Build());
+```
+
+`IResourceBuilder.WithEnvironment(IReadOnlyDictionary<string, string>)` applies the entries directly, so
+the keys are preserved verbatim (for example `Services__ServiceName`).
+
+## PathFor
+
+If you need a property path as a plain string (for example, to build keys or log config), use
+`PathFor` with a member selector:
+
+```csharp
+var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions>(f => f.API.Name);
+// "API.Name"
+```
+
+When the selected member is a value type, use the two-type-parameter overload. The `object?`-returning
+overload boxes the value into the expression tree; the generic overload keeps the member in its
+natural type:
+
+```csharp
+var path = OptionsHelper.PathFor<ShopHostKit.ShopHostKitOptions, bool>(f => f.API.IsEnabled);
+// "API.IsEnabled"
+```
+
+## SectionNameFor
+
+Look up the resolved section name for any options type directly:
+
+```csharp
+var sectionName = OptionsHelper.SectionNameFor<ShopHostKit.ShopHostKitOptions>();
+// "ShopHostKit"
+
+var sectionNameFromType = OptionsHelper.SectionNameFor(typeof(ShopHostKit.ShopHostKitOptions));
+// "ShopHostKit"
+```
+
+`SectionNameFor` accepts both a generic type argument and a `Type`, and applies the same resolution
+rules as `Assign`:
+
+1. `const string SectionName` on the options type
+2. Type name trimmed by one suffix: `Options`, `Settings`, `Configuration`, `Config`
+3. Original type name
+
+Suffix trimming works for generic types by ignoring type arguments.
+
+## TUnit.Aspire integration
+
+`OptionsHelper` pairs well with [TUnit.Aspire](https://www.nuget.org/packages/TUnit.Aspire/) when
+passing args to an AppHost under test:
+
+```csharp
+protected override string[] Args =>
+[
+    .. base.Args,
+    .. OptionsHelper.Assign<ShopHostKit.ShopHostKitOptions>(
+      c => c.API.IsEnabled = false,
+      c => c.API.Name = "api-test"
+    ).Build(),
+];
+```
+
+See [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md).
+
+## The SG0020 rule
+
+An `OptionsHelper.Assign<TOptions>(...)` action must set exactly one property path. A block-bodied
+lambda such as the following is rejected at compile time:
+
+```csharp
+OptionsHelper.Assign<ShopHostKitOptions>(o =>
+{
+    o.API.IsEnabled = false;
+    o.API.Name = "api-test";
+});
+```
+
+Split each property into its own assignment argument instead:
+
+```csharp
+OptionsHelper.Assign<ShopHostKitOptions>(
+    o => o.API.IsEnabled = false,
+    o => o.API.Name = "api-test"
+);
+```
+
+Visual Studio offers a **"Split into separate assignments"** code fix that performs this conversion for
+you. See [Source Generator Behaviors](Source-Generator-Behaviors.md) for how the fix works.
+
+## See also
+
+- [Configuration and Options](../Configuration-and-Options.md)
+- [Testing with ResourceKit](../testing/Testing-with-ResourceKit.md)

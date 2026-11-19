@@ -5,7 +5,37 @@ All notable changes to `Purview.Aspire.ResourceKit` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0] - 2026-11-18
+
+### Added
+
+- **Aspire 17 Project V2 support.** Declare
+  `[ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]` and build with
+  `AddDotnetProject`. The generator emits `ResourceKitBase<THostKit, DotnetProjectResource>`; SG0018
+  validates that `BuildResource` adds the same project path (normalising `\`/`/`), and SG0019 checks that
+  an explicit base resolves to the declared project resource type. The new `ProjectPath` named argument is
+  reported by SG0041 when it is used with a resource that is not `DotnetProjectResource`.
+- **Aspire 13.6 remains supported.** The published package still declares the `Aspire.Hosting` 13.6.5
+  floor and resolves `DotnetProjectResource` by metadata name only, so a 13.6 consumer that never
+  references `Aspire.Hosting.Dotnet` is unaffected. `verify-consumers` now builds both a 13.6 and a 17
+  consumer from the packed package.
+
+### Changed
+
+- **Two example families.** `Example.Pre17.AppHost` / `Example.Pre17.ManualAppHost` keep the Aspire
+  13.6 `Aspire.AppHost.Sdk` form and stay buildable without the Aspire CLI.
+  `Example.AppHost17` / `Example.ManualAppHost17` use `Microsoft.NET.Sdk`, `AddDotnetProject` and
+  Project V2; both pipelines install the pinned Aspire CLI from `.config/aspire-version` before building
+  them. `Example17.IntegrationTests` covers the 17 pair on net10.0.
+- SG0018 and SG0019 messages name both project APIs (`AddProject<T>` / `AddDotnetProject`) and the
+  declared project resource type. Diagnostic text is not part of the public contract.
+- **Documentation organised into topic folders.** `docs/wiki` gained `concepts/`, `reference/`,
+  `testing/` and `project/`, plus a `_Sidebar.md` that declares the published reading order.
+  `Getting-Started.md` stays at the root as `docs.rootPage`, and `Examples.md` /
+  `Configuration-and-Options.md` stay there because `useCases[].docsPage` addresses them as single URL
+  segments. Every moved page's previous URL is listed in `docs/wiki/_redirects.yml`.
+
+## [2.0.0] - 2026-11-16
 
 ### Added
 
@@ -42,7 +72,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   constructs parents before children, validates the ownership graph before creating Aspire resources,
   builds in parent-before-child order, and inherits enablement down the hierarchy. Child options nest under
   the parent (`<HostKit>:<Parent>:<Child>`). A child with no `[InGroup]` inherits its parent's primary group.
-  See [Parent and child resource kits](docs/wiki/Hierarchies.md).
+  See [Parent and child resource kits](docs/wiki/concepts/Hierarchies.md).
 - **Diagnostics SG0032–SG0038** for self-parenting, parent cycles, unavailable or non-kit parents, child
   property collisions, duplicate child property names, and generated `Parent` member collisions. Invalid
   graphs block generation; manual graphs are rejected at runtime before resource creation.
@@ -72,7 +102,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   no test in this repository previously proved); and `PackageToolchainTests` fails the build if a
   `net8.0`/`net9.0` declaration reappears or a `Microsoft.Extensions.*` reference drifts into the
   11.x band. The decision record for the feature adoption and the union/`closed` assessment is
-  [`docs/wiki/Toolchain.md`](docs/wiki/Toolchain.md).
+  [`docs/wiki/project/Toolchain.md`](docs/wiki/project/Toolchain.md).
 - **Agent skill delivery documented correctly** — `README.md` no longer claims the package installs skills
   into a consuming repository on build. That mirror was removed in `Purview.BuildSdk` 1.0.6; the skills CLI
   is the only installer.

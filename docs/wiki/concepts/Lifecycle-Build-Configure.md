@@ -1,0 +1,104 @@
+# Lifecycle: Build vs Configure
+
+ResourceKit executes resources in a predictable sequence so dependency flow stays explicit and easy to
+reason about.
+
+## Runtime order
+
+When the generated extension method is invoked, ResourceKit performs:
+
+1. Instantiate root resource kits from options, then each child with its parent instance.
+2. Validate the complete ownership graph and compute a stable parent-before-child order.
+3. Resolve the composition gates (host mode, groups and ancestors).
+4. `Build` each enabled resource, parents before children.
+5. `Configure` each enabled resource in the same order.
+
+This happens before `DistributedApplication.Build()` completes. Graph validation runs before any Aspire
+resource is created, so an invalid manual composition fails fast.
+
+## The two lifecycle pairs
+
+- `Build` / `BuildResource(...)`: **construct this resource** (`AddProject` / `AddDotnetProject`, `AddRedis`,
+  `AddAzureStorage`, and so on).
+- `Configure` / `ConfigureResource()`: **attach resources to each other** after construction
+  (references, bindings, cross-resource wiring).
+
+The separation keeps creation and cross-resource wiring explicit and deterministic.
+
+## How the generated host kit drives the lifecycle
+
+The generated host kit overrides `Build` and `Configure`:
+
+- `Build` creates each discovered resource kit from its options, registers all of them with the base
+  class via `AddResource`, invokes an optional `onBuilt` callback, and then calls `base.Build(builder)`,
+  which runs `BuildResource(...)` for each resource.
+- `Configure` calls `base.Configure()` first (running each resource's `ConfigureResource()`), then
+  invokes an optional `onConfigured` callback.
+
+The extension method signature gives you hooks for extra wiring:
+
+```csharp
+builder.AddAspireResourceKit(
+    onBuilt: (hostKit, builder) => { /* after resources are created, before Configure */ },
+    onConfigured: hostKit => { /* after all resources are configured */ },
+    configureOptions: optionsBuilder => { /* additional options configuration */ }
+);
+```
+
+`HostKitBase<THostKit>` (the runtime base of the generated host kit) enforces that resources cannot be
+added after `Build` seals the resource list, keeping the lifecycle single-run and deterministic.
+
+## Build vs Configure per resource
+
+Each resource kit implements `IResourceKit<THostKit>`:
+
+- `Build(IDistributedApplicationBuilder builder)` calls your `BuildResource(...)` override to
+  **construct** the resource and store the resulting `IResourceBuilder<TResource>` in
+  `ResourceBuilder`.
+- `Configure()` calls your `ConfigureResource()` override to **attach** resources to each other after
+  construction.
+
+A common Configure example that connects an API to its dependencies:
+
+```csharp
+protected override void ConfigureResource()
+{
+    ResourceBuilder.WithReference(HostKit.Postgres.Database).WaitFor(HostKit.Postgres.Database);
+    ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
+
+    if (HostKit.Redis.IsEnabled)
+        ResourceBuilder.WithReference(HostKit.Redis).WaitFor(HostKit.Redis);
+}
+```
+
+Because `ConfigureResource()` runs after every resource is built, you can safely reach other resources
+through the host kit's generated properties.
+
+A child can use `Parent` directly inside its own `BuildResource` (`Parent.ResourceBuilder` also works but is
+redundant; SG0040), because the parent has completed its build first. The relationship is fixed at
+construction; a child never triggers its parent's or its own `Build` recursively.
+
+## Failure policy
+
+- Exceptions from `BuildResource` and `ConfigureResource` propagate unchanged.
+- A failed parent aborts the build; descendants are not built.
+- `Configure` skips a kit whose parent failed.
+- A host builds and configures at most once; repeated calls are no-ops.
+
+See [Parent and child resource kits](Hierarchies.md).
+
+## Enablement gates both phases
+
+Before `BuildResource(...)` runs, ResourceKit checks whether the resource should participate:
+
+- The configured `Mode` (`All`, `LocalDevelopment`, `Run`, `Publish`) must participate in the current AppHost execution.
+- If `IsEnabled` is `false`, both `BuildResource(...)` and `ConfigureResource()` are skipped.
+- During `Build`, `IsResourceEnabled(builder)` is evaluated (only when `IsEnabled` is already `true`)
+  and its result is assigned back to `IsEnabled`.
+
+See [Enablement](Enablement.md) for the full model.
+
+## See also
+
+- [Generated Output](../reference/Generated-Output.md)
+- [Enablement](Enablement.md)

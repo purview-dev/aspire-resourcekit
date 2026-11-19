@@ -84,7 +84,7 @@ arguments to toggle resources.
 Raw strings work:
 
 ```csharp
-public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.Example_AppHost>
+public sealed class CustomOptionsExampleAppHostFixture : AspireFixture<Projects.Example_Pre17_AppHost>
 {
     public const string AzureStorageName = "custom-options-azure-storage-example";
 

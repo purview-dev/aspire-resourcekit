@@ -13,7 +13,8 @@ namespace Purview.Aspire.ResourceKit.Repository;
 /// </para>
 /// <para>
 /// There is no <c>RepositoryRoot</c> override: the default is the SDK's repository-root marker walk,
-/// the same resolution <c>InstallPurviewSkills</c> uses, so an ordinary test run exercises it.
+/// the same resolution the skills recipes and <c>ValidatePurviewSkills</c> use, so an ordinary test run
+/// exercises it.
 /// <see cref="SkillsFolder_ResolvesToThisRepository"/> is what catches a walk that landed elsewhere -
 /// every inherited rule passes vacuously against a catalogue that was never found.
 /// </para>

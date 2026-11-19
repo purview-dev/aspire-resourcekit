@@ -1,0 +1,31 @@
+using Aspire.Hosting.Dotnet;
+
+namespace Purview.Aspire.ResourceKit.Example.ManualAppHost17.AppModels.Resources;
+
+sealed partial class ExampleAPIKit(ExampleHostKit hostKit)
+	: ResourceKitBase<ExampleHostKit, DotnetProjectResource>(hostKit, Platform.ResourceKits.API)
+{
+	protected override IEnumerable<ResourceKitUrl> Urls =>
+		[
+			new() { Url = Platform.EndpointsDefinitions.Health, DisplayText = "Health" },
+			new() { Endpoint = "https", DisplayText = "API" },
+		];
+
+	protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
+		builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
+
+	protected override void ConfigureResource()
+	{
+		if (HostKit.PublishMarker.IsEnabled)
+			ResourceBuilder.WithEnvironment("PUBLISH_MARKER", HostKit.PublishMarker);
+
+		ResourceBuilder.WithReference(HostKit.PostgresDatabase).WaitFor(HostKit.PostgresDatabase);
+		ResourceBuilder.WithReference(HostKit.AzureStorage.Blobs).WaitFor(HostKit.AzureStorage.Blobs);
+
+		if (HostKit.KeyVault.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.KeyVault).WaitFor(HostKit.KeyVault);
+
+		if (HostKit.Redis.IsEnabled)
+			ResourceBuilder.WithReference(HostKit.Redis).WaitFor(HostKit.Redis);
+	}
+}
