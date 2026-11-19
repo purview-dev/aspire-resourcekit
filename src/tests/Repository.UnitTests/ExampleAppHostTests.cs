@@ -6,7 +6,7 @@ namespace Purview.Aspire.ResourceKit.Repository;
 /// Holds the two example families to their build contracts. The Pre17 pair uses the legacy
 /// <c>Aspire.AppHost.Sdk</c> and deliberately stays buildable without the Aspire CLI. The Aspire 17
 /// pair uses <c>Microsoft.NET.Sdk</c> plus <c>Aspire.Hosting.AppHost</c>, which makes the CLI bundle a
-/// hard requirement (ASPIRE013), so the shared pipelines must install the pinned CLI before building.
+/// hard requirement (ASPIRE013), so each pipeline must arrange for the pinned CLI before it builds.
 /// </summary>
 public sealed class ExampleAppHostTests
 {
@@ -106,40 +106,52 @@ public sealed class ExampleAppHostTests
 	}
 
 	[Test]
-	public async Task Workflows_InstallThePinnedAspireCLIBeforeBuilding(CancellationToken cancellationToken)
+	public async Task Workflows_GivenTheAspire17Examples_EnableThePinnedAspireCLIBeforeBuilding(
+		CancellationToken cancellationToken
+	)
 	{
 		// Arrange
 		cancellationToken.ThrowIfCancellationRequested();
-		string[] workflows = [".github/workflows/pr.yml", ".github/workflows/release.yml"];
-		var contents = workflows
-			.Select(relative =>
-				(
-					Path: relative,
-					Text: File.ReadAllText(
-						Path.Combine(RepositoryRoot, relative.Replace('/', Path.DirectorySeparatorChar))
-					)
-				)
-			)
-			.ToArray();
+		var pullRequest = ReadWorkflow("pr.yml");
+		var release = ReadWorkflow("release.yml");
 
 		// Act
-		var missing = contents
-			.Where(workflow =>
-				!workflow.Text.Contains("Aspire.Cli", StringComparison.Ordinal)
-				|| !workflow.Text.Contains(".config/aspire-version", StringComparison.Ordinal)
-			)
-			.Select(workflow => workflow.Path)
-			.ToArray();
+		// PR validation delegates to the shared workflow, so the CLI is that workflow's job and this
+		// file's only obligation is to enable it. Release cannot delegate to a reusable workflow -
+		// nuget.org's Trusted Publishing policy checks the job_workflow_ref claim against this file -
+		// so it installs the CLI itself.
+		var pullRequestEnablesSharedCli = pullRequest.Any(static line =>
+			line.Trim().Contains("aspire-cli: true", StringComparison.Ordinal)
+		);
+		var releaseInstallsPinnedCli =
+			release.Any(static line => line.Contains("Aspire.Cli", StringComparison.Ordinal))
+			&& release.Any(static line => line.Contains(".config/aspire-version", StringComparison.Ordinal))
+			&& release.Any(static line =>
+				line.Contains("aspire", StringComparison.OrdinalIgnoreCase)
+				&& line.Contains("setup", StringComparison.Ordinal)
+			);
 
 		// Assert
 		await Assert
-			.That(missing)
-			.IsEmpty()
+			.That(pullRequestEnablesSharedCli)
+			.IsTrue()
 			.Because(
-				"every pipeline that builds the Aspire 17 examples must install Aspire.Cli from "
-					+ ".config/aspire-version first: ASPIRE013 cannot be suppressed."
+				"the PR pipeline calls the shared workflow, whose `aspire-cli` input is what installs "
+					+ "Aspire.Cli from .config/aspire-version and runs `aspire setup` before the build: "
+					+ "ASPIRE013 cannot be suppressed, so leaving it off fails the build instead."
+			);
+		await Assert
+			.That(releaseInstallsPinnedCli)
+			.IsTrue()
+			.Because(
+				"the release pipeline builds the Aspire 17 examples through the purview-release composite "
+					+ "action and must install Aspire.Cli from .config/aspire-version, then run `aspire setup`, "
+					+ "before it runs: ASPIRE013 cannot be suppressed."
 			);
 	}
+
+	static string[] ReadWorkflow(string fileName) =>
+		File.ReadAllLines(Path.Combine(RepositoryRoot, ".github", "workflows", fileName));
 
 	[Test]
 	public async Task RepositoryRoot_ResolvesToThisRepository(CancellationToken cancellationToken)

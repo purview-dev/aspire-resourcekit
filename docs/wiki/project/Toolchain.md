@@ -32,7 +32,9 @@ package.
 The repository keeps both example families. `Example.Pre17.AppHost` / `Example.Pre17.ManualAppHost` use
 `Aspire.AppHost.Sdk` 13.6.5 and stay buildable without the Aspire CLI;
 `Example.AppHost17` / `Example.ManualAppHost17` use `Microsoft.NET.Sdk` + `Aspire.Hosting.AppHost` 17 and
-require the pinned CLI from `.config/aspire-version` (ASPIRE013). Both pipelines install it.
+require the pinned CLI from `.config/aspire-version` (ASPIRE013). PR validation enables the shared
+workflow's `aspire-cli` input; the release pipeline installs the same CLI inline, because Trusted
+Publishing checks the `job_workflow_ref` claim against `release.yml`.
 
 ## What is enabled
 

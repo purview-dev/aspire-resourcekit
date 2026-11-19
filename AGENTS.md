@@ -39,11 +39,14 @@ This is a .NET repository centered on Aspire and source generation.
     on the NuGet cache and fail with ASPIRE009 — the failure that broke the release pipeline.
   - `Example.AppHost17` / `Example.ManualAppHost17` use `Microsoft.NET.Sdk` plus
     `Aspire.Hosting.AppHost` 17 and `AddDotnetProject`. ASPIRE013 makes the Aspire CLI bundle a hard
-    build requirement for a C# AppHost; both pipelines install `Aspire.Cli` from
-    `.config/aspire-version` and run `aspire setup` before the build. Do not set
+    build requirement for a C# AppHost. PR validation enables the shared workflow's `aspire-cli` input,
+    which installs `Aspire.Cli` from `.config/aspire-version` and runs `aspire setup` before the build;
+    the release pipeline cannot call a reusable workflow (Trusted Publishing checks the
+    `job_workflow_ref` claim against `release.yml`), so it installs the same pinned CLI inline. Do not set
     `AspireUseCliBundle=false` on these.
 
-  `ExampleAppHostTests` guards both contracts and that the CLI version matches `Aspire17Version`.
+  `ExampleAppHostTests` guards both contracts, that each pipeline arranges the pinned CLI, and that the
+  CLI version matches `Aspire17Version`.
 
 The skills this repository **authors** live in the root `skills/` folder — read them there, at
 `skills/<name>/SKILL.md`. Skills a *package* ships are installed into `.agents/skills/` by the skills

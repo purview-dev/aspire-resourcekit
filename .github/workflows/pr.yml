@@ -8,43 +8,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  packages: read
-
 jobs:
   build:
     name: Build and test
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
+    uses: purview-dev/build/.github/workflows/purview-build.yml@main
+    with:
       # The full test filter is owned by .config/purview-build.json; this only states that the
-      # pipeline must run tests rather than rely on a shared default.
-      Build__RunTests: true
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
+      # pipeline must run tests rather than rely on a shared-workflow default.
+      run-tests: true
       # The Aspire 17 examples use Microsoft.NET.Sdk + Aspire.Hosting.AppHost, which requires the
-      # Aspire CLI bundle at build time (ASPIRE013 cannot be suppressed). Install the pinned CLI
-      # before the build; the version is the same one Directory.Packages.props pins for the 17
-      # AppHost packages.
-      - uses: purview-dev/build/actions/dotnet-sdk@main
-
-      - name: Install Aspire CLI
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$(tr -d '[:space:]' < .config/aspire-version)"
-          dotnet tool install --global Aspire.Cli --version "$version" \
-            || dotnet tool update --global Aspire.Cli --version "$version"
-          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-          "$HOME/.dotnet/tools/aspire" setup
-          "$HOME/.dotnet/tools/aspire" --version
-
-      - uses: purview-dev/build/.github/actions/purview-build@main
-        with:
-          packages-read-token: ${{ secrets.PURVIEW_PACKAGES_READ_TOKEN }}
-          source-mapping: ${{ vars.PURVIEW_NUGET_SOURCE_MAPPING }}
+      # Aspire CLI bundle at build time (ASPIRE013 cannot be suppressed). The shared workflow installs
+      # Aspire.Cli from .config/aspire-version and runs `aspire setup` before the build.
+      aspire-cli: true
+    secrets: inherit
