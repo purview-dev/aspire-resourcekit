@@ -64,32 +64,28 @@ order, and inherited enablement. It is composition ownership, not a general depe
 [Parent and child resource kits](../concepts/Hierarchies.md).
 
 `ProjectPath` selects Aspire 17 Project V2. Declare `DotnetProjectResource` as the type argument and
-add the same path with `AddDotnetProject`; SG0018 validates the path and SG0019 validates an explicit
-base.
+the path. With no `BuildResource` override, ResourceKit generates `AddDotnetProject(builder, Name, path)`.
+SG0019 validates an explicit base.
 
 ```csharp
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
-}
+partial class ApiResourceKit;
 ```
 
 `ResourcePath` is the general form and works for the same .NET project plus Aspire JavaScript app
-resources. When both are set, `ResourcePath` is validated and the two must agree (SG0042):
+resources. When both are set, `ResourcePath` is used and the two must agree (SG0042). A
+`ViteAppResource` or `NextJsAppResource` kit gets `AddViteApp`/`AddNextJsApp` generated with the
+default `"dev"` script. Node, Bun and Deno apps need a script path, so they keep a hand-written
+override:
 
 ```csharp
 [ResourceDefinition<ViteAppResource>("web", ResourcePath = "../../../web/packages/vite-app")]
-partial class WebResourceKit
-{
-    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddViteApp(Name, "../../../web/packages/vite-app", "dev");
-}
+partial class WebResourceKit;
 ```
 
-SG0018 reports a `ResourcePath` that `BuildResource` does not add with the matching path, whichever
-path-based method the resource type supports. A `ResourcePath` on any other resource type reports
+When you write `BuildResource` yourself, ResourceKit generates nothing. SG0018 then reports an
+override that doesn't add the declared path with the method the resource type supports, and SG0044
+reports one that only repeats the call ResourceKit would generate. A `ResourcePath` on any other resource type reports
 SG0043; a `ProjectPath` on anything but `DotnetProjectResource` keeps reporting SG0041.
 
 The legacy `[ResourceDefinition<Projects.X>]` + `AddProject<T>` form is still supported, including on

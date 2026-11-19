@@ -41,21 +41,17 @@ If your AppHost is getting bigger, this helps you keep resource setup maintainab
 
 ```csharp
 using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Dotnet;
 using Purview.Aspire.ResourceKit;
 
 [HostKit]
 partial class ShopHostKit;
 
-// Aspire 17 Project V2. On Aspire 13.6, use [ResourceDefinition<Projects.Example_Service>] with
+// Aspire 17 Project V2: BuildResource is generated as AddDotnetProject(Name, ProjectPath). On Aspire
+// 13.6, use [ResourceDefinition<Projects.Example_Service>] with an override that calls
 // builder.AddProject<Projects.Example_Service>(Name) instead; both forms are supported.
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
-}
+partial class ApiResourceKit;
 
 var builder = DistributedApplication.CreateBuilder(args);
 builder.AddAspireResourceKit();

@@ -166,10 +166,17 @@ readonly record struct ResourceKitModel(
 	// The groups the kit belongs to, primary group first.
 	EquatableArray<TypeIdentity> Groups,
 	EquatableArray<UrlModel> Urls,
+	// The fully-qualified add method (for example global::Aspire.Hosting.DotnetProjectHostingExtensions.AddDotnetProject)
+	// and the declared path, when ResourceKit generates BuildResource; both null otherwise.
+	string? GeneratedBuildResourceMethod,
+	string? GeneratedBuildResourcePath,
 	SourceLocationModel Location
 )
 {
 	public bool HasParent => ParentType != TypeIdentity.Empty;
+
+	public bool GeneratesBuildResource =>
+		GeneratedBuildResourceMethod is not null && GeneratedBuildResourcePath is not null;
 }
 
 /// <summary>

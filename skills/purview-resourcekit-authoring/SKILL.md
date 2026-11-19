@@ -4,7 +4,8 @@ description: >-
   Use when composing an Aspire AppHost with Purview.Aspire.ResourceKit - declaring a [HostKit] and
   [ResourceDefinition] resource kits, choosing the generic or non-generic attribute style, the
   Build/BuildResource and Configure/ConfigureResource lifecycle, project resources through
-  AddProject or AddDotnetProject (Aspire 17 Project V2), parent/child kits with Parent = typeof(TParentKit) and inherited enablement, grouping
+  AddProject or AddDotnetProject (Aspire 17 Project V2), ProjectPath/ResourcePath with a generated
+  BuildResource, typed AppHostProjects paths, parent/child kits with Parent = typeof(TParentKit) and inherited enablement, grouping
   kits with [ResourceGroup]/[InGroup<TGroup>], named dashboard URLs with
   [ResourceUrl]/[EndpointUrl], and registering the generated AddAspireResourceKit extension.
 metadata:
@@ -73,6 +74,7 @@ need more. Every participating class must be `partial` (`SG0001`).
 | `Mode` | `ResourceKitMode` | `All` | execution mode for this resource |
 | `Parent` | `Type?` | `null` | the owning resource kit: `Parent = typeof(TParentKit)` |
 | `ProjectPath` | `string?` | `null` | Aspire 17 Project V2 project path (`AddDotnetProject`); only used with `DotnetProjectResource` (`SG0041`) |
+| `ResourcePath` | `string?` | `null` | the path for any path-based resource (`AddDotnetProject`, the JavaScript `Add*App` methods); wins over `ProjectPath` (`SG0042`), ignored on other resources (`SG0043`) |
 | `AspireResourceType` | generic type argument | `null` | the Aspire `IResource` type — generic style only |
 
 `Mode` accepts a named property or a constructor argument on both attributes, and configuration can
@@ -237,17 +239,14 @@ service is added by path, and Vite/npm directories, which never had a typed refe
 ```
 
 ```csharp
+// No BuildResource: ResourceKit generates AddDotnetProject(builder, Name, "<the value of AppHostProjects.Api.Path>").
 [ResourceDefinition<DotnetProjectResource>(AppHostProjects.Api.Name, ProjectPath = AppHostProjects.Api.Path)]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
-}
+partial class ApiResourceKit;
 ```
 
-- `Path` is a `const`, relative to the AppHost project directory, so SG0018 still validates it; the
-  class is in the AppHost's root namespace and is `internal` unless
-  `ResourceKitAppHostProjectsVisibility` changes it.
+- `Path` is a `const` relative to the AppHost project directory, so the generator can read it, and
+  SG0018 can validate it in a hand-written override. The class is in the AppHost's root namespace and
+  is `internal` unless `ResourceKitAppHostProjectsVisibility` changes it.
 - `Name` defaults to the leaf file/directory name; `ClassName` overrides the nested type name. A
   missing path is `RKP0001` (set `Optional="true"` when it may be absent), an invalid class name is
   `RKP0002`, an invalid resource name is `RKP0003`, a duplicate nested class name is `RKP0004`, a
@@ -262,15 +261,19 @@ partial class ApiResourceKit
   (`apphost.go`) AppHosts have no MSBuild project and use the Aspire CLI's generated SDK modules
   instead.
 
-For a JavaScript app, keep `AppHostProjects.Web.Path` and declare it with `ResourcePath` so SG0018
-validates the `AddViteApp`/`AddNextJsApp`/`AddNodeApp` call too:
+For a JavaScript app, declare `AppHostProjects.Web.Path` with `ResourcePath`. A Vite or Next.js kit
+gets `AddViteApp`/`AddNextJsApp` generated with the default `"dev"` script. A Node, Bun or Deno kit
+needs a script path, so you write that override, and SG0018 validates its path:
 
 ```csharp
 [ResourceDefinition<ViteAppResource>(AppHostProjects.Web.Name, ResourcePath = AppHostProjects.Web.Path)]
-partial class WebResourceKit
+partial class WebResourceKit;
+
+[ResourceDefinition<NodeAppResource>(AppHostProjects.Worker.Name, ResourcePath = AppHostProjects.Worker.Path)]
+partial class WorkerResourceKit
 {
-    protected override IResourceBuilder<ViteAppResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddViteApp(Name, AppHostProjects.Web.Path, "dev");
+    protected override IResourceBuilder<NodeAppResource> BuildResource(IDistributedApplicationBuilder builder)
+        => builder.AddNodeApp(Name, AppHostProjects.Worker.Path, "server.js");
 }
 ```
 
@@ -280,15 +283,18 @@ partial class WebResourceKit
 using Aspire.Hosting.Dotnet;
 
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
-}
+partial class ApiResourceKit;
 ```
 
-`ProjectPath` is validated against the literal passed to `AddDotnetProject` after normalising `\` and
-`/`. A computed path is accepted because it cannot be compared at compile time. Use
+With no override, ResourceKit generates `BuildResource` as `AddDotnetProject(builder, Name, path)`.
+Write the override only when registration needs more, such as the `configure` callback or a fluent
+call on the result. If an override only repeats the generated call, `SG0044` reports it, and its code
+fix deletes it, moving the path into `ProjectPath` first if the attribute has none. The generator never
+replaces a hand-written override or one a base class already implements.
+
+In a hand-written override, `ProjectPath` is validated against the constant passed to
+`AddDotnetProject` after normalising `\` and `/`. A computed path is accepted because it can't be
+compared at compile time. Use
 `ProjectPath` only with `DotnetProjectResource`; otherwise `SG0041` reports that the declaration is
 ignored. `ResourcePath` is the general form for the same project and for JavaScript app resources; when
 both are set `ResourcePath` wins and a mismatch is `SG0042`, while a `ResourcePath` on any resource that

@@ -56,9 +56,10 @@ exiting the constructor" warning does not apply.
 | SG0041 | Warning | `ProjectPath` is set on a resource that is not a `DotnetProjectResource`, so it is ignored |
 | SG0042 | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used |
 | SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored |
+| SG0044 | Info | A `BuildResource` override only repeats the registration ResourceKit generates from the declared path; the code fix removes it, moving the path into the attribute first when needed |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
-[Project Resources](../concepts/Project-Resources.md) for SG0018/SG0019/SG0041–SG0043 specifics,
+[Project Resources](../concepts/Project-Resources.md) for SG0018/SG0019/SG0041–SG0044 specifics,
 [Groups and URLs](../concepts/Groups-and-URLs.md) for SG0021–SG0031, and
 [Parent and child resource kits](../concepts/Hierarchies.md) for SG0032–SG0040.
 

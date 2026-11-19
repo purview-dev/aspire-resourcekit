@@ -92,6 +92,22 @@ static partial class TypeLibraryGenerator
 	[TypeRef("Aspire.Hosting.JavaScript")]
 	static readonly TypeIdentity JavaScriptAppResource = default;
 
+	// The JavaScript app types whose Add* method needs only a name and a directory (the run script defaults
+	// to "dev"), so ResourceKit can generate BuildResource from ResourcePath alone.
+	[TypeRef("Aspire.Hosting.JavaScript")]
+	static readonly TypeIdentity ViteAppResource = default;
+
+	[TypeRef("Aspire.Hosting.JavaScript")]
+	static readonly TypeIdentity NextJsAppResource = default;
+
+	// The extension classes a generated BuildResource calls through, fully qualified so the generated
+	// source never depends on the consumer's usings.
+	[TypeRef("Aspire.Hosting")]
+	static readonly TypeIdentity DotnetProjectHostingExtensions = default;
+
+	[TypeRef("Aspire.Hosting")]
+	static readonly TypeIdentity JavaScriptHostingExtensions = default;
+
 	[TypeRef("Aspire.Hosting.ApplicationModel")]
 	static readonly TypeIdentity IResourceWithEndpoints = default;
 

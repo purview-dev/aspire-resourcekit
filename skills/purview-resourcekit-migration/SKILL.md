@@ -1,6 +1,9 @@
 ---
 name: purview-resourcekit-migration
 description: "Use when converting an Aspire AppHost (typically Program.cs/AppHost.cs) into Purview.Aspire.ResourceKit patterns: generate a HostKit, split resources into ResourceKits with BuildResource/ConfigureResource, extract parent/child kits with Parent = typeof(TParentKit), map existing config into generated options (IsEnabled/Name), replace direct wiring with AddAspireResourceKit, and update tests/fixtures/configuration to use OptionsHelper and ResourceKit semantics."
+metadata:
+  product: Purview.Aspire.ResourceKit
+  repository: purview-dev/aspire-resourcekit
 ---
 
 # Aspire AppHost → ResourceKit Migration Skill
@@ -55,6 +58,8 @@ For each logical resource currently created inline in AppHost:
 
 - Create a partial class with `[ResourceDefinition<TResource>("resource-name")]`.
 - Implement `BuildResource(IDistributedApplicationBuilder builder)` with the original creation call.
+  The exception is a plain `AddDotnetProject(name, path)`, `AddViteApp(name, path)` or
+  `AddNextJsApp(name, path)`: declare the path on the attribute instead and write no override (see 2.0.1).
 - Do **not** move cross-resource links into build unless required by API constraints.
 
 Example shape:
@@ -70,27 +75,68 @@ partial class ApiResourceKit
 
 #### 2.0.1) Aspire 17: migrate `AddProject` to Project V2
 
-On an Aspire 17 AppHost, `AddProject<T>` is obsolete (`CS0618`) and the AppHost SDK is gone. Convert
-the same shape to `DotnetProjectResource` and declare the path once on the attribute:
+On an Aspire 17 AppHost, `AddProject<T>` is obsolete (`CS0618`) and the AppHost SDK is gone.
+
+> [!IMPORTANT]
+> **Inventory the project references before you change the SDK.** `Aspire.AppHost.Sdk` set
+> `IsAspireProjectResource=true` on every `<ProjectReference>`, and `Aspire.Hosting.AppHost` generates
+> `Projects.<ClassName>` only from references that carry it. `Microsoft.NET.Sdk` sets no such default, so
+> after the swap every plain `<ProjectReference>` silently stops producing its `Projects.*` type. That
+> reference is the only record of the project's path, so dropping it, or converting the kit without
+> carrying it over, loses the project entirely.
+
+Before editing the csproj, list every `<ProjectReference>` that does **not** say
+`IsAspireProjectResource="false"`. Each one was a project resource. Record its `Include` path and its
+`Projects.*` class name: the file name without extension, with every non-word character (`.`, `-`) replaced by `_` (or the
+`AspireProjectMetadataTypeName` metadata, when set). Then, for **every** entry, do one of these:
+
+1. **Convert it (the default).** Add a `<ResourceKitProject Include="<same path>" Name="<resource name>"
+   ClassName="<PascalCase name>" />`, remove the `<ProjectReference>`, and declare
+   `ProjectPath = AppHostProjects.<ClassName>.Path` on the kit (example below).
+2. **Keep the `Projects.*` type.** Do this when the registration has no path-based Aspire 17 equivalent,
+   for example `AddAzureFunctionsProject<T>` or another integration that takes `IProjectMetadata`. Keep the
+   reference and restore the metadata the SDK used to add:
+
+   ```xml
+   <ProjectReference Include="..\SyncSupportCalendar\SyncSupportCalendar.csproj"
+                     IsAspireProjectResource="true"
+                     ReferenceOutputAssembly="false"
+                     SkipGetTargetFrameworkProperties="true" />
+   ```
+
+Afterwards, every `Projects.*` and `AppHostProjects.*` symbol a kit references must resolve, and the
+AppHost must build. A `CS0234`/`CS0103` on `Projects.X` or `AppHostProjects.X` means an inventory entry
+was dropped. Restore it from the pre-migration csproj (`git show HEAD:<apphost>.csproj`) rather than
+deleting the kit.
+
+Convert each entry to `DotnetProjectResource` and declare the path once on the attribute:
 
 ```csharp
 using Aspire.Hosting.Dotnet;
 
+// No BuildResource: ResourceKit generates AddDotnetProject(Name, "../Api/Api.csproj").
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = "../Api/Api.csproj")]
-partial class ApiResourceKit
-{
-    protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder)
-        => builder.AddDotnetProject(Name, "../Api/Api.csproj");
-}
+partial class ApiResourceKit;
 ```
 
-- Keep the resource `Name` and every `WithReference`/`WithEnvironment` call; `DotnetProjectResource`
-  supports them.
-- `ProjectPath` is validated against the literal passed to `AddDotnetProject` after normalising `\`
-  and `/` (SG0018). A computed path is accepted but cannot be validated. `ResourcePath` is the general
-  form for the same project and for an `AddViteApp`/`AddNextJsApp`/`AddNodeApp` app (SG0018); a
-  conflicting pair is SG0042 and a non-path resource is SG0043.
+- Keep the resource `Name`, and move every `WithReference`/`WithEnvironment` call into
+  `ConfigureResource`. `DotnetProjectResource` supports them.
+- A kit that already has `BuildResource => builder.AddDotnetProject(Name, path)` reports SG0044. Apply
+  its code fix rather than editing by hand: it deletes the override, and moves the path into
+  `ProjectPath` first when the attribute has none.
+- Keep the override only when registration needs more than the name and path. `ProjectPath` is then
+  validated against the constant passed to `AddDotnetProject` after normalising `\` and `/` (SG0018).
+  A computed path is accepted but can't be validated. `ResourcePath` is the general
+  form for the same project and for JavaScript apps. A Vite or Next.js kit with the default `"dev"`
+  script gets its `BuildResource` generated too. A Node, Bun or Deno app needs a script path, so it keeps
+  a hand-written override that SG0018 validates. A conflicting pair is SG0042 and a non-path resource is
+  SG0043.
+- Declare paths through `<ResourceKitProject>` items so the attribute can use
+  `AppHostProjects.Api.Path` instead of a string literal.
 - On Aspire 13.6, keep the legacy `Projects.*` form; the package still declares the 13.6 floor.
+- Preserve the resource name. A legacy kit with no explicit name took it from the class name. Pass that
+  same name as the `ResourceKitProject` `Name`, so configuration keys, `WithReference` connection names
+  and tests keep working.
 
 #### 2.1) Extract a child resource created from another resource
 

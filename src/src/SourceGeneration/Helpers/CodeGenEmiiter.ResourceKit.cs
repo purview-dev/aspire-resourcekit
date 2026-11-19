@@ -156,6 +156,9 @@ partial class CodeGenEmiiter
 							);
 					}
 
+					if (resourceKit.GeneratesBuildResource)
+						GenerateBuildResource(context.Writer, resourceKit);
+
 					GenerateChildResourceKitProperties(context, resourceKit, cancellationToken);
 				}
 			}
@@ -163,6 +166,29 @@ partial class CodeGenEmiiter
 			resourceNs.Dispose();
 		}
 	}
+
+	// A kit that declares ProjectPath/ResourcePath and writes no override gets the one-line registration
+	// generated, so the path is stated once, on the attribute. The call is fully qualified so it does not
+	// depend on the consumer's usings.
+	static void GenerateBuildResource(CodeWriter writer, ResourceKitModel resourceKit) =>
+		writer
+			.NewLine()
+			.XmlInheritDoc()
+			.MethodExpression(
+				new(
+					"BuildResource",
+					TypeLibrary.Aspire.Hosting.ApplicationModel.IResourceBuilder.MakeGeneric(
+						resourceKit.AspireResourceType
+					),
+					TypeDeclarationAccessibility.Protected
+				)
+				{
+					IsOverride = true,
+					Parameters = [new("builder", TypeLibrary.Aspire.Hosting.IDistributedApplicationBuilder)],
+					ExpressionBody =
+						$"{resourceKit.GeneratedBuildResourceMethod}(builder, Name, {resourceKit.GeneratedBuildResourcePath.StringLiteral()})",
+				}
+			);
 
 	// The host kit constructs children, so the setter is assembly-internal rather than private. The generated
 	// host and every generated kit live in the consuming compilation.

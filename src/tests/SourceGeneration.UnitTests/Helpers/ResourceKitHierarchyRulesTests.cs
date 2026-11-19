@@ -179,6 +179,8 @@ public sealed class ResourceKitHierarchyRulesTests
 			Mode: null,
 			Groups: EquatableArray<TypeIdentity>.Empty,
 			Urls: EquatableArray<UrlModel>.Empty,
+			GeneratedBuildResourceMethod: null,
+			GeneratedBuildResourcePath: null,
 			Location: default
 		);
 

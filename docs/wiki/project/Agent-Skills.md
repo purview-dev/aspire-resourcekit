@@ -26,10 +26,10 @@ records what it installed in `skills-lock.json`, so the set can be restored late
 
 | Skill | Answers |
 | --- | --- |
-| `purview-resourcekit-authoring` | declaring a `[HostKit]` and resource kits, attribute styles, parent/child hierarchies, the Build/Configure lifecycle, project resources, groups and URLs |
+| `purview-resourcekit-authoring` | declaring a `[HostKit]` and resource kits, attribute styles, parent/child hierarchies, the Build/Configure lifecycle, project and path-based resources (including the generated `BuildResource` and typed `AppHostProjects` paths), groups and URLs |
 | `purview-resourcekit-options` | generated options including nested child options, extending them, run modes (`Mode`), inherited `IsEnabled` versus `IsResourceEnabled`, `OptionsHelper` |
 | `purview-resourcekit-testing` | TUnit.Aspire fixtures, overriding options from a test, hierarchy model tests, running the tiers |
-| `purview-resourcekit-diagnostics` | what an `SG00xx` means, including hierarchy, group-placement and redundant-`ResourceBuilder` rules, and how to fix it |
+| `purview-resourcekit-diagnostics` | what an `SG00xx` means, including hierarchy, group-placement, declared-path, redundant-`ResourceBuilder` and redundant-`BuildResource` rules, the `RKP` build errors, and how to fix each |
 | `purview-resourcekit-migration` | converting an existing inline AppHost into ResourceKit composition, including extracting child resource kits |
 
 Each is authored at `skills/<name>/SKILL.md` in this repository, and validated on every test run

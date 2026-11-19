@@ -306,6 +306,7 @@ static class SourceGenLibrary
 			?? symbol.Name.TrimSuffix(TypeLibraryGenerator.TrimSuffixes)!;
 		var (aspireResourceType, _, _) = ResourceKitRules.ResolveResourceType(matchedAttribute, symbol);
 		var parent = ResourceKitRules.GetParent(symbol);
+		var generatedBuildResource = ResourceKitRules.GetGeneratedBuildResource(symbol, matchedAttribute);
 
 		TypeIdentity resourceKitType = new(symbol);
 		var optionsType = resourceKitType.Nested(symbol.Name + TypeLibraryGenerator.OptionsBaseClassSuffix);
@@ -333,6 +334,10 @@ static class SourceGenLibrary
 					.. ResourceKitRules.GetGroups(symbol).Select(static g => new TypeIdentity(g)),
 				]),
 				Urls: GetUrlModels(symbol),
+				GeneratedBuildResourceMethod: generatedBuildResource is { } method
+					? $"{method.ExtensionsType}.{method.MethodName}"
+					: null,
+				GeneratedBuildResourcePath: generatedBuildResource?.Path,
 				Location: SourceLocationModel.From(
 					symbol.Locations.FirstOrDefault(static location => location.IsInSource)
 				)

@@ -4,15 +4,14 @@ using Purview.Aspire.ResourceKit.Example.AppHost17.AppModels.Groups;
 
 namespace Purview.Aspire.ResourceKit.Example.AppHost17.AppModels.Resources;
 
+// ProjectPath is the only place the path is stated: with no BuildResource override, ResourceKit generates
+// AddDotnetProject(builder, Name, path), reading the path from the AppHostProjects.Api.Path constant.
 [ResourceDefinition<DotnetProjectResource>(Platform.ResourceKits.API, ProjectPath = AppHostProjects.Api.Path)]
 [InGroup<ServicesGroup>]
 [ResourceUrl("Health", Platform.EndpointsDefinitions.Health, DisplayText = "Health")]
 [EndpointUrl("https", DisplayText = "API")]
 sealed partial class ExampleAPIKit
 {
-	protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddDotnetProject(Name, AppHostProjects.Api.Path);
-
 	protected override void ConfigureResource()
 	{
 		if (HostKit.PublishMarker.IsEnabled)

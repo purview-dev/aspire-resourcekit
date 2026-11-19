@@ -1,5 +1,3 @@
-using Aspire.Hosting;
-using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Dotnet;
 using ConsumerV2;
 using Purview.Aspire.ResourceKit;
@@ -9,13 +7,10 @@ using Purview.Aspire.ResourceKit;
 // [ResourceDefinition<DotnetProjectResource>] and the ProjectPath declared on it.
 //
 // The path comes from AppHostProjects, which the packaged buildTransitive targets generate from the
-// ResourceKitProject item in ConsumerV2.csproj. SG0018 still resolves it, because it is a const.
+// ResourceKitProject item in ConsumerV2.csproj. BuildResource is not written either: ApiKit compiles
+// only when the shipped generator emits AddDotnetProject(Name, path) from ProjectPath.
 [HostKit]
 partial class ConsumerHostKit;
 
 [ResourceDefinition<DotnetProjectResource>("api", ProjectPath = AppHostProjects.Self.Path)]
-partial class ApiKit
-{
-	protected override IResourceBuilder<DotnetProjectResource> BuildResource(IDistributedApplicationBuilder builder) =>
-		builder.AddDotnetProject(Name, AppHostProjects.Self.Path);
-}
+partial class ApiKit;

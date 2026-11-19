@@ -109,6 +109,20 @@ Your `partial class` supplies `BuildResource(...)` and optionally `ConfigureReso
 options are disabled), so publish-only and local-development-only resources are configuration rather
 than code. See [Enablement](../concepts/Enablement.md).
 
+A kit added by path doesn't need to supply `BuildResource` either. When a `DotnetProjectResource`,
+`ViteAppResource` or `NextJsAppResource` kit declares `ProjectPath`/`ResourcePath` and writes no
+override, the generator emits the registration from the declared value:
+
+```csharp
+/// <inheritdoc/>
+protected override global::Aspire.Hosting.ApplicationModel.IResourceBuilder<global::Aspire.Hosting.Dotnet.DotnetProjectResource> BuildResource(
+    global::Aspire.Hosting.IDistributedApplicationBuilder builder
+) => global::Aspire.Hosting.DotnetProjectHostingExtensions.AddDotnetProject(builder, Name, "../Example.Service/Example.Service.csproj");
+```
+
+See [Project Resources](../concepts/Project-Resources.md) for when the override is still yours to
+write.
+
 ## Generated options
 
 Host options are nested under the host kit and expose a `SectionName` constant plus one nested options
