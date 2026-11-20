@@ -155,11 +155,14 @@ sealed partial class ExampleAPIKit { /* ... */ }
 - **`[ResourceUrl(name, url)]`** adds a link.
   - An absolute URL is shown as it is.
   - A relative URL is resolved against the endpoint named by `Endpoint`. Without one, it uses the
-    `https` endpoint, then the `http` endpoint, then the first endpoint.
+    `https` endpoint, then the `http` endpoint, then the first endpoint. Within an endpoint it uses the
+    URL the dashboard shows (the dev-domain address) before Aspire's details-only `localhost` copy.
   - Only **one** URL is added. This differs from Aspire's own `WithUrl("/health")`, which rewrites the
     path of *every* endpoint URL on the resource.
 - **`[EndpointUrl(endpoint)]`** changes the URL Aspire already shows for an endpoint: its `DisplayText`
-  and `DisplayLocation`.
+  and `DisplayLocation`. When a launch profile gives the endpoint a dev domain, Aspire also keeps a
+  details-only `localhost` copy of it; that copy is left hidden and unlabelled, so the dashboard shows
+  one link with your text. The copy is changed only when Aspire shows no URL for the endpoint.
 - A URL's name is the key for its options. An `[EndpointUrl]` is named after its endpoint in PascalCase,
   so `otlp-grpc` becomes `OtlpGrpc`. Names must be unique on a kit or group (SG0026).
 

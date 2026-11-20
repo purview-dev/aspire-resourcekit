@@ -100,6 +100,61 @@ public sealed class ResourceKitUrlTests
 		await Assert.That(urls[1].DisplayText).IsNull();
 	}
 
+	// With a dev domain, Aspire shows the dev-domain URL and keeps a localhost copy of the same endpoint
+	// in the details only. Customising the endpoint must not reveal or relabel that copy, or the
+	// dashboard shows two links with one name, one of them on localhost.
+	[Test]
+	public async Task Apply_GivenEndpointUrlWithoutUrl_LeavesTheEndpointsHiddenUrlsAlone()
+	{
+		// Arrange
+		var urls = CreateDevDomainUrls();
+		ResourceKitUrl url = new() { Endpoint = "https", DisplayText = "Web" };
+
+		// Act
+		var unresolved = ResourceKitUrl.Apply([url], urls);
+
+		// Assert
+		await Assert.That(unresolved).IsEmpty();
+		await Assert.That(urls[0].DisplayText).IsEqualTo("Web");
+		await Assert.That(urls[0].DisplayLocation).IsEqualTo(UrlDisplayLocation.SummaryAndDetails);
+		await Assert.That(urls[1].DisplayText).IsNull();
+		await Assert.That(urls[1].DisplayLocation).IsEqualTo(UrlDisplayLocation.DetailsOnly);
+	}
+
+	// When Aspire shows no URL for the endpoint at all, the customisation is all there is to apply to.
+	[Test]
+	public async Task Apply_GivenEndpointUrlWhoseUrlsAreAllHidden_CustomisesThem()
+	{
+		// Arrange
+		var urls = CreateDevDomainUrls();
+		urls[0].DisplayLocation = UrlDisplayLocation.DetailsOnly;
+		ResourceKitUrl url = new() { Endpoint = "https", DisplayText = "Web" };
+
+		// Act
+		ResourceKitUrl.Apply([url], urls);
+
+		// Assert
+		await Assert.That(urls[0].DisplayText).IsEqualTo("Web");
+		await Assert.That(urls[1].DisplayText).IsEqualTo("Web");
+		await Assert.That(urls[1].DisplayLocation).IsEqualTo(UrlDisplayLocation.SummaryAndDetails);
+	}
+
+	// A relative URL is built on the endpoint URL the dashboard shows, not on the hidden localhost copy.
+	[Test]
+	public async Task Apply_GivenRelativeUrl_ResolvesAgainstTheEndpointsShownUrl()
+	{
+		// Arrange
+		var urls = CreateDevDomainUrls();
+		urls.Reverse();
+		ResourceKitUrl url = new() { Url = "/health", Endpoint = "https" };
+
+		// Act
+		ResourceKitUrl.Apply([url], urls);
+
+		// Assert
+		await Assert.That(urls[^1].Url).IsEqualTo("https://web.dev.localhost:7311/health");
+	}
+
 	[Test]
 	public async Task Apply_GivenDisabledUrl_SkipsIt()
 	{
@@ -202,6 +257,25 @@ public sealed class ResourceKitUrlTests
 		[
 			new() { Url = "http://localhost:5000", Endpoint = container.GetEndpoint("http") },
 			new() { Url = "https://localhost:5001", Endpoint = container.GetEndpoint("https") },
+		];
+	}
+
+	// The pair Aspire computes for an endpoint whose launch profile gives it a dev domain.
+	static List<ResourceUrlAnnotation> CreateDevDomainUrls()
+	{
+		var builder = DistributedApplication.CreateBuilder();
+		var container = builder.AddContainer("web", "image").WithHttpsEndpoint(port: 7311, name: "https");
+		var https = container.GetEndpoint("https");
+
+		return
+		[
+			new() { Url = "https://web.dev.localhost:7311", Endpoint = https },
+			new()
+			{
+				Url = "https://localhost:7311",
+				Endpoint = https,
+				DisplayLocation = UrlDisplayLocation.DetailsOnly,
+			},
 		];
 	}
 

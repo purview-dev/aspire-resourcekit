@@ -13,7 +13,9 @@ namespace Purview.Aspire.ResourceKit;
 /// </para>
 /// <para>
 /// A URL without a <see cref="Url"/> customises the URL Aspire already shows for <see cref="Endpoint"/>,
-/// changing its <see cref="DisplayText"/> and <see cref="DisplayLocation"/>.
+/// changing its <see cref="DisplayText"/> and <see cref="DisplayLocation"/>. When Aspire also keeps a
+/// details-only copy of that endpoint's URL (the <c>localhost</c> address beside a dev domain), the copy
+/// is left as it is; it is customised only when Aspire shows no URL for the endpoint.
 /// </para>
 /// <para>
 /// The type is mutable so generated options can bind it from configuration, for example
@@ -84,18 +86,23 @@ public sealed class ResourceKitUrl
 
 			if (url.Url is null)
 			{
-				var matched = false;
-				foreach (var endpointUrl in endpointUrls.Where(u => IsEndpoint(u, url.Endpoint)))
+				ResourceUrlAnnotation[] matches = [.. endpointUrls.Where(u => IsEndpoint(u, url.Endpoint))];
+				if (matches.Length == 0)
 				{
-					matched = true;
+					unresolved.Add(url);
+					continue;
+				}
+
+				// Aspire keeps a details-only copy of an endpoint's URL beside its dev-domain URL. Customise
+				// the URLs it shows; touch the hidden ones only when it shows none.
+				ResourceUrlAnnotation[] shown = [.. matches.Where(static u => IsShown(u))];
+				foreach (var endpointUrl in shown.Length > 0 ? shown : matches)
+				{
 					if (url.DisplayText is not null)
 						endpointUrl.DisplayText = url.DisplayText;
 
 					endpointUrl.DisplayLocation = url.DisplayLocation;
 				}
-
-				if (!matched)
-					unresolved.Add(url);
 
 				continue;
 			}
@@ -136,14 +143,19 @@ public sealed class ResourceKitUrl
 
 	static ResourceUrlAnnotation? SelectBaseUrl(ResourceUrlAnnotation[] endpointUrls, string? endpoint)
 	{
+		// Resolve against a URL the dashboard shows before a details-only copy of the same endpoint.
+		ResourceUrlAnnotation[] ordered = [.. endpointUrls.OrderBy(static u => IsShown(u) ? 0 : 1)];
+
 		if (endpoint is not null)
-			return endpointUrls.FirstOrDefault(u => IsEndpoint(u, endpoint));
+			return ordered.FirstOrDefault(u => IsEndpoint(u, endpoint));
 
 		// Prefer the https endpoint, then http, then any.
-		return endpointUrls.FirstOrDefault(static u => IsEndpoint(u, "https"))
-			?? endpointUrls.FirstOrDefault(static u => IsEndpoint(u, "http"))
-			?? endpointUrls.FirstOrDefault();
+		return ordered.FirstOrDefault(static u => IsEndpoint(u, "https"))
+			?? ordered.FirstOrDefault(static u => IsEndpoint(u, "http"))
+			?? ordered.FirstOrDefault();
 	}
+
+	static bool IsShown(ResourceUrlAnnotation url) => url.DisplayLocation != UrlDisplayLocation.DetailsOnly;
 
 	static bool IsEndpoint(ResourceUrlAnnotation url, string? endpoint) =>
 		endpoint is not null && string.Equals(url.Endpoint?.EndpointName, endpoint, StringComparison.OrdinalIgnoreCase);

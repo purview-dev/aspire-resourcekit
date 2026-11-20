@@ -19,6 +19,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`[EndpointUrl]` no longer reveals Aspire's hidden `localhost` URL.** With a dev domain, Aspire shows
+  the dev-domain URL and keeps a details-only `localhost` copy of the same endpoint. `ResourceKitUrl.Apply`
+  set the display text and `SummaryAndDetails` on both, so the dashboard showed two links with the same
+  name, one of them on `localhost`. It now customises only the URLs Aspire shows (all of them when it
+  shows none), and a relative `[ResourceUrl]` resolves against the shown URL before the hidden copy.
 - **Aspire 17 migration guidance no longer loses `Projects.*` projects.** `Aspire.AppHost.Sdk` marked
   every `<ProjectReference>` `IsAspireProjectResource=true`; `Microsoft.NET.Sdk` does not, so a plain
   reference stops generating its `Projects.*` type and the project's path is lost. The migration skill
