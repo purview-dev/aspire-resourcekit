@@ -553,8 +553,30 @@ public sealed class OptionsHelperTests
 		await Assert.That(envVars[expectedKey]).IsEqualTo("LocalDevelopment");
 	}
 
+	// A kit with [EndpointUrl] carries a ResourceKitUrl option, whose IsAbsolute is computed. A
+	// get-only property can be neither assigned nor configured, so it is never a candidate path.
+	[Test]
+	public async Task Assign_GivenOptionsWithAComputedProperty_IgnoresIt()
+	{
+		// Arrange
+
+		// Act
+		var args = OptionsHelper.Assign<UrlOptions>(static c => c.UseDbGate = false).Build();
+
+		// Assert
+		await Assert.That(args.Length).IsEqualTo(1);
+		await Assert.That(args[0]).IsEqualTo("--Url:UseDbGate=false");
+	}
+
 	sealed class ModeOptions
 	{
 		public ResourceKitMode Mode { get; set; }
+	}
+
+	sealed class UrlOptions
+	{
+		public bool UseDbGate { get; set; } = true;
+
+		public ResourceKitUrl Https { get; set; } = new() { Endpoint = "https", DisplayText = "API" };
 	}
 }

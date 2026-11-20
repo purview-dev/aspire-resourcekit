@@ -535,6 +535,17 @@ public static class OptionsHelper
 			var av = property.GetValue(a);
 			var bv = property.GetValue(b);
 
+			var isLeaf =
+				TryGetScalarSentinel(property.PropertyType, 1, out _)
+				|| property.PropertyType == typeof(string)
+				|| property.PropertyType == typeof(object);
+
+			// A get-only leaf (a computed value such as ResourceKitUrl.IsAbsolute) cannot be seeded, so it
+			// is always equal across the two copies; it can be neither assigned nor configured, so it is
+			// never the path an assignment set.
+			if (isLeaf && property.SetMethod is null)
+				continue;
+
 			if (TryGetScalarSentinel(property.PropertyType, 1, out _))
 			{
 				if (Equals(av, bv))

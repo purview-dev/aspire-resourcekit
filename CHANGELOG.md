@@ -19,6 +19,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`OptionsHelper.Assign` ignores computed properties.** It infers the path an assignment set by
+  comparing two seeded copies of the options, and counted every get-only leaf as set because it can
+  never be seeded. A kit with `[EndpointUrl]` or `[ResourceUrl]` carries a `ResourceKitUrl`, whose
+  `IsAbsolute` is computed, so every `Assign<THostKitOptions>(o => ...)` on that host kit threw "Found
+  n candidate paths". Get-only leaves are now skipped: they can be neither assigned nor configured.
 - **`[EndpointUrl]` no longer reveals Aspire's hidden `localhost` URL.** With a dev domain, Aspire shows
   the dev-domain URL and keeps a details-only `localhost` copy of the same endpoint. `ResourceKitUrl.Apply`
   set the display text and `SummaryAndDetails` on both, so the dashboard showed two links with the same
