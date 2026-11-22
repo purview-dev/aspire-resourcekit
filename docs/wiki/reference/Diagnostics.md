@@ -57,10 +57,12 @@ exiting the constructor" warning does not apply.
 | SG0042 | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used |
 | SG0043 | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored |
 | SG0044 | Info | A `BuildResource` override only repeats the registration ResourceKit generates from the declared path; the code fix removes it, moving the path into the attribute first when needed |
+| SG0045 | Error | A `[ResourceGroup]` class is nested in another type; it must be declared at namespace scope |
+| SG0046 | Error | A `[ResourceGroup]` class and its host kit are declared with different accessibility |
 
 See [Attributes Reference](Attributes-Reference.md) for the rules tied to attribute styles,
 [Project Resources](../concepts/Project-Resources.md) for SG0018/SG0019/SG0041–SG0044 specifics,
-[Groups and URLs](../concepts/Groups-and-URLs.md) for SG0021–SG0031, and
+[Groups and URLs](../concepts/Groups-and-URLs.md) for SG0021–SG0031 and SG0045/SG0046, and
 [Parent and child resource kits](../concepts/Hierarchies.md) for SG0032–SG0040.
 
 A parent cycle is reported on one kit in the cycle and includes the full path, for example
@@ -165,6 +167,9 @@ and the kit's own `IResourceBuilder<TResource>` would not satisfy it.
 6. If the kit declares `Parent = typeof(...)`, ensure that type is a resource kit in the same composition;
    a child in a different primary group than its parent gets SG0039, and a redundant
    `Parent.ResourceBuilder` gets SG0040.
+7. Declare each `[ResourceGroup]` class at namespace scope (SG0045) and with the same accessibility as the
+   host kit (SG0046); a nested group, or a `public` group under an `internal` host kit, is reported there
+   instead of in generated code.
 
 ## Common fixes
 

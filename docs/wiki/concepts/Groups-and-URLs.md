@@ -47,7 +47,16 @@ foreach (var resource in HostKit.Groups.Data.Resources.Where(static r => r.IsEna
 }
 ```
 
-A group must be at least as accessible as the host kit, just like a resource kit.
+Two placement rules apply, because the group is a second partial declaration the generator completes:
+
+- **A group must be declared at namespace scope** (SG0045). The generator emits the group, and its nested
+  options class, beside the host kit, so a group nested inside another class is emitted without the
+  containing types its `*Options` references still use. Move the class out of the container rather than
+  making the container `partial`.
+- **A group must have the same accessibility as its host kit** (SG0046). A `public` group paired with an
+  `internal` host kit derives from a less accessible base (CS9338/CS0051), and an `internal` group paired
+  with a `public` host kit is exposed by the host kit's public `Groups` accessor (CS0053). Declare both
+  `public` or both `internal`; leaving the modifier off a group makes it `internal` at namespace scope.
 
 ### Enablement
 
@@ -65,9 +74,9 @@ ExampleHostKit:Groups:Data:ShowInDashboard=false  # data's kits move up to the p
 
 ### Parent and child kits in groups
 
-A child kit with no `[InGroup]` inherits its ResourceKit parent's **primary** group when the host seals its
-resources. A child with an explicit `[InGroup]` keeps it instead. The parent's group is registered by the
-parent, so the child's registration order does not matter.
+A child kit **may** declare `[InGroup]`. Without one it inherits its ResourceKit parent's **primary** group
+when the host seals its resources; with one it keeps the groups it declares instead. The parent's group is
+registered by the parent, so the child's registration order does not matter.
 
 Permission to build is the intersection of every gate: the child's own groups, the parent's groups, the
 host mode, and the parent/child hierarchy. A disabled parent disables descendants even when a child's own

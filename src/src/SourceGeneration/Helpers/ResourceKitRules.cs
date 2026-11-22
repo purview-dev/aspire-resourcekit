@@ -58,7 +58,9 @@ static class ResourceKitRules
 		DiagnosticLibrary.ResourceKitParentCycle.Id,
 		DiagnosticLibrary.ResourceKitParentNotResourceKit.Id,
 		DiagnosticLibrary.ResourceKitParentUnavailable.Id,
-		DiagnosticLibrary.DuplicateResourceKitChildPropertyName.Id
+		DiagnosticLibrary.DuplicateResourceKitChildPropertyName.Id,
+		DiagnosticLibrary.ResourceGroupMustBeTopLevel.Id,
+		DiagnosticLibrary.ResourceGroupAccessibilityMismatch.Id
 	);
 
 	/// <summary>
@@ -738,6 +740,21 @@ static class ResourceKitRules
 			);
 		}
 
+		// The group is emitted beside the host kit, so it cannot carry the containing types the declaring
+		// path implies. Report the placement rather than let the generated code fail with CS0426/CS9338.
+		// A group nested in a generic type is SG0030's case instead; one message per cause is enough.
+		if (symbol.ContainingType is { } containingType && !IsGenericOrInGenericType(symbol))
+		{
+			diagnostics.Add(
+				new(
+					DiagnosticLibrary.ResourceGroupMustBeTopLevel,
+					IsBlocking: true,
+					GetGroupDeclarationLocation(symbol, cancellationToken) ?? declaration.Identifier.GetLocation(),
+					[symbol.Name, containingType.ToDisplayString()]
+				)
+			);
+		}
+
 		// A group is never a member of anything, itself included: groups nest through their parent only.
 		if (
 			TypeHelpers.HasAttribute(symbol, TypeLibrary.Purview.Aspire.ResourceKit.ResourceDefinitionAttribute)
@@ -1103,6 +1120,86 @@ static class ResourceKitRules
 
 	public static string GroupName(INamedTypeSymbol symbol) =>
 		ResourceGroupAttributeData.FromAttributeData(symbol.GetAttributes()).Name ?? GroupPropertyName(symbol);
+
+	/// <summary>
+	/// Gets the location of the <c>[ResourceGroup]</c> application on <paramref name="symbol"/>, so a
+	/// placement diagnostic points at the declaration the user wrote rather than at emitted code.
+	/// </summary>
+	public static Location? GetGroupDeclarationLocation(INamedTypeSymbol symbol, CancellationToken cancellationToken) =>
+		symbol
+			.GetAttributes()
+			.Where(IsResourceGroupAttribute)
+			.Select(attribute => GetLocation(attribute, cancellationToken))
+			.FirstOrDefault(static location => location is not null);
+
+	/// <summary>
+	/// Compares the accessibility a resource group is emitted with against the accessibility of the host
+	/// kit it derives from, and returns the mismatch rule when the two differ.
+	/// </summary>
+	/// <remarks>
+	/// The generated group derives from <c>ResourceKitGroup&lt;THostKit&gt;</c>, and the host kit exposes it
+	/// through members emitted on types nested in the host kit. Both relationships carry the accessibility
+	/// of the type they mention, so the declarations must match: a public group paired with an internal
+	/// host kit fails with CS9338/CS0051, and an internal group paired with a public host kit fails with
+	/// CS0053. The generated group copies the declared modifier because it is a second partial
+	/// declaration, so the generator cannot correct the pairing itself.
+	/// </remarks>
+	public static RuleEvaluation? EvaluateGroupHostKitAccessibility(
+		TypeDeclarationAccessibility? groupAccessibility,
+		TypeDeclarationAccessibility? hostKitAccessibility,
+		string groupName,
+		string hostKitName,
+		Location? location
+	)
+	{
+		// A declaration without a modifier is internal at namespace scope, which is what the generator emits.
+		var group = groupAccessibility ?? TypeDeclarationAccessibility.Internal;
+		var hostKit = hostKitAccessibility ?? TypeDeclarationAccessibility.Internal;
+		if (group == hostKit)
+			return null;
+
+		return new(
+			DiagnosticLibrary.ResourceGroupAccessibilityMismatch,
+			IsBlocking: true,
+			location ?? Location.None,
+			[groupName, AccessibilityText(group), hostKitName, AccessibilityText(hostKit)]
+		);
+	}
+
+	/// <summary>
+	/// Compares a resource group with the host kit it belongs to, from their symbols.
+	/// </summary>
+	/// <remarks>
+	/// A nested group is SG0045's case, and its effective accessibility comes from its containing types, so
+	/// it is left to that rule rather than reported twice.
+	/// </remarks>
+	public static RuleEvaluation? EvaluateGroupHostKitAccessibility(
+		INamedTypeSymbol group,
+		INamedTypeSymbol hostKit,
+		CancellationToken cancellationToken
+	) =>
+		group.ContainingType is not null || IsGenericOrInGenericType(group)
+			? null
+			: EvaluateGroupHostKitAccessibility(
+				group.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
+				hostKit.DeclaredAccessibility.ToTypeDeclarationAccessibility(),
+				GroupName(group),
+				hostKit.Name,
+				GetGroupDeclarationLocation(group, cancellationToken) ?? GetLocation(group)
+			);
+
+	static string AccessibilityText(TypeDeclarationAccessibility accessibility) =>
+		accessibility switch
+		{
+			TypeDeclarationAccessibility.Public => "public",
+			TypeDeclarationAccessibility.Internal => "internal",
+			TypeDeclarationAccessibility.Protected => "protected",
+			TypeDeclarationAccessibility.ProtectedInternal => "protected internal",
+			TypeDeclarationAccessibility.PrivateProtected => "private protected",
+			TypeDeclarationAccessibility.Private => "private",
+			TypeDeclarationAccessibility.File => "file",
+			_ => "internal",
+		};
 
 	/// <summary>
 	/// Determines whether a group's parent chain leads back to the group itself.

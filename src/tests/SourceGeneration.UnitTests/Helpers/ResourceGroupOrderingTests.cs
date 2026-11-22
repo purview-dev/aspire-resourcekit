@@ -85,6 +85,7 @@ public sealed class ResourceGroupOrderingTests
 			PropertyName: name,
 			ShowInDashboard: true,
 			Mode: null,
-			Urls: EquatableArray<UrlModel>.Empty
+			Urls: EquatableArray<UrlModel>.Empty,
+			Location: default
 		);
 }

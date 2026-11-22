@@ -163,9 +163,9 @@ sealed partial class PostgresDatabaseKit
 - A disabled parent disables every descendant, and a disabled ancestor never invokes a descendant's
   `IsResourceEnabled` hook. Siblings are independent.
 - Child options nest under the parent (`ShopHostKit:Postgres:Database:IsEnabled`).
-- A child with no `[InGroup]` inherits its parent's **primary** group. Grouping never changes build order.
-  An explicit child group whose primary group differs from the parent's warns `SG0039`; the child renders in
-  its own group unless an Aspire visual parent places it under the parent.
+- A child may declare `[InGroup]`; with none it inherits its parent's **primary** group. Grouping never
+  changes build order. An explicit child group whose primary group differs from the parent's warns `SG0039`;
+  the child renders in its own group unless an Aspire visual parent places it under the parent.
 - ResourceKit parentage is composition ownership, not a general dependency, and it does **not** create an
   Aspire visual parent relationship. Add `WithParentRelationship(Parent.ResourceBuilder)` yourself when you
   want that.
@@ -346,7 +346,11 @@ sealed partial class ApiKit { /* ... */ }
 
 - A group class must be `partial`, non-generic and must have no base type: the generator derives it from
   `ResourceKitGroup<THostKit>` (`SG0025`, `SG0030`). A class is a kit or a group, never both (`SG0031`), and a
-  parent chain can never loop back (`SG0022`). It must be at least as accessible as the host kit.
+  parent chain can never loop back (`SG0022`).
+- Declare a group at **namespace scope**, never nested inside another class, and give it the **same
+  accessibility as the host kit** (`SG0045`, `SG0046`). The generator emits the group beside the host kit as
+  a second partial declaration, so a nested group's `*Options` path no longer resolves, and an accessibility
+  mismatch surfaces as CS9338/CS0051 (`public` group, `internal` host kit) or CS0053 (the inverse).
 - In run mode, at the end of `Configure`, each group with a built kit is added as a `ResourceKitGroupResource`
   node, named after the group, or `<name>-group` when a resource already has that name. The node is
   excluded from the manifest. A kit whose resource already has a parent (its own

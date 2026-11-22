@@ -79,7 +79,14 @@ static class SourceGenLibrary
 			)
 			.CombineWith(
 				resourceGroups,
-				static (model, groups, _) => model with { ResourceGroups = groups },
+				static (model, groups, _) =>
+					model with
+					{
+						ResourceGroups = groups,
+						// Evaluated here because only the pair decides whether a group can be emitted, and only
+						// now are the host kit and its groups both known.
+						HierarchyDiagnostics = WithGroupAccessibilityDiagnostics(model, groups),
+					},
 				GeneratorTrackingNames.CollectResourceGroups
 			);
 
@@ -155,6 +162,47 @@ static class SourceGenLibrary
 		var location = model.Location.IsEmpty ? Location.None : model.Location.ToLocation();
 
 		return ReportableDiagnostic.Create(finding.Descriptor, isBlocking: true, location, [.. finding.MessageArgs]);
+	}
+
+	/// <summary>
+	/// Appends the accessibility rules that compare each resource group with the host kit it is emitted
+	/// beside, keeping the hierarchy diagnostics already gathered.
+	/// </summary>
+	/// <remarks>
+	/// A nested group is SG0045's case and has no single accessibility to compare, so it is skipped here.
+	/// </remarks>
+	static EquatableArray<ReportableDiagnostic> WithGroupAccessibilityDiagnostics(
+		KitGenerationModel model,
+		EquatableArray<GeneratorResult<ResourceGroupModel>> groups
+	)
+	{
+		if (model.HostKit.IsEmpty || groups.IsEmpty)
+			return model.HierarchyDiagnostics;
+
+		var hostKit = model.HostKit.Value;
+		List<ReportableDiagnostic> diagnostics = [.. model.HierarchyDiagnostics];
+		foreach (var group in groups)
+		{
+			var groupModel = group.Value;
+			if (
+				groupModel.GroupType.IsNested
+				|| ResourceKitRules.EvaluateGroupHostKitAccessibility(
+					groupModel.Accessibility,
+					hostKit.Accessibility,
+					groupModel.Name,
+					hostKit.HostKitType.Name,
+					groupModel.Location.IsEmpty ? Location.None : groupModel.Location.ToLocation()
+				)
+					is not { } rule
+			)
+			{
+				continue;
+			}
+
+			diagnostics.Add(rule.ToDiagnosticInfo());
+		}
+
+		return EquatableArray<ReportableDiagnostic>.Create([.. diagnostics]);
 	}
 
 	// A warning, not an error: an explicit child group is allowed, but it silently changes visual placement.
@@ -374,7 +422,10 @@ static class SourceGenLibrary
 				PropertyName: ResourceKitRules.GroupPropertyName(symbol),
 				ShowInDashboard: data.ShowInDashboard,
 				Mode: data.Mode,
-				Urls: GetUrlModels(symbol)
+				Urls: GetUrlModels(symbol),
+				Location: SourceLocationModel.From(
+					ResourceKitRules.GetGroupDeclarationLocation(symbol, cancellationToken)
+				)
 			),
 			diagnostics
 		);

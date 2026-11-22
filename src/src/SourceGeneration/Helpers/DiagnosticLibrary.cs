@@ -428,4 +428,24 @@ static class DiagnosticLibrary
 		isEnabledByDefault: true,
 		description: "A class is either a resource kit, which joins groups with [InGroup], or a resource group, which nests under a parent group. One class cannot be both, so a group can never contain itself as a member."
 	);
+
+	public static readonly DiagnosticDescriptor ResourceGroupMustBeTopLevel = new(
+		id: "SG0045",
+		title: "Resource group must be declared at namespace scope",
+		messageFormat: "The resource group '{0}' is nested in '{1}'; declare the group at namespace scope",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "The generator emits the group class, and its nested options class, beside the host kit rather than inside the declaring type, so a group nested in another type is emitted without its containing types while its options are referenced through them. Move the group class to namespace scope."
+	);
+
+	public static readonly DiagnosticDescriptor ResourceGroupAccessibilityMismatch = new(
+		id: "SG0046",
+		title: "Resource group accessibility differs from its host kit",
+		messageFormat: "The resource group '{0}' is {1}, but the host kit '{2}' is {3}; declare the group with the same accessibility as its host kit",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true,
+		description: "A group derives from ResourceKitGroup<THostKit>, and the host kit exposes it through public members of types nested in the host kit, so the two declarations must have the same accessibility: a public group paired with an internal host kit derives from a less accessible base, and an internal group paired with a public host kit is exposed by a more accessible member."
+	);
 }

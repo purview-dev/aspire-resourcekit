@@ -104,7 +104,7 @@ From your `[HostKit]` and `[ResourceDefinition]` declarations, ResourceKit gener
 - a host resource base class,
 - typed parent/child properties and constructors for hierarchical kits,
 - host + per-resource options (when enabled), including nested child options,
-- typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard,
+- typed resource groups (`[ResourceGroup]`, `[InGroup<TGroup>]`) that switch sets of resources on or off and nest them in the dashboard — a group is a namespace-scope partial class declared with the same accessibility as the host kit (SG0045, SG0046),
 - named dashboard URLs (`[ResourceUrl]`, `[EndpointUrl]`) that options can override,
 - an AppHost extension method to build/configure/register your host kit,
 - typed project, app and file/directory paths (`AppHostProjects`) from `ResourceKitProject` /

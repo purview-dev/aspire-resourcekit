@@ -13,6 +13,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `NextJsAppResource` kit that declares `ProjectPath`/`ResourcePath` and writes no `BuildResource` gets
   the `AddDotnetProject`/`AddViteApp`/`AddNextJsApp` registration generated from the declared path. It
   is not generated when the kit writes the override or an explicit base class implements it.
+- **SG0045** (Error) reports a `[ResourceGroup]` class nested inside another type, and **SG0046** (Error)
+  reports a group declared with a different accessibility than its host kit. Both block generation, so the
+  failure is one diagnostic on the declaration instead of a wall of errors in generated code: a nested group
+  lost its containing types (`CS0426`) while still referencing its `*Options` through them, a `public` group
+  under an `internal` host kit derived from a less accessible base (`CS9338`/`CS0051`), and the inverse
+  pairing exposed an `internal` group from the host kit's public `Groups` accessor (`CS0053`).
 - **SG0044** (Info) reports a `BuildResource` override that only repeats the generated call; its code
   fix removes the override, first moving the path into `ProjectPath`/`ResourcePath` when the attribute
   does not declare it.

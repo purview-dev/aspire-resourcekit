@@ -123,6 +123,13 @@ ownership, not a general dependency or an automatic Aspire visual parent relatio
 `<HostKit>:Groups:<Group>`, which applies to every kit in it. In run mode each group appears as a
 dashboard node with its kits nested underneath.
 
+The group class must be declared **at namespace scope** and with the **same accessibility as the host
+kit** (SG0045, SG0046). It is a second partial declaration the generator completes, emitted beside the
+host kit: a nested group loses its containing types (CS0426), a `public` group under an `internal` host
+kit derives from a less accessible base (CS9338), and an `internal` group under a `public` host kit is
+exposed by the host kit's public `Groups` accessor (CS0053). Both rules are reported against the
+declaration instead.
+
 `[ResourceUrl(name, url)]` adds a named dashboard URL: absolute, or relative to an endpoint.
 `[EndpointUrl(endpoint)]` renames an endpoint's own URL. Each URL becomes a `ResourceKitUrl` option under
 `<HostKit>:<Kit>:Urls:<Name>`.
