@@ -58,16 +58,16 @@ public sealed class GeneratorCachingTests : ResourceKitSourceGeneratorTestBase<H
 		[
 			.. TestHelper.GenerateSources(),
 			"""
-				namespace Testing.Groups;
+			namespace Testing.Groups;
 
-				// TestHelper's host kit is public, and a group must be at least as accessible as its host kit.
-				[ResourceGroup]
-				[ResourceUrl("Runbook", "https://example.com/runbook")]
-				public partial class PlatformGroup;
+			// TestHelper's host kit is public, and a group must be at least as accessible as its host kit.
+			[ResourceGroup]
+			[ResourceUrl("Runbook", "https://example.com/runbook")]
+			public partial class PlatformGroup;
 
-				[ResourceGroup(Parent = typeof(PlatformGroup))]
-				public partial class DataGroup;
-				""",
+			[ResourceGroup(Parent = typeof(PlatformGroup))]
+			public partial class DataGroup;
+			""",
 		];
 
 		// Act & Assert

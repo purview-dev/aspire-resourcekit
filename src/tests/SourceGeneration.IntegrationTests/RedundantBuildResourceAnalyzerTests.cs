@@ -49,20 +49,19 @@ public sealed class RedundantBuildResourceAnalyzerTests : ResourceKitSourceGener
 		};
 	}
 
-	static string DotnetKit(string attributeArguments, string body) =>
-		$$"""
-			namespace Testing
-			{
-				[HostKit]
-				partial class TestingHostKit;
+	static string DotnetKit(string attributeArguments, string body) => $$"""
+		namespace Testing
+		{
+			[HostKit]
+			partial class TestingHostKit;
 
-				[ResourceDefinition<{{DotnetProject}}>({{attributeArguments}})]
-				sealed partial class ApiKit
-				{
-					{{body}}
-				}
+			[ResourceDefinition<{{DotnetProject}}>({{attributeArguments}})]
+			sealed partial class ApiKit
+			{
+				{{body}}
 			}
-			""";
+		}
+		""";
 
 	[Test]
 	public async Task Analyze_GivenOverrideRepeatingProjectPath_ReportsRedundantBuildResource(
