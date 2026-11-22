@@ -15,5 +15,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/purview-dev/aspire-resourcekit.git"
+	},
+	"devDependencies": {
+		"oxfmt": "^0.79.0",
+		"oxlint": "^1.94.0"
 	}
 }
