@@ -38,6 +38,11 @@ sealed partial class PublishHostKit;
 
 See [Enablement](../concepts/Enablement.md) for the mode list and evaluation order.
 
+A host kit's accessibility sets what its generated members can mention. The host kit's options class and
+`Groups` accessor are nested inside it, so they take its accessibility; a `[ResourceGroup]` class is emitted
+beside it, so it must be declared the same way — `public` under a `public` host kit, `internal` under an
+`internal` one (SG0046). See [Groups and URLs](../concepts/Groups-and-URLs.md#resource-groups).
+
 ## `ResourceDefinitionAttribute` (`[ResourceDefinition]`)
 
 Marks a resource kit class that participates in generation.

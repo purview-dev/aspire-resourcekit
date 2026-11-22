@@ -1,0 +1,62 @@
+	internal sealed partial class DataGroup : global::Purview.Aspire.ResourceKit.ResourceKitGroup<global::Testing.TestingHostKit>
+	{
+		/// <summary>
+		/// Initializes a new instance of the resource group.
+		/// </summary>
+		[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+		[global::System.Runtime.CompilerServices.CompilerGenerated]
+		[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+		public DataGroup(
+			global::Testing.DataGroup.DataGroupOptions options,
+			global::Purview.Aspire.ResourceKit.ResourceKitGroup<global::Testing.TestingHostKit>? parent
+		)
+			: base("data", parent)
+		{
+			Options = options ?? throw new global::System.ArgumentNullException(nameof(options));
+			IsEnabled = options.IsEnabled;
+			Mode = options.Mode;
+			ShowInDashboard = options.ShowInDashboard;
+		}
+
+		/// <summary>
+		/// Gets the resource group options.
+		/// </summary>
+		[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+		[global::System.Runtime.CompilerServices.CompilerGenerated]
+		[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+		public global::Testing.DataGroup.DataGroupOptions Options { get; }
+
+		/// <summary>
+		/// Typed settings for <see cref="global::Testing.DataGroup" />.
+		/// Can be accessed by resolving <see cref="global::Testing.TestingHostKit.TestingHostKitOptions.Groups" />.
+		/// </summary>
+		[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+		[global::System.Runtime.CompilerServices.CompilerGenerated]
+		[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+		public sealed partial class DataGroupOptions
+		{
+			/// <summary>
+			/// Gets or sets whether the group, and so every resource in it, is enabled.
+			/// </summary>
+			[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+			[global::System.Runtime.CompilerServices.CompilerGenerated]
+			[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+			public bool IsEnabled { get; set; } = true;
+
+			/// <summary>
+			/// Gets or sets the execution mode in which the group, and so every resource in it, participates.
+			/// </summary>
+			[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+			[global::System.Runtime.CompilerServices.CompilerGenerated]
+			[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+			public global::Purview.Aspire.ResourceKit.ResourceKitMode Mode { get; set; } = global::Purview.Aspire.ResourceKit.ResourceKitMode.All;
+
+			/// <summary>
+			/// Gets or sets whether the group is shown as a node in the dashboard.
+			/// </summary>
+			[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+			[global::System.Runtime.CompilerServices.CompilerGenerated]
+			[global::System.CodeDom.Compiler.GeneratedCode("HostKitGenerator", "<version>")]
+			public bool ShowInDashboard { get; set; } = false;
+		}
+	}

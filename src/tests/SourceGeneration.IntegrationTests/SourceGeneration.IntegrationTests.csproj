@@ -12,6 +12,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Golden generated output, compared byte for byte by the generator tests. -->
+		<None Update="Golden\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\..\src\ResourceKit\ResourceKit.csproj" />
 		<!-- Reference the analyzer output as a normal reference so the test code can use HostKitGenerator. -->
 		<ProjectReference

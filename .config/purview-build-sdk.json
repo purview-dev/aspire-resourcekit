@@ -1,5 +1,8 @@
 {
 	"Skills": {
-		"Agents": ["universal"]
+		"Runner": "bun",
+		"Agents": [
+			"universal"
+		]
 	}
 }

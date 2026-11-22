@@ -51,6 +51,8 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			DiagnosticLibrary.ResourceKitParentNotResourceKit,
 			DiagnosticLibrary.ResourceKitParentUnavailable,
 			DiagnosticLibrary.DuplicateResourceKitChildPropertyName,
+			DiagnosticLibrary.ResourceGroupMustBeTopLevel,
+			DiagnosticLibrary.ResourceGroupAccessibilityMismatch,
 		];
 
 	public override void Initialize(AnalysisContext context)
@@ -123,7 +125,7 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 			compilationStartContext.RegisterCompilationEndAction(compilationEndContext =>
 			{
 				ReportCompilationRules(compilationEndContext, hostKits, resourceKits);
-				ReportGroupCompilationRules(compilationEndContext, resourceGroups);
+				ReportGroupCompilationRules(compilationEndContext, resourceGroups, hostKits);
 			});
 		});
 	}
@@ -249,10 +251,12 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 	// name is a member of the generated Groups accessor, which C# compares ordinally.
 	static void ReportGroupCompilationRules(
 		CompilationAnalysisContext context,
-		ConcurrentBag<INamedTypeSymbol> resourceGroups
+		ConcurrentBag<INamedTypeSymbol> resourceGroups,
+		ConcurrentBag<INamedTypeSymbol> hostKits
 	)
 	{
 		var groups = resourceGroups.ToArray();
+		ReportGroupAccessibilityRules(context, groups, hostKits);
 
 		var duplicates = groups
 			.GroupBy(ResourceKitRules.GroupName, StringComparer.OrdinalIgnoreCase)
@@ -275,6 +279,31 @@ public sealed class ResourceKitDiagnosticAnalyzer : DiagnosticAnalyzer
 						duplicate.Key
 					)
 				);
+			}
+		}
+	}
+
+	// A group is emitted beside the host kit and copies its declared accessibility, so the pair must match:
+	// the generated class derives from ResourceKitGroup<THostKit> and is exposed by members the generator
+	// adds to types nested in the host kit. One host kit is required to know which accessibility to compare.
+	static void ReportGroupAccessibilityRules(
+		CompilationAnalysisContext context,
+		INamedTypeSymbol[] groups,
+		ConcurrentBag<INamedTypeSymbol> hostKits
+	)
+	{
+		var hostKitArray = hostKits.ToArray();
+		if (hostKitArray.Length != 1)
+			return;
+
+		foreach (var group in groups)
+		{
+			if (
+				ResourceKitRules.EvaluateGroupHostKitAccessibility(group, hostKitArray[0], context.CancellationToken) is
+				{ } rule
+			)
+			{
+				context.ReportDiagnostic(rule.ToDiagnostic());
 			}
 		}
 	}

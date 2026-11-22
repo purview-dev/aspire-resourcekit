@@ -34,8 +34,10 @@ sealed record KitGenerationModel(
 		EquatableArray<GeneratorResult<ResourceGroupModel>>.Empty;
 
 	/// <summary>
-	/// Diagnostics raised by the ownership graph once every resource kit is known: self-parenting, cycles,
-	/// unknown parents, and duplicate child property names.
+	/// Diagnostics raised once the whole composition is known, which the per-symbol transforms cannot
+	/// decide alone: the ownership graph (self-parenting, cycles, unknown parents, duplicate child property
+	/// names), a child kit whose primary group differs from its parent's, and a group whose accessibility
+	/// does not match its host kit.
 	/// </summary>
 	public EquatableArray<ReportableDiagnostic> HierarchyDiagnostics { get; init; } =
 		EquatableArray<ReportableDiagnostic>.Empty;
@@ -205,7 +207,9 @@ readonly record struct ResourceGroupModel(
 	string PropertyName,
 	bool ShowInDashboard,
 	string? Mode,
-	EquatableArray<UrlModel> Urls
+	EquatableArray<UrlModel> Urls,
+	// The [ResourceGroup] application, so a diagnostic discovered once the host kit is known points at it.
+	SourceLocationModel Location
 )
 {
 	public bool HasParent => ParentType != TypeIdentity.Empty;

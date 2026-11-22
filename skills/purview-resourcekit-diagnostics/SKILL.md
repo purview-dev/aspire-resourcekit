@@ -70,6 +70,8 @@ assigned.
 | `SG0042` | Warning | `ProjectPath` and `ResourcePath` declare different paths; `ResourcePath` is used, so one must be fixed or removed. |
 | `SG0043` | Warning | `ResourcePath` is set on a resource that is not added by path, so it is ignored. |
 | `SG0044` | Info | A `BuildResource` override only calls `AddDotnetProject`/`AddViteApp`/`AddNextJsApp` with `Name` and the path, which ResourceKit generates. The code fix removes it, first moving the path into `ProjectPath`/`ResourcePath` when the attribute has none. |
+| `SG0045` | Error | A `[ResourceGroup]` class is nested in another type; it must be declared at namespace scope. |
+| `SG0046` | Error | A `[ResourceGroup]` class and its host kit are declared with different accessibility. |
 
 `SG0018` applies only to a hand-written `BuildResource`. A `DotnetProjectResource`, `ViteAppResource` or
 `NextJsAppResource` kit that declares its path and writes no override gets the registration generated.
@@ -99,6 +101,7 @@ Only the Error-severity rules block generation.
 3. Are the generated property names unique?
 4. Does each resource use one attribute style, with a matching base?
 5. Is `Name` set where inference cannot determine it?
+6. Is every `[ResourceGroup]` class at namespace scope, with the same accessibility as the host kit?
 
 ## Common fixes
 
@@ -140,7 +143,7 @@ sealed partial class SqlServerKit
 }
 ```
 
-### `SG0021`–`SG0031` — groups and URLs
+### `SG0021`–`SG0031`, `SG0045`–`SG0046` — groups and URLs
 
 - `SG0021`: the type in `[InGroup<T>]`, or in `Parent = typeof(T)`, must be a `[ResourceGroup]` class declared
   in the same project.
@@ -152,6 +155,12 @@ sealed partial class SqlServerKit
   `[EndpointUrl("https")]` also collide.
 - `SG0027` / `SG0028`: a group, or a kit for a resource without endpoints such as a `ParameterResource`, can
   only show an **absolute** URL.
+- `SG0045` / `SG0046`: the group class is a second partial declaration of a class the generator completes,
+  emitted beside the host kit. Declare it at **namespace scope** (a nested group loses its containing types
+  and its `*Options` path stops resolving — CS0426) and with the **same accessibility as the host kit**: a
+  `public` group under an `internal` host kit derives from a less accessible base (CS9338/CS0051), and an
+  `internal` group under a `public` host kit is exposed by the host kit's public `Groups` accessor (CS0053).
+  Both are errors, and both block generation, so no generated code is emitted to fail in their place.
 
 ### `SG0032`–`SG0038` — parent/child hierarchies
 

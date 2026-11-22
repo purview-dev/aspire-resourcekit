@@ -18,6 +18,14 @@ public sealed partial class AnalyzerReleaseTrackingTests
 	[GeneratedRegex(@"^\s*(?<id>SG\d{4})\s*\|", RegexOptions.CultureInvariant)]
 	private static partial Regex RuleIdPattern();
 
+	/// <summary>
+	/// Roslyn's own pattern for the separator row of a new/removed rules table
+	/// (<c>ReleaseTrackingHelper.TableHeaderNewOrRemovedRulesLine2RegexPattern</c>). It allows no
+	/// spaces around the pipes, so a padded Markdown table does not match.
+	/// </summary>
+	[GeneratedRegex(@"^\|?-{3,}\|-{3,}\|-{3,}\|-{3,}\|?$", RegexOptions.CultureInvariant)]
+	private static partial Regex TableSeparatorRowPattern();
+
 	[Test]
 	public async Task ReleaseTrackingFiles_EveryDiagnosticDescriptor_IsTrackedExactlyOnce(
 		CancellationToken cancellationToken
@@ -35,6 +43,40 @@ public sealed partial class AnalyzerReleaseTrackingTests
 		// Assert
 		await Assert.That(untracked).IsEmpty();
 		await Assert.That(trackedInBoth).IsEmpty();
+	}
+
+	[Test]
+	public async Task ReleaseTrackingFiles_TableSeparatorRows_MatchTheFormatTheRoslynAnalyzerParses(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		// Microsoft.CodeAnalysis.Analyzers parses a release tracking table only when the separator
+		// row matches its own pattern, which is dashes and pipes with no padding:
+		// '--------|----------|----------|-------'. A Markdown formatter that aligns table cells
+		// writes '-------- | ---------- | ---------- | ------' instead, and the build then fails
+		// with RS2007 and stops reading every table below the first row it cannot parse.
+		var shippedLines = await ReadLinesAsync("AnalyzerReleases.Shipped.md", cancellationToken);
+		var unshippedLines = await ReadLinesAsync("AnalyzerReleases.Unshipped.md", cancellationToken);
+
+		// Act
+		var shippedSeparatorRows = shippedLines.Where(static line => IsTableSeparatorRow(line)).ToArray();
+		var malformed = shippedLines
+			.Concat(unshippedLines)
+			.Where(static line => IsTableSeparatorRow(line))
+			.Where(static line => !TableSeparatorRowPattern().IsMatch(line.Trim()))
+			.ToArray();
+
+		// Assert
+		await Assert.That(shippedSeparatorRows).IsNotEmpty();
+		await Assert
+			.That(malformed)
+			.IsEmpty()
+			.Because("Roslyn rejects a padded separator row, so it must stay '--------|----------|----------|-------'");
+
+		static bool IsTableSeparatorRow(string line) =>
+			line.Contains('|', StringComparison.Ordinal)
+			&& line.Trim().All(static character => character is '-' or '|' or ' ');
 	}
 
 	[Test]
@@ -61,8 +103,7 @@ public sealed partial class AnalyzerReleaseTrackingTests
 
 	static async Task<HashSet<string>> ReadRuleIdsAsync(string fileName, CancellationToken cancellationToken)
 	{
-		var path = Path.Combine(AppContext.BaseDirectory, ReleaseTrackingFolder, fileName);
-		var lines = await File.ReadAllLinesAsync(path, cancellationToken);
+		var lines = await ReadLinesAsync(fileName, cancellationToken);
 
 		return
 		[
@@ -72,4 +113,10 @@ public sealed partial class AnalyzerReleaseTrackingTests
 				.Select(static match => match.Groups["id"].Value),
 		];
 	}
+
+	static async Task<string[]> ReadLinesAsync(string fileName, CancellationToken cancellationToken) =>
+		await File.ReadAllLinesAsync(
+			Path.Combine(AppContext.BaseDirectory, ReleaseTrackingFolder, fileName),
+			cancellationToken
+		);
 }

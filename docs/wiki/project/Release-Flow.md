@@ -97,7 +97,7 @@ The GitHub release is created with automatically generated notes, grouped by the
 
 ## Analyzer release tracking
 
-`src/src/SourceGeneration` ships public diagnostics (`SG0001`–`SG0020`), so it maintains the Roslyn
+`src/src/SourceGeneration` ships public diagnostics (`SG0001`–`SG0046`), so it maintains the Roslyn
 release tracking files:
 
 - `AnalyzerReleases.Shipped.md` — rules that have shipped in a released version.
@@ -108,6 +108,14 @@ they exist in the project directory, so they are validated during the build (Ros
 with `TreatWarningsAsErrors`). Add new rules to the *unshipped* file while developing, and move them
 into the *shipped* file as part of a release. See [Contributing](Contributing.md) for the day-to-day
 workflow.
+
+> [!IMPORTANT]
+> Roslyn parses those tables with a fixed header shape, so the separator row under
+> `Rule ID | Category | Severity | Notes` must stay dashes and pipes with **no spaces**:
+> `--------|----------|----------|-------`. A Markdown formatter that aligns table cells rewrites it to
+> `-------- | ---------- | ---------- | ------`, and the build then fails with `RS2007` and stops
+> reading every table below the first row it cannot parse. `AnalyzerReleaseTrackingTests` guards the
+> shape, so a reformat fails the test suite with the offending rows named.
 
 ## Build-time dependencies
 

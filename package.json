@@ -1,6 +1,6 @@
 {
 	"name": "aspire-resourcekit",
-	"version": "2.2.2",
+	"version": "2.2.3",
 	"description": "Source-generator-powered framework for structuring .NET Aspire AppHost resource composition as strongly typed, test-friendly classes.",
 	"keywords": [],
 	"homepage": "https://purview.dev/projects/aspire-resourcekit/",
@@ -15,5 +15,9 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/purview-dev/aspire-resourcekit.git"
+	},
+	"devDependencies": {
+		"oxfmt": "^0.79.0",
+		"oxlint": "^1.94.0"
 	}
 }
