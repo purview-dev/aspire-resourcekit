@@ -3,7 +3,7 @@
 ### New Rules
 
 Rule ID | Category | Severity | Notes
--------- | ---------- | ---------- | ------
+--------|----------|----------|-------
 SG0044 | Purview.Aspire.ResourceKit.SourceGenerator | Info | BuildResource only adds the declared path
 SG0045 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Resource group must be declared at namespace scope
 SG0046 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Resource group accessibility differs from its host kit
@@ -13,7 +13,7 @@ SG0046 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Resource group acc
 ### New Rules
 
 Rule ID | Category | Severity | Notes
--------- | ---------- | ---------- | ------
+--------|----------|----------|-------
 SG0041 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ProjectPath requires a DotnetProjectResource
 SG0042 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ProjectPath and ResourcePath conflict
 SG0043 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ResourcePath requires a path-based resource
@@ -23,7 +23,7 @@ SG0043 | Purview.Aspire.ResourceKit.SourceGenerator | Warning | ResourcePath req
 ### New Rules
 
 Rule ID | Category | Severity | Notes
--------- | ---------- | ---------- | ------
+--------|----------|----------|-------
 SG0021 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Type is not a resource group
 SG0022 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Resource group parent cycle
 SG0023 | Purview.Aspire.ResourceKit.SourceGenerator | Error | Duplicate resource group name
